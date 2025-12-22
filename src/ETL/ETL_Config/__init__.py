@@ -5,6 +5,7 @@ from crawl4ai.components.crawler_monitor import CrawlerMonitor
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
+from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
 
 class WebShareConfig:
@@ -33,12 +34,27 @@ class ScrapeConfig:
             verbose=False,
             enable_stealth=True,
         )
+        json_extract_strat = JsonCssExtractionStrategy(
+            schema={
+                "name": "Swiggy Data",
+                "baseSelector": "html > body",
+                "fields": [  # /html/body/pre/text()
+                    {
+                        "name": "swiggy_json_data",
+                        "selector": "pre",
+                        "type": "text",
+                        "default": "[{'swiggy_json_data': '{}'}]",
+                    },
+                ],
+            }
+        )
 
         self.run_config_prxy_rot = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             js_code=[
                 """await new Promise(r=>setTimeout(r,Math.random()*10000+1000));"""
             ],
+            extraction_strategy=json_extract_strat,
             proxy_rotation_strategy=WebShareConfig().proxy_rotation_strat,
         )
 
@@ -47,6 +63,7 @@ class ScrapeConfig:
             js_code=[
                 """await new Promise(r=>setTimeout(r,Math.random()*10000+1000));"""
             ],
+            extraction_strategy=json_extract_strat,
         )
 
         rate_limiter = RateLimiter(

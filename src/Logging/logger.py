@@ -6,11 +6,11 @@ from typing import Literal
 
 def get_logger(log_type: Literal["full", "train", "pred", "etl", "flask"] = "etl"):
     log_dirs = {
-        # "full": os.path.join(os.getcwd(), "logs", "full"),
+        "etl": os.path.join(os.getcwd(), "logs", "etl"),
         # "train": os.path.join(os.getcwd(), "logs", "train"),
         # "pred": os.path.join(os.getcwd(), "logs", "pred"),
-        "etl": os.path.join(os.getcwd(), "logs", "etl"),
         "flask": os.path.join(os.getcwd(), "logs", "flask"),
+        # "full": os.path.join(os.getcwd(), "logs", "full"),
     }
     log_dir = log_dirs.get(log_type)
     if not log_dir:
@@ -48,5 +48,5 @@ def get_logger(log_type: Literal["full", "train", "pred", "etl", "flask"] = "etl
 log_etl = get_logger("etl")
 # log_trn = get_logger("train")
 # log_prd = get_logger("pred")
-log_etl = get_logger("flask")
+log_flk = get_logger("flask")
 # log_ful = get_logger("full")

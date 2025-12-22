@@ -1,0 +1,24 @@
+{
+    "Countries": [
+        {
+            "name": "India",
+            "States": [
+                {
+                    "name": "Karnataka",
+                    "Cities": [
+                        {
+                            "name": "Bengaluru",
+                            "Areas": [
+                                {
+                                    "area_name": "Gandhi Nagar",
+                                    "area_coords": [12.9753 , 77.591],
+                                    "area_pincode": 560009
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

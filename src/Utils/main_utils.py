@@ -2,13 +2,15 @@ import os
 import json
 import pandas as pd
 from logging import Logger
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
 
 
-def save_json(data: Dict[str, Any], save_path: str, log: Logger = log_etl):
+def save_json(
+    data: Dict[str, Any] | List[Dict[str, Any]], save_path: str, log: Logger = log_etl
+):
     try:
         dir_path = os.path.dirname(save_path)
         os.makedirs(dir_path, exist_ok=True)
@@ -24,7 +26,7 @@ def save_json(data: Dict[str, Any], save_path: str, log: Logger = log_etl):
 def read_json(save_path: str, log: Logger = log_etl) -> Dict[str, Any]:
     data = {"data": "error_reading_json"}
     try:
-        with open(save_path, "w", encoding="utf-8") as f:
+        with open(save_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         log.info("Successfully read JSON data from file")
 
