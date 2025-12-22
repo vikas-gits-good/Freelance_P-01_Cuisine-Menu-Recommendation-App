@@ -1,0 +1,19 @@
+.
+├── airflow_settings.yaml
+├── dags
+│   └── exampledag.py
+├── Dockerfile
+├── include
+├── main.py
+├── packages.txt
+├── plugins
+├── pyproject.toml
+├── README.md
+├── requirements.txt
+├── str.txt
+├── tests
+│   └── dags
+│       └── test_dag_example.py
+└── uv.lock
+
+6 directories, 11 files
