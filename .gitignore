@@ -7,7 +7,14 @@ __pycache__/
 *.so
 
 # Manual
+logs/
+mlruns/
+Artifacts/
+Final_Artifacts/
+catboost_info/
+src/Research/
 src/Secrets/
+__pycache__/
 
 # Distribution / packaging
 .Python
