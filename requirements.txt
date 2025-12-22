@@ -12,3 +12,7 @@ pytest
 # scrape
 crawl4ai
 playwright
+
+# data
+pandas
+numpy
