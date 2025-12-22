@@ -7,6 +7,8 @@ from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
+from src.ETL.ETL_Constants import SwiggyLinksConstants
+
 
 class WebShareConfig:
     def __init__(self, instances: int = 6):
@@ -86,3 +88,19 @@ class ScrapeConfig:
             rate_limiter=rate_limiter,
             monitor=crawl_monitor,
         )
+
+
+class LinksConfig:
+    def __init__(self) -> None:
+        self.dir_path = SwiggyLinksConstants.SITEMAP_GZIP_SAVE_DIRECTORY
+        self.save_path = SwiggyLinksConstants.SITEMAP_JSON_SAVE_DIRECTORY
+        os.makedirs(self.dir_path, exist_ok=True)
+        self.main_link = SwiggyLinksConstants.SWIGGY_SITEMAP_URL
+        self.headers = SwiggyLinksConstants.SWIGGY_SITEMAP_SCRAPE_HEADERS
+        self.all_urls_file_path = os.path.join(
+            SwiggyLinksConstants.SITEMAP_JSON_SAVE_DIRECTORY,
+            SwiggyLinksConstants.JSON_DATA_FILE_NAME,
+        )
+
+    def get_path(self, link: str) -> str:
+        return os.path.join(self.dir_path, link.split("/")[-1])

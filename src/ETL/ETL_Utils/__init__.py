@@ -1,11 +1,19 @@
+import gzip
 import json
+import requests
 import pandas as pd
 from random import choice
+from requests import Response
 from urllib.parse import quote
+import xml.etree.ElementTree as ET
 from typing import Dict, Any, List
 from crawl4ai.async_webcrawler import AsyncWebCrawler
 
-from src.ETL.ETL_Config import ScrapeConfig
+from lxml import etree
+from pathlib import Path
+import time
+
+from src.ETL.ETL_Config import ScrapeConfig, LinksConfig
 from src.ETL.ETL_Constants import SwiggyRestaurantConstants
 from src.Utils.main_utils import save_json, save_dataframe
 from src.Logging.logger import log_etl
@@ -172,3 +180,127 @@ class RestaurantData:
             raise CustomException(e)
 
         return urls_list
+
+
+class AllLinks:
+    def __init__(self, config: LinksConfig = LinksConfig()) -> None:
+        self.config = config
+
+    def get(self):
+        try:
+            log_etl.info("Extraction: Getting main sitemap file")
+            main_xml: Response = self._get(url=self.config.main_link)
+            log_etl.info(
+                f"Extraction: Sitemap: {main_xml.url} | Status: {main_xml.status_code}"
+            )
+
+            if main_xml.status_code == 200:
+                main_path = self.config.get_path(self.config.main_link)
+                self._save(main_xml, main_path)
+
+            log_etl.info("Extraction: Getting sub-sitemap files")
+            child_sitemaps = self._read_sitemap_index(main_path)
+            child_xmls: list[Response] = [
+                self._get(url=link) for link in child_sitemaps
+            ]
+            child_paths = [self.config.get_path(child.url) for child in child_xmls]
+
+            _ = [
+                log_etl.info(
+                    f"Extraction: Sitemap: {child.url} | Status: {child.status_code}"
+                )
+                for child in child_xmls
+            ]
+
+            for child, path in zip(child_xmls, child_paths):
+                if child.status_code == 200:
+                    self._save(child, path)
+                else:
+                    print(f"Error with {child.url.split('/')[-1]}. Skipping")
+                    continue
+
+            # use child_paths
+            log_etl.info("Extraction: Getting full sitemap of Swiggy!")
+            _ = self._extract_urls(path_list=child_paths)
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+    def _get(self, url):
+        return requests.get(url, headers=self.config.headers, timeout=10)
+
+    def _save(self, obj, path):
+        with open(path, "wb") as f:
+            f.write(obj.content)
+
+    def _read_sitemap_index(self, path):
+        with gzip.open(path, "rb") as f:
+            content = f.read()
+
+        root = ET.fromstring(content)
+        namespaces = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+
+        child_sitemaps = []
+        for sitemap in root.findall(".//sitemap:sitemap", namespaces):
+            loc = sitemap.find("sitemap:loc", namespaces).text
+            child_sitemaps.append(loc)
+
+        return child_sitemaps
+
+    def _extract_urls(self, path_list, batch_size=50000):
+        """Process 65 local .xml.gz sitemaps, extract URLs, save as JSON"""
+        all_urls = []
+        output_file = self.config.all_urls_file_path
+        temp_file = Path(output_file).with_suffix(".tmp")
+
+        for i, sitemap_file in enumerate(path_list, 1):
+            urls_in_file = 0
+            context = etree.iterparse(
+                gzip.open(sitemap_file, "rb"),
+                events=("end",),
+                tag="{http://www.sitemaps.org/schemas/sitemap/0.9}url",
+            )
+
+            for event, elem in context:
+                # Extract URL
+                loc = elem.find("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
+                if loc is not None and loc.text:
+                    all_urls.append(loc.text)
+                    urls_in_file += 1
+
+                    # Batch save every 50K URLs
+                    if len(all_urls) >= batch_size:
+                        self.save_batch(all_urls, temp_file)
+                        all_urls = []
+                        log_etl.info(
+                            f"Extraction: Saved Batch-{i:02d} of extracted urls"
+                        )
+
+                # Clear memory
+                elem.clear()
+                while elem.getprevious() is not None:
+                    del elem.getparent()[0]
+
+            time.sleep(0.1)  # Brief pause
+
+        # Final batch
+        if all_urls:
+            self.save_batch(all_urls, temp_file)
+            log_etl.info("Extraction: Saved final batch of extracted urls")
+
+        # Rename to final file
+        temp_file.rename(output_file)
+
+    def save_batch(self, urls, filepath):
+        """Append batch to JSON file"""
+        try:
+            with open(filepath, "r+") as f:
+                data = json.load(f)
+                data["links"].extend(urls)
+                f.seek(0)
+                f.truncate()
+                json.dump(data, f, separators=(",", ":"))  # Compact JSON
+        except FileNotFoundError:
+            with open(filepath, "w") as f:
+                json.dump({"links": urls}, f, separators=(",", ":"))

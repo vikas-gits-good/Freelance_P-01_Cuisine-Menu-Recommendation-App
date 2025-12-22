@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from src.Utils.main_utils import read_json
+from random import random
 
 
 @dataclass
@@ -8,7 +9,7 @@ class SwiggyRestaurantConstants:
     JSON_FILE_SAVE_PATH = "src/ETL/ETL_Data/json_data.json"
     DF_FILE_SAVE_PATH = "src/ETL/ETL_Data/df_data.pkl"
     COORDINATES_JSON = read_json(save_path="src/ETL/ETL_Constants/coordinates.json")
-    DISTANCE = 10
+    DISTANCE = int(10 * (1 + random()))
     QUERIES = [
         f"All eateries within {DISTANCE}km range",
         f"Nearby restaurants in {DISTANCE}km",
@@ -31,3 +32,17 @@ class SwiggyRestaurantConstants:
         f"Local dining {DISTANCE}km radius",
         f"All food venues {DISTANCE}km",
     ]
+
+
+@dataclass
+class SwiggyLinksConstants:
+    SWIGGY_SITEMAP_URL = "https://www.swiggy.com/sitemap.xml.gz"
+    SWIGGY_SITEMAP_SCRAPE_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.swiggy.com/",
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    SITEMAP_GZIP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap"
+    SITEMAP_JSON_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    JSON_DATA_FILE_NAME = "sitemap_urls.json"

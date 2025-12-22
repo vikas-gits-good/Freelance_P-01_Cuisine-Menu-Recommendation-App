@@ -1,6 +1,10 @@
 import asyncio
-from src.ETL.ETL_Utils import RestaurantData
+from src.ETL.ETL_Utils import RestaurantData, AllLinks
 
 
 if __name__ == "__main__":
-    clean_data = asyncio.run(RestaurantData().get())
+    # Get restaurant data based on location
+    # clean_data = asyncio.run(RestaurantData().get())
+
+    # Get full sitemap of Swiggy
+    _ = AllLinks().get()

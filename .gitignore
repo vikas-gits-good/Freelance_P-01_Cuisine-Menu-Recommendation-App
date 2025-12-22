@@ -11,6 +11,7 @@ logs/
 mlruns/
 Artifacts/
 Final_Artifacts/
+src/ETL/ETL_Data/sitemap/
 catboost_info/
 src/Research/
 src/Secrets/
