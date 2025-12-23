@@ -7,4 +7,5 @@ if __name__ == "__main__":
     # clean_data = asyncio.run(RestaurantData().get())
 
     # Get full sitemap of Swiggy
-    _ = AllLinks().get()
+    # _ = AllLinks().get()
+    _ = AllLinks().get_unique_data(search_for="restaurants")

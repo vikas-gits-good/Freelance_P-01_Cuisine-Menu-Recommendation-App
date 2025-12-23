@@ -6,6 +6,7 @@ from random import random
 @dataclass
 class SwiggyRestaurantConstants:
     SWIGGY_API_ENDPOINT = "https://www.swiggy.com/dapi/restaurants/search/v3?lat={latitude}&lng={longitude}&str={query}&submitAction=ENTER"
+    SWIGGY_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstrnID}&submitAction=ENTER"
     JSON_FILE_SAVE_PATH = "src/ETL/ETL_Data/json_data.json"
     DF_FILE_SAVE_PATH = "src/ETL/ETL_Data/df_data.pkl"
     COORDINATES_JSON = read_json(save_path="src/ETL/ETL_Constants/coordinates.json")
@@ -44,5 +45,17 @@ class SwiggyLinksConstants:
         "X-Requested-With": "XMLHttpRequest",
     }
     SITEMAP_GZIP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap"
-    SITEMAP_JSON_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
-    JSON_DATA_FILE_NAME = "sitemap_urls.json"
+    SITEMAP_JSON_SITEMAP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    SITEMAP_JSON_CITIES_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    SITEMAP_JSON_RESTAURANTS_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    JSON_SITEMAP_DATA_FILE_NAME = "sitemap_urls.json"
+    JSON_CITIES_DATA_FILE_NAME = "unique_cities.json"
+    JSON_RESTAURANTS_DATA_FILE_NAME = "unique_restaurants.json"
+
+
+@dataclass
+class NominatimOSMConstants:
+    API_ENDPOINT = "https://nominatim.openstreetmap.org/search"
+    SCRAPE_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }

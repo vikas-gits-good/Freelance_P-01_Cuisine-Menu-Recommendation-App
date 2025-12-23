@@ -1,3 +1,4 @@
+import re
 import gzip
 import json
 import requests
@@ -6,16 +7,16 @@ from random import choice
 from requests import Response
 from urllib.parse import quote
 import xml.etree.ElementTree as ET
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Literal
 from crawl4ai.async_webcrawler import AsyncWebCrawler
 
 from lxml import etree
 from pathlib import Path
 import time
 
-from src.ETL.ETL_Config import ScrapeConfig, LinksConfig
+from src.ETL.ETL_Config import ScrapeConfig, LinksConfig, CoordsConfig
 from src.ETL.ETL_Constants import SwiggyRestaurantConstants
-from src.Utils.main_utils import save_json, save_dataframe
+from src.Utils.main_utils import save_json, save_dataframe, read_json
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
 
@@ -219,9 +220,14 @@ class AllLinks:
                     print(f"Error with {child.url.split('/')[-1]}. Skipping")
                     continue
 
-            # use child_paths
             log_etl.info("Extraction: Getting full sitemap of Swiggy!")
             _ = self._extract_urls(path_list=child_paths)
+
+            log_etl.info("Extraction: Creating a list of unique cities")
+            _ = self.get_unique_data(search_for="cities")
+
+            log_etl.info("Extraction: Creating a list of unique restaurants")
+            _ = self.get_unique_data(search_for="restaurants")
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -271,7 +277,7 @@ class AllLinks:
 
                     # Batch save every 50K URLs
                     if len(all_urls) >= batch_size:
-                        self.save_batch(all_urls, temp_file)
+                        self._save_batch(all_urls, temp_file)
                         all_urls = []
                         log_etl.info(
                             f"Extraction: Saved Batch-{i:02d} of extracted urls"
@@ -286,13 +292,13 @@ class AllLinks:
 
         # Final batch
         if all_urls:
-            self.save_batch(all_urls, temp_file)
+            self._save_batch(all_urls, temp_file)
             log_etl.info("Extraction: Saved final batch of extracted urls")
 
         # Rename to final file
         temp_file.rename(output_file)
 
-    def save_batch(self, urls, filepath):
+    def _save_batch(self, urls, filepath):
         """Append batch to JSON file"""
         try:
             with open(filepath, "r+") as f:
@@ -304,3 +310,81 @@ class AllLinks:
         except FileNotFoundError:
             with open(filepath, "w") as f:
                 json.dump({"links": urls}, f, separators=(",", ":"))
+
+    def get_unique_data(self, search_for: Literal["cities", "restaurants"] = "cities"):
+        try:
+            read_path = self.config.all_urls_file_path
+
+            if search_for == "cities":
+                save_path = self.config.unique_cities_file_path
+                search_pattern = re.compile(r"/city/([^/]+)/")
+
+            elif search_for == "restaurants":
+                save_path = self.config.unique_restaurants_file_path
+                search_pattern = re.compile(r"-rest(\d+)(?:/|$)")
+
+            item = set()
+            processed_urls = 0
+
+            log_etl.info("Extraction: Preparing to read 3M+ urls")
+
+            with open(read_path, "r") as f:
+                data = json.load(f)
+                links = data["links"]
+
+                for url in links:
+                    match = search_pattern.search(url)
+                    if match:
+                        if search_for == "cities":
+                            item.add(match.group(1))
+                            processed_urls += 1
+
+                        elif search_for == "restaurants":
+                            # item.add(match.group(1))
+                            item.add(url)
+                            processed_urls += 1
+
+                    if processed_urls % 100000 == 0 and processed_urls > 0:
+                        log_etl.info(
+                            f"Extraction: Processed {processed_urls:,} URLs and found {len(item):,} unique {search_for}"
+                        )
+
+            log_etl.info(
+                "Extraction: Completed reading all urls. Now cleaning & saving data"
+            )
+            if search_for == "cities":
+                city_data = {"unique_cities": sorted(list(item))}
+                cleaned_data = {
+                    k: v
+                    for k, v in city_data.items()
+                    if all(
+                        not any(c.isdigit() for c in city) and "-closed-" not in city
+                        for city in v
+                    )
+                }
+
+            elif search_for == "restaurants":
+                cleaned_data = {"unique_restaurants": sorted(item)}
+
+            save_json(data=cleaned_data, save_path=save_path)
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+
+class CityCoordinates:
+    def __init__(self, config: CoordsConfig = CoordsConfig()) -> None:
+        self.config = config
+
+    def get(self):
+        try:
+            log_etl.info("Extraction: Getting unique cities list")
+            city_list = read_json(save_path=self.config.cities_file_path)[
+                "unique_cities"
+            ]
+            pass
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
