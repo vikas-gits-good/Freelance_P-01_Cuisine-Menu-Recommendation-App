@@ -46,11 +46,10 @@ class SwiggyLinksConstants:
     }
     SITEMAP_GZIP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap"
     SITEMAP_JSON_SITEMAP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
-    SITEMAP_JSON_CITIES_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
-    SITEMAP_JSON_RESTAURANTS_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
     JSON_SITEMAP_DATA_FILE_NAME = "sitemap_urls.json"
-    JSON_CITIES_DATA_FILE_NAME = "unique_cities.json"
-    JSON_RESTAURANTS_DATA_FILE_NAME = "unique_restaurants.json"
+
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_FILE_NAME = "unique_data.json"
 
 
 @dataclass

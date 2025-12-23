@@ -101,13 +101,9 @@ class LinksConfig:
             SwiggyLinksConstants.SITEMAP_JSON_SITEMAP_SAVE_DIRECTORY,
             SwiggyLinksConstants.JSON_SITEMAP_DATA_FILE_NAME,
         )
-        self.unique_cities_file_path = os.path.join(
-            SwiggyLinksConstants.SITEMAP_JSON_CITIES_SAVE_DIRECTORY,
-            SwiggyLinksConstants.JSON_CITIES_DATA_FILE_NAME,
-        )
-        self.unique_restaurants_file_path = os.path.join(
-            SwiggyLinksConstants.SITEMAP_JSON_RESTAURANTS_SAVE_DIRECTORY,
-            SwiggyLinksConstants.JSON_RESTAURANTS_DATA_FILE_NAME,
+        self.unique_data_file_path = os.path.join(
+            SwiggyLinksConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            SwiggyLinksConstants.UNIQUE_DATA_FILE_NAME,
         )
 
     def get_path(self, link: str) -> str:
@@ -116,7 +112,8 @@ class LinksConfig:
 
 class CoordsConfig:
     def __init__(self) -> None:
-        self.cities_file_path = os.path.join(
-            SwiggyLinksConstants.SITEMAP_JSON_CITIES_SAVE_DIRECTORY,
-            SwiggyLinksConstants.JSON_CITIES_DATA_FILE_NAME,
-        )
+        # self.cities_file_path = os.path.join(
+        #     SwiggyLinksConstants.SITEMAP_JSON_CITIES_SAVE_DIRECTORY,
+        #     SwiggyLinksConstants.JSON_CITIES_DATA_FILE_NAME,
+        # )
+        pass

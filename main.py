@@ -8,4 +8,4 @@ if __name__ == "__main__":
 
     # Get full sitemap of Swiggy
     # _ = AllLinks().get()
-    _ = AllLinks().get_unique_data(search_for="restaurants")
+    _ = AllLinks().get_data_from_url()

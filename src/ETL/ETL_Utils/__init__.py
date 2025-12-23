@@ -223,11 +223,8 @@ class AllLinks:
             log_etl.info("Extraction: Getting full sitemap of Swiggy!")
             _ = self._extract_urls(path_list=child_paths)
 
-            log_etl.info("Extraction: Creating a list of unique cities")
-            _ = self.get_unique_data(search_for="cities")
-
-            log_etl.info("Extraction: Creating a list of unique restaurants")
-            _ = self.get_unique_data(search_for="restaurants")
+            log_etl.info("Extraction: Getting city and restaurants details from urls")
+            _ = self.get_data_from_url()
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -306,67 +303,42 @@ class AllLinks:
                 data["links"].extend(urls)
                 f.seek(0)
                 f.truncate()
-                json.dump(data, f, separators=(",", ":"))  # Compact JSON
+                json.dump(data, f, separators=(",", ":"))
+
         except FileNotFoundError:
             with open(filepath, "w") as f:
                 json.dump({"links": urls}, f, separators=(",", ":"))
 
-    def get_unique_data(self, search_for: Literal["cities", "restaurants"] = "cities"):
+    def get_data_from_url(self):
         try:
             read_path = self.config.all_urls_file_path
+            save_path = self.config.unique_data_file_path
 
-            if search_for == "cities":
-                save_path = self.config.unique_cities_file_path
-                search_pattern = re.compile(r"/city/([^/]+)/")
+            urls_dict = read_json(save_path=read_path)
+            urls_list = urls_dict["links"]
+            search_pattern = r"https://www\.swiggy\.com/city/([^/]+)/(.+)-rest(\d+)"
 
-            elif search_for == "restaurants":
-                save_path = self.config.unique_restaurants_file_path
-                search_pattern = re.compile(r"-rest(\d+)(?:/|$)")
+            log_etl.info("Extraction: Reading 3M+ urls and extracting data")
+            main_data = {}
 
-            item = set()
-            processed_urls = 0
+            for url in urls_list:
+                match = re.search(search_pattern, url)
+                if match:
+                    city = match.group(1)
+                    rstn_id = int(match.group(3))
 
-            log_etl.info("Extraction: Preparing to read 3M+ urls")
+                    # Create a new dict for each new city
+                    if city not in main_data.keys():
+                        main_data.update({city: {"boundingbox": [], "data": []}})
 
-            with open(read_path, "r") as f:
-                data = json.load(f)
-                links = data["links"]
+                    # Append the 'rstn_id' into ['city']['data']
+                    main_data[city]["data"].append({"rstn_id": rstn_id})
 
-                for url in links:
-                    match = search_pattern.search(url)
-                    if match:
-                        if search_for == "cities":
-                            item.add(match.group(1))
-                            processed_urls += 1
+            log_etl.info("Extraction: Rearranging extracted data")
+            main_data = dict(sorted(main_data.items()))
 
-                        elif search_for == "restaurants":
-                            # item.add(match.group(1))
-                            item.add(url)
-                            processed_urls += 1
-
-                    if processed_urls % 100000 == 0 and processed_urls > 0:
-                        log_etl.info(
-                            f"Extraction: Processed {processed_urls:,} URLs and found {len(item):,} unique {search_for}"
-                        )
-
-            log_etl.info(
-                "Extraction: Completed reading all urls. Now cleaning & saving data"
-            )
-            if search_for == "cities":
-                city_data = {"unique_cities": sorted(list(item))}
-                cleaned_data = {
-                    k: v
-                    for k, v in city_data.items()
-                    if all(
-                        not any(c.isdigit() for c in city) and "-closed-" not in city
-                        for city in v
-                    )
-                }
-
-            elif search_for == "restaurants":
-                cleaned_data = {"unique_restaurants": sorted(item)}
-
-            save_json(data=cleaned_data, save_path=save_path)
+            log_etl.info("Extraction: Saving extracted data")
+            save_json(data=main_data, save_path=save_path)
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -379,10 +351,6 @@ class CityCoordinates:
 
     def get(self):
         try:
-            log_etl.info("Extraction: Getting unique cities list")
-            city_list = read_json(save_path=self.config.cities_file_path)[
-                "unique_cities"
-            ]
             pass
 
         except Exception as e:
