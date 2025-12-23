@@ -220,7 +220,9 @@ class AllLinks:
                     print(f"Error with {child.url.split('/')[-1]}. Skipping")
                     continue
 
-            log_etl.info("Extraction: Getting full sitemap of Swiggy!")
+            log_etl.info(
+                "Extraction: Getting full sitemap of Swiggy! This is a slow process > 20 minutes."
+            )
             _ = self._extract_urls(path_list=child_paths)
 
             log_etl.info("Extraction: Getting city and restaurants details from urls")
@@ -321,18 +323,47 @@ class AllLinks:
             log_etl.info("Extraction: Reading 3M+ urls and extracting data")
             main_data = {}
 
+            def clean_string(text):
+                keywords = [
+                    "-only-dominos",
+                    "-dominos-only",
+                    "-and-",
+                    "-road",
+                    "-do-not-use",
+                    "-new-city",
+                    "closed",
+                    "-please-use-city-noida-city-id-24",
+                ]
+                if any(keyword in text for keyword in keywords):
+                    return text.split("-")[0]
+                text = text.replace("jjajjar", "jhajjar")
+                return text.replace("-", " ")
+
             for url in urls_list:
                 match = re.search(search_pattern, url)
                 if match:
                     city = match.group(1)
+                    city = clean_string(city)
                     rstn_id = int(match.group(3))
 
                     # Create a new dict for each new city
                     if city not in main_data.keys():
-                        main_data.update({city: {"boundingbox": [], "data": []}})
+                        main_data.update(
+                            {
+                                city: {
+                                    "name": "",
+                                    "coords": [],
+                                    "boundingbox": [],
+                                    "address": {},
+                                    "restaurants": [],
+                                }
+                            }
+                        )
 
-                    # Append the 'rstn_id' into ['city']['data']
-                    main_data[city]["data"].append({"rstn_id": rstn_id})
+                    # Append data to ['city']['restaurants']
+                    main_data[city]["restaurants"].append(
+                        {"rstn_id": rstn_id, "rstn_url": url}
+                    )
 
             log_etl.info("Extraction: Rearranging extracted data")
             main_data = dict(sorted(main_data.items()))
@@ -346,12 +377,90 @@ class AllLinks:
 
 
 class CityCoordinates:
-    def __init__(self, config: CoordsConfig = CoordsConfig()) -> None:
+    def __init__(
+        self,
+        source: Literal["OSM", "GMaps"] = "OSM",
+        config: CoordsConfig = CoordsConfig(),
+    ) -> None:
         self.config = config
+        self.source = source  # some address details is missing in OSM
 
     def get(self):
         try:
-            pass
+            read_path = self.config.read_unique_data_path
+            save_path = self.config.save_unique_data_path
+            rqst_parm = self.config.request_params
+
+            city_dict = read_json(save_path=read_path)
+
+            log_etl.info(
+                f"Extraction: Getting {len(list(city_dict.keys())):04d} cities' coordinates & address details. This will take > 10 minutes."
+            )
+            cnt = 1
+
+            for city in city_dict.keys():
+                try:
+                    # prep request parameters
+                    rp = {
+                        "url": rqst_parm["url"].format(query=quote(f"{city} in India")),
+                        "headers": rqst_parm["headers"],
+                        "timeout": rqst_parm["timeout"],
+                    }
+
+                    # make api call
+
+                    response = requests.get(**rp)
+                    if response.status_code == 200:
+                        json_data = response.json()
+
+                        if json_data:
+                            city_dict[city].update(
+                                {"name": json_data[0]["display_name"]}
+                            )
+                            city_dict[city].update(
+                                {
+                                    "coords": [
+                                        float(json_data[0]["lat"]),
+                                        float(json_data[0]["lon"]),
+                                    ]
+                                }
+                            )
+                            if "address" in json_data[0].keys():
+                                city_dict[city].update(
+                                    {"address": json_data[0]["address"]}
+                                )
+                            city_dict[city].update(
+                                {
+                                    "boundingbox": [
+                                        float(data)
+                                        for data in json_data[0]["boundingbox"]
+                                    ]
+                                }
+                            )
+
+                        else:
+                            log_etl.info(
+                                f"Extraction: Coordinates not found for '{city}'. Continuing"
+                            )
+
+                    if cnt % 100 == 0:
+                        log_etl.info(
+                            f"Extraction: Completed {cnt:04d} of {len(list(city_dict.keys())):04d} urls."
+                        )
+                        time.sleep(10)
+
+                    cnt += 1
+
+                    # rate limit < 1 request/second. Dont rtlm - (start - end)
+                    time.sleep(self.config.rtlm)
+
+                except Exception as e:
+                    LogException(e, logger=log_etl)
+                    cnt += 1
+                    continue
+
+            log_etl.info("Extraction: Saving updated data to file")
+            save_json(data=city_dict, save_path=save_path)
 
         except Exception as e:
             LogException(e, logger=log_etl)

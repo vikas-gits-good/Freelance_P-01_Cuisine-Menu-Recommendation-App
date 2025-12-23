@@ -54,7 +54,10 @@ class SwiggyLinksConstants:
 
 @dataclass
 class NominatimOSMConstants:
-    API_ENDPOINT = "https://nominatim.openstreetmap.org/search"
+    API_ENDPOINT = "https://nominatim.openstreetmap.org/search?q={query}&format=jsonv2&addressdetails=1&limit=1"
     SCRAPE_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
+    RATE_LIMIT = 1.2
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_FILE_NAME = "city_rstn_coords_data.json"

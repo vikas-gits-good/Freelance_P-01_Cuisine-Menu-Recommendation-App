@@ -112,8 +112,17 @@ class LinksConfig:
 
 class CoordsConfig:
     def __init__(self) -> None:
-        # self.cities_file_path = os.path.join(
-        #     SwiggyLinksConstants.SITEMAP_JSON_CITIES_SAVE_DIRECTORY,
-        #     SwiggyLinksConstants.JSON_CITIES_DATA_FILE_NAME,
-        # )
-        pass
+        self.read_unique_data_path = os.path.join(
+            SwiggyLinksConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            SwiggyLinksConstants.UNIQUE_DATA_FILE_NAME,
+        )
+        self.save_unique_data_path = os.path.join(
+            NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
+        )
+        self.request_params = {
+            "url": NominatimOSMConstants.API_ENDPOINT,
+            "headers": NominatimOSMConstants.SCRAPE_HEADERS,
+            "timeout": 20,
+        }
+        self.rtlm = NominatimOSMConstants.RATE_LIMIT
