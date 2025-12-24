@@ -5,18 +5,19 @@ apache-airflow-providers-http
 apache-airflow-providers-postgres
 
 # utils
+pytest
+pydantic
 ipykernel
 python-dotenv
-pytest
 
 # scrape
-crawl4ai
-playwright
+rnet
+redis
+tenacity
+curl-cffi
 
 # data
 pandas
 numpy
 
 # nlp
-spacy
-# uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
