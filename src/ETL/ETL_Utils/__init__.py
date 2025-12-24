@@ -1,189 +1,66 @@
 import re
+import time
 import gzip
 import json
+import asyncio
 import requests
-import pandas as pd
-from random import choice
+from lxml import etree
+from pathlib import Path
+from typing import Literal
 from requests import Response
 from urllib.parse import quote
 import xml.etree.ElementTree as ET
-from typing import Dict, Any, List, Literal
-# from crawl4ai.async_webcrawler import AsyncWebCrawler
+from crawl4ai.async_webcrawler import AsyncWebCrawler
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from lxml import etree
-from pathlib import Path
-import time
 
-from src.ETL.ETL_Config import LinksConfig, CoordsConfig
-from src.ETL.ETL_Constants import SwiggyRestaurantMenuConstants
-from src.Utils.main_utils import save_json, save_dataframe, read_json
+from src.Utils.main_utils import save_json, read_json
+from src.ETL.ETL_Config import (
+    LinksConfig,
+    CoordsConfig,
+    RestaurantConfig,
+    ScrapeConfig,
+    Restaurant,
+    Menu,
+)
+
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
 
 
-# class RestaurantData:
-#     def __init__(
-#         self,
-#         use_proxy_rotation: bool = False,
-#         crawl_config: ScrapeConfig = ScrapeConfig(),
-#     ) -> None:
-#         try:
-#             self.use_proxy_rotation = use_proxy_rotation
-#             self.crawl_config = crawl_config
-
-#         except Exception as e:
-#             LogException(e, logger=log_etl)
-#             raise CustomException(e)
-
-#     async def get(self) -> pd.DataFrame:
-#         clean_data = pd.DataFrame({"data": ["Error in RestaurantData().get()"]})
-#         try:
-#             log_etl.info("Extraction: Preparing to scrape restaurant data")
-#             json_data = await self._get_json_data()
-
-#             log_etl.info("Extraction: Preparing to clean scraped restaurant data")
-#             clean_data = self._get_clean_data(json_data)
-
-#         except Exception as e:
-#             LogException(e, logger=log_etl)
-#             raise CustomException(e)
-
-#         return clean_data
-
-#     async def _get_json_data(self) -> List[Dict[str, Any]]:
-#         json_data = [{"data": "Error in RestaurantData()._get_json_data()"}]
-#         save_path_json = SwiggyRestaurantConstants.JSON_FILE_SAVE_PATH
-#         try:
-#             log_etl.info("Extraction: Preparing list of URLs to scrape")
-#             urls_list = RestaurantData.get_urls_list()
-
-#             log_etl.info("Extraction: Starting data scraping")
-#             async with AsyncWebCrawler(
-#                 config=self.crawl_config.browser_config
-#             ) as crawler:
-#                 try:
-#                     results = await crawler.arun_many(
-#                         urls=urls_list,
-#                         dispatcher=self.crawl_config.mem_ada_dispatcher,
-#                         config=self.crawl_config.run_config_prxy_rot
-#                         if self.use_proxy_rotation
-#                         else self.crawl_config.run_config,
-#                     )
-
-#                     log_etl.info("Extraction: Formatting scraped data")
-#                     json_data = []
-#                     for result in results:
-#                         json_data_str = json.loads(result.extracted_content)
-#                         json_data.append(
-#                             json.loads(json_data_str[0]["swiggy_json_data"])
-#                         )
-
-#                 except Exception as e:
-#                     LogException(e, logger=log_etl)
-
-#         except Exception as e:
-#             LogException(e, logger=log_etl)
-#             raise CustomException(e)
-
-#         save_json(data=json_data, save_path=save_path_json)
-#         return json_data
-
-#     def _get_clean_data(self, data_list) -> pd.DataFrame:
-#         clean_data = pd.DataFrame()
-#         save_path_df = SwiggyRestaurantConstants.DF_FILE_SAVE_PATH
-#         try:
-#             for data in data_list:
-#                 if data["data"]["statusMessage"] in ["done successfully"]:
-#                     restaurant_list: list[dict] = data["data"]["cards"][1][
-#                         "groupedCard"
-#                     ]["cardGroupMap"]["RESTAURANT"]["cards"]
-
-#                     restaurant_data = []
-#                     for card in restaurant_list:
-#                         info = card["card"]["card"]["info"]
-#                         try:
-#                             restaurant_data.append(
-#                                 {
-#                                     "restaurant_id": int(info.get("id", "-1")),
-#                                     "restaurant_name": info["name"],
-#                                     "city": info["slugs"]["city"],
-#                                     "address": info["address"],
-#                                     "locality": info["locality"],
-#                                     "area": info["areaName"],
-#                                     "cuisines": ", ".join(
-#                                         [item for item in info["cuisines"]]
-#                                     ),
-#                                     "average_rating": float(
-#                                         info.get("avgRating", "-1.0")
-#                                     ),
-#                                 }
-#                             )
-#                         except Exception as e:
-#                             print(f"Restaurant {info['name']}. Error: {e}")
-#                             continue
-
-#                     clean_data = pd.concat(
-#                         [clean_data, pd.DataFrame(restaurant_data)],
-#                         axis=0,
-#                         ignore_index=True,
-#                     )
-
-#                 else:
-#                     log_etl.info("Extraction: JSON statusMessage != 'Success'")
-#                     continue
-
-#         except Exception as e:
-#             LogException(e, logger=log_etl)
-#             raise CustomException(e)
-
-#         save_dataframe(data=clean_data, save_path=save_path_df)
-#         return clean_data
-
-#     @staticmethod
-#     def get_urls_list() -> List[str]:
-#         """Method to get a list of API endpoint URLs of Swiggy.
-
-#         Raises:
-#             CustomException: Any error during the function.
-
-#         Returns:
-#             urls_list (List[str]): List of API endpoint URLs.
-#         """
-#         urls_list = [""]
-#         try:
-#             # get variables
-#             api_endpoint = SwiggyRestaurantConstants.SWIGGY_API_ENDPOINT
-#             coords_json = SwiggyRestaurantConstants.COORDINATES_JSON
-#             queries = SwiggyRestaurantConstants.QUERIES
-
-#             # flatten the data to get list[tuples] of coordinates
-#             coords_list = [
-#                 tuple(area["area_coords"])
-#                 for country in coords_json["Countries"]
-#                 for state in country["States"]
-#                 for city in state["Cities"]
-#                 for area in city["Areas"]
-#             ]
-
-#             # format api endpoint with coordinates and random query
-#             urls_list = [
-#                 api_endpoint.format(
-#                     latitude=coords[0],
-#                     longitude=coords[1],
-#                     query=quote(choice(queries)),
-#                 )
-#                 for coords in coords_list
-#             ]
-#             log_etl.info("Extraction: Successfully prepared URLs list")
-
-#         except Exception as e:
-#             LogException(e, logger=log_etl)
-#             raise CustomException(e)
-
-#         return urls_list
-
-
 class AllLinks:
+    """Class to download and process sitemap.xml and extract > 3M+ urls and then filter only useful ones.
+
+    Usage Example: -
+    ```python
+    >>> from src.ETL.ETLUtils import AllLinks
+    >>> AllLinks().get()
+    ```
+    This will output a json file to `src/ETL/ETL_Data/sitemap/unique_data.json`.
+
+    Data format:
+    ```python
+    >>> from src.Utils.main_utils import read_json
+    >>> sitemap_json = read_json(save_path = "src/ETL/ETL_Data/sitemap/unique_data.json")
+    >>> sitemap_json
+    >>> {
+            "abohar": {
+                "name": "",
+                "coords": [],
+                "boundingbox": [],
+                "address": {},
+                "restaurants": [
+                    {
+                        "rstn_id": 156588,
+                        "rstn_url": "https://www.swiggy.com/city/abohar/shere-punjab-veg-surinder-chowk-kishna-nagri-rest156588"
+                    },
+                    ...
+                ]
+            },
+            ...
+    ```
+    """
+
     def __init__(self, config: LinksConfig = LinksConfig()) -> None:
         self.config = config
 
@@ -377,6 +254,51 @@ class AllLinks:
 
 
 class CityCoordinates:
+    """Class to update address and coordinates of 750+ cities from `unique_cities.json`.
+    Using [Nominatim's Open Street Map](https://nominatim.openstreetmap.org/) strategy
+    is slow > 60 minutes. The [Google Maps](https://developers.google.com/maps/documentation/geocoding)
+    strategy is yet to be implemented.
+
+    Usage Example: -
+    ```python
+    >>> from src.ETL.ETLUtils import CityCoordinates
+    >>> CityCoordinates(source='OSM').get()
+    ```
+    This will output a json file to `src/ETL/ETL_Data/sitemap/city_rstn_coords_data.json`.
+
+    Data format:
+    ```python
+    >>> from src.Utils.main_utils import read_json
+    >>> city_data = read_json(save_path = "src/ETL/ETL_Data/sitemap/city_rstn_coords_data.json")
+    >>> city_data
+    >>> {
+            "abohar": {
+                "name": "Abohar, Abohar Tahsil, Fazilka, Punjab, 152116, India",
+                "coords": [30.1450543, 74.1956597],
+                "boundingbox": [29.9850543, 30.3050543, 74.0356597, 74.3556597],
+                "address": {
+                    "city": "Abohar",
+                    "county": "Abohar Tahsil",
+                    "state_district": "Fazilka",
+                    "state": "Punjab",
+                    "ISO3166-2-lvl4": "IN-PB",
+                    "postcode": "152116",
+                    "country": "India",
+                    "country_code": "in"
+                },
+                "restaurants": [
+                    {
+                        "rstn_id": 156588,
+                        "rstn_url": "https://www.swiggy.com/city/abohar/shere-punjab-veg-surinder-chowk-kishna-nagri-rest156588"
+                    },
+                    ...
+                ]
+            },
+        ...
+        }
+    ```
+    """
+
     def __init__(
         self,
         source: Literal["OSM", "GMaps"] = "OSM",
@@ -465,3 +387,114 @@ class CityCoordinates:
         except Exception as e:
             LogException(e, logger=log_etl)
             raise CustomException(e)
+
+
+class RestaurantData:
+    def __init__(
+        self,
+        processing: Literal["series", "parallel"] = "parallel",
+        rt_config: RestaurantConfig = RestaurantConfig(),
+        sc_config: ScrapeConfig = ScrapeConfig(),
+    ):
+        self.processing = processing
+        self.rt_config = rt_config
+        self.sc_config = sc_config
+
+    def get(self):
+        try:
+            read_path = self.rt_config.read_unique_data_path
+            save_path = self.rt_config.save_unique_data_path
+            city_data = read_json(save_path=read_path)
+
+            log_etl.info("Extraction: Preparing to get restaurant data.")
+            clean_data = asyncio.run(self._scrape_all_cities(city_data))
+
+            # implement streaming and .tmp based batch saving & make it one way.
+            log_etl.info("Extraction: Saving restaurant & menu data")
+            save_json(data=clean_data, save_path=save_path)
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+    async def _scrape_all_cities(self, city_data):
+        self.updated_city_data = city_data
+
+        log_etl.info("Extraction: Getting urls to crawl")
+        urls_dict = {}
+        for city in self.updated_city_data.keys():
+            urls = [
+                self.rt_config.menu_api_ep.format(
+                    latitude=self.updated_city_data[city]["coords"][0],
+                    longitude=self.updated_city_data[city]["coords"][1],
+                    rstnID=self.updated_city_data[city]["restaurants"][i]["rstn_id"],
+                )
+                for i in range(len(self.updated_city_data[city]["restaurants"]))
+            ]
+            urls_dict.update({city: urls})
+
+        for city in self.updated_city_data.keys():
+            log_etl.info(
+                f"Extraction: Scraping menu data from all restaurants in '{city}'"
+            )
+            # Using multithread operations here. One worker per city
+            if self.processing == "parallel":
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = []
+                    # how to get _city_data
+                    futures.append(
+                        executor.submit(
+                            self._scrape_one_city,
+                            urls_dict[city],
+                        )
+                    )
+                    # Wait for all futures to complete
+                    for future in as_completed(futures):
+                        pass
+
+            # Using series operations here.
+            elif self.processing == "series":
+                _city_data = await self._scrape_one_city(urls_dict[city])
+
+            log_etl.info("Extraction: Appending restaurant & menu data")
+            restaurants_data = self.updated_city_data[city]["restaurants"]
+            for [rstn, menu] in _city_data:
+                for i, rd in enumerate(restaurants_data):
+                    if rstn.rstn_id == rd["rstn_id"]:
+                        rd.update(rstn.model_dump())  # The i index might cause issues
+                        self.updated_city_data[city]["restaurants"][i]["menu"] = [
+                            item.model_dump() for item in menu.food_items
+                        ]
+                        break
+
+        return self.updated_city_data
+
+    async def _scrape_one_city(self, urls):
+        try:
+            async with AsyncWebCrawler(config=self.sc_config.browser_config) as crawler:
+                results = await crawler.arun_many(
+                    urls=urls,
+                    config=self.sc_config.run_config_prxy_rot,
+                    dispatcher=self.sc_config.mem_ada_dispatcher,
+                )
+
+                # get json_data from all urls
+                rstn_menu_city = []
+                for result in results:
+                    # parse string and extract json
+                    json_data_str = json.loads(result.extracted_content)
+                    print(json_data_str)
+                    # page didnt load. Might have to do with SSL certificates
+                    json_data_city = json.loads(json_data_str[0]["json_data"])
+
+                    # parse json to extract restaurant and menu details
+                    rstn_menu_city.append(self._extract_menu(json_data_city))
+
+                return rstn_menu_city
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+    def _extract_menu(self, json_data):
+        return [Restaurant(**json_data), Menu(**json_data)]

@@ -1,8 +1,20 @@
 import os
+from dotenv import load_dotenv
 from typing import Literal, List, Dict, Any
 from pydantic import BaseModel, model_validator
 
-from src.ETL.ETL_Constants import SwiggyLinksConstants, NominatimOSMConstants
+from crawl4ai.cache_context import CacheMode
+from crawl4ai.components.crawler_monitor import CrawlerMonitor
+from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
+from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
+from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
+from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
+
+from src.ETL.ETL_Constants import (
+    SwiggyLinksConstants,
+    NominatimOSMConstants,
+    RestaurantConstants,
+)
 
 
 # For processing sitemaps
@@ -45,27 +57,50 @@ class CoordsConfig:
         self.rtlm = NominatimOSMConstants.RATE_LIMIT
 
 
+class RestaurantConfig:
+    def __init__(self) -> None:
+        self.read_unique_data_path = os.path.join(
+            # NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            # NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
+            "src/Research/sample_menus",
+            "1_sample_rstn_data.json",
+        )
+        self.save_json_data_path = os.path.join(
+            # RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            # '2_sample_scrp_data.json',
+            "src/Research/sample_menus",
+            "2_sample_scrp_data.json",
+        )
+        self.save_unique_data_path = os.path.join(
+            # RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            # RestaurantConstants.UNIQUE_DATA_FILE_NAME,
+            "src/Research/sample_menus",
+            "3_sample_menu_data.json",
+        )
+        self.menu_api_ep = RestaurantConstants.RESTAURANT_MENU_ENDPOINT
+
+
 # Restaurant details to scrape from json
 class Restaurant(BaseModel):
     """pydantic.BaseModel that returns restaurant details from scraped JSON.
 
-    Useage example:-
+    Usage:
     ```python
-    >>> rstn_data = menu_json_raw['data']
+    >>> rstn_data = scraped_json['data']
     >>> rstn = Restaurant(**rstn_data)
     >>> rstn
-    >>> RestaurantDetails(rstn_id=8840, rstn_name='Smoke House Deli', rstn_city='Delhi', rstn_locality='Saket', rstn_area='Saket', rstn_cuisines=['Pizzas', 'Pastas'], rstn_rating=4.2, rstn_address='...')
+    >>> Restaurant(rstn_id=8840, rstn_name='Smoke House Deli', rstn_city='Delhi', rstn_locality='Saket', rstn_area='Saket', rstn_cuisines=['Pizzas', 'Pastas'], rstn_rating=4.2, rstn_address='...')
     ```
     Attributes:
         rstn_id (int): Unique ID for each restaurants. There are > 0.47M IDs in total.
-        rstn_name (str): Restaurant name. For restaurant chain, check attr: `rstn_chain`.
+        rstn_name (str): Restaurant name.
         rstn_city (str): City location of restaurant.
         rstn_locality (str): Locality of restaurant.
         rstn_area (str): Area if restaurant.
         rstn_cuisines (List['str']): List of cuisines available.
         rstn_rating (float): Average customer rating for online ordering.
         rstn_address (str): Physical address of restaurant.
-        rstn_chain (bool): Is it a restaurant chain?
+        rstn_chain (bool): Is it a restaurant chain? # Not implemented
 
     Returns:
         Restaurant (BaseModel): A class object with variables as details
@@ -79,7 +114,7 @@ class Restaurant(BaseModel):
     rstn_cuisines: List[str]
     rstn_rating: float
     rstn_address: str
-    rstn_chain: bool
+    # rstn_chain: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -154,8 +189,8 @@ class FoodItem(BaseModel):
     food_category: str
     food_description: str
     food_price: str
-    food_type: Literal["VEG", "NONVEG", "UNKNOWN"]
     food_rating: float
+    food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"  # str#
 
     @model_validator(mode="before")
     @classmethod
@@ -167,26 +202,26 @@ class FoodItem(BaseModel):
             "food_category": main_part.get("category", ""),
             "food_description": main_part.get("description", ""),
             "food_price": f"Rs.{int(int(main_part.get('price', '-100')) / 100)}",
-            "food_type": main_part["itemAttribute"].get("vegClassifier", "UNKNOWN"),
             "food_rating": float(
                 main_part["ratings"]["aggregatedRating"].get("rating", "-1.0")
             ),
+            "food_type": main_part["itemAttribute"].get("vegClassifier", "UNKNOWN"),
         }
         return clean_data
 
 
 # Main class to process menu
 class Menu(BaseModel):
-    """Pydantic.BaseModel class that will return a list of food items.
+    """Pydantic.BaseModel class that returns a list of food items.
 
     Usage example
     ```python
-    menu_data = menu_json_raw['data']
-    menu = Menu(**menu_data)
-
-    menu.food_items = [
-        FoodItem(food_id='146696388', food_name='Pink Pasta Feast Box', food_category='Premium Feast Boxes', food_description='pasta ...', food_price='Rs.450', food_type='VEG', food_rating=3.8),
-        FoodItem(food_id='146696386', food_name='Cottage Cheese Steak Box', food_category='Premium Feast Boxes', food_description='cheese steak ...', food_price='Rs.450', food_type='VEG', food_rating=4.4),
+    >>> menu_data = scraped_json['data']
+    >>> menu = Menu(**menu_data)
+    >>> menu.food_items
+    >>> [
+    FoodItem(food_id='146696388', food_name='Pink Pasta Feast Box', food_category='Premium Feast Boxes', food_description='pasta ...', food_price='Rs.450', food_type='VEG', food_rating=3.8),
+    FoodItem(food_id='146696386', food_name='Cottage Cheese Steak Box', food_category='Premium Feast Boxes', food_description='cheese steak ...', food_price='Rs.450', food_type='VEG', food_rating=4.4)
     ]
     ```
 
@@ -209,3 +244,77 @@ class Menu(BaseModel):
             for mi in menu_item.menu_items_list
         ]
         return {"food_items": food_list}
+
+
+class WebShareConfig:
+    def __init__(self, instances: int = 6):
+        load_dotenv("src/Secrets/Secrets.env")
+        domain = os.getenv("DOMAIN")
+        port = os.getenv("PORT")
+        countries = os.getenv("COUNTRIES").split("-")
+        username = f"{os.getenv('PROXY_USERNAME')}{''.join([f'-{x}' for x in countries])}-rotate"
+        password = os.getenv("PROXY_PASSWORD")
+        server = f"http://{domain}:{port}"
+
+        self.proxy_url = f"http://{username}:{password}@{domain}:{port}"
+        self.proxy_configs = [
+            ProxyConfig(server=server, username=username, password=password)
+            for _ in range(instances)
+        ]
+        self.proxy_rotation_strat = RoundRobinProxyStrategy(proxies=self.proxy_configs)
+
+
+class ScrapeConfig:
+    def __init__(self, max_parallel: int = 10, len_list: int = 0) -> None:
+        self.browser_config = BrowserConfig(
+            browser_type="chromium",
+            headless=False,  # True, #
+            verbose=False,
+            enable_stealth=True,
+        )
+        json_extract_strat = JsonCssExtractionStrategy(
+            schema={
+                "name": "Swiggy Data",
+                "baseSelector": "html > body",
+                "fields": [  # /html/body/pre/text()
+                    {
+                        "name": "json_data",
+                        "selector": "pre",
+                        "type": "text",
+                        "default": "[{'json_data': '{}'}]",
+                    },
+                ],
+            }
+        )
+
+        self.run_config_prxy_rot = CrawlerRunConfig(
+            cache_mode=CacheMode.BYPASS,
+            js_code=[
+                """await new Promise(r=>setTimeout(r,Math.random()*1000+2000));"""
+            ],
+            # fetch_ssl_certificate=True,
+            extraction_strategy=json_extract_strat,
+            proxy_rotation_strategy=WebShareConfig().proxy_rotation_strat,
+            stream=False,  # True,  #
+        )
+
+        rate_limiter = RateLimiter(
+            base_delay=(2, 12),
+            max_delay=60.0,
+            max_retries=3,
+            rate_limit_codes=[429, 503, 403],
+        )
+        crawl_monitor = CrawlerMonitor(
+            urls_total=len_list,
+            refresh_rate=0.1,
+            enable_ui=False,  # True,  #
+            max_width=120,
+        )
+
+        self.mem_ada_dispatcher = MemoryAdaptiveDispatcher(
+            memory_threshold_percent=80.0,
+            max_session_permit=max_parallel,
+            check_interval=1.0,
+            rate_limiter=rate_limiter,
+            monitor=crawl_monitor,
+        )

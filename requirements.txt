@@ -7,17 +7,18 @@ apache-airflow-providers-postgres
 # utils
 pytest
 pydantic
-ipykernel
+# datamodel-code-generator # auto generate pydantic.BaseModel from nested json
 python-dotenv
+ipykernel
 
 # scrape
 rnet
 redis
 tenacity
 curl-cffi
+crawl4ai
+playwright
 
 # data
 pandas
 numpy
-
-# nlp

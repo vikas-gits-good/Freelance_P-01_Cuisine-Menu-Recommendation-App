@@ -4,13 +4,6 @@ from random import random
 
 
 @dataclass
-class SwiggyRestaurantMenuConstants:
-    SWIGGY_RESTAURANT_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstrnID}&submitAction=ENTER"
-    JSON_FILE_SAVE_PATH = "src/ETL/ETL_Data/json_data.json"
-    DF_FILE_SAVE_PATH = "src/ETL/ETL_Data/df_data.pkl"
-
-
-@dataclass
 class SwiggyLinksConstants:
     SWIGGY_SITEMAP_URL = "https://www.swiggy.com/sitemap.xml.gz"
     SWIGGY_SITEMAP_SCRAPE_HEADERS = {
@@ -36,3 +29,10 @@ class NominatimOSMConstants:
     RATE_LIMIT = 1.2
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "city_rstn_coords_data.json"
+
+
+@dataclass
+class RestaurantConstants:
+    RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&submitAction=ENTER"
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_FILE_NAME = "final_menu_data.json"
