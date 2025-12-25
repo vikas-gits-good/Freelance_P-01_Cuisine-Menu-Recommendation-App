@@ -390,15 +390,92 @@ class CityCoordinates:
 
 
 class RestaurantData:
+    """Class Method to scrape actual Restaurant & Menu details.
+
+    Usage Example:-
+    ```python
+    >>> from src.ETL.ETLUtils import RestaurantData
+    >>> data = RestaurantData().get()
+    >>> data
+    >>> {
+            "abohar": {
+                "name": "Abohar, Abohar Tahsil, Fazilka, Punjab, 152116, India",
+                "coords": [
+                    30.1450543,
+                    74.1956597
+                ],
+                "boundingbox": [
+                    29.9850543,
+                    30.3050543,
+                    74.0356597,
+                    74.3556597
+                ],
+                "address": {
+                    "city": "Abohar",
+                    "county": "Abohar Tahsil",
+                    "state_district": "Fazilka",
+                    "state": "Punjab",
+                    "ISO3166-2-lvl4": "IN-PB",
+                    "postcode": "152116",
+                    "country": "India",
+                    "country_code": "in"
+                },
+                "restaurants": [
+                    {
+                        "rstn_id": 156588,
+                        "rstn_url": "https://www.swiggy.com/city/abohar/shere-punjab-veg-surinder-chowk-kishna-nagri-rest156588",
+                        "rstn_name": "Shere Punjab Veg",
+                        "rstn_city": "Abohar",
+                        "rstn_locality": "Surinder Chowk",
+                        "rstn_area": "Kishna Nagri",
+                        "rstn_cuisines": [
+                            "Punjabi"
+                        ],
+                        "rstn_rating": 4.4,
+                        "rstn_address": "major surinder chowk near verma sons petrol pump and lic building abohar",
+                        "menu": [
+                            {
+                                "food_id": "171164207",
+                                "food_name": "Dal makhani + 4 roti                           ",
+                                "food_category": "Super Saver Meals",
+                                "food_description": "Dal makhani served with 4 Roti ( Serves 1 )",
+                                "food_price": "Rs.250",
+                                "food_rating": 4.3,
+                                "food_type": "VEG"
+                            },
+                            {
+                                "food_id": "171164216",
+                                "food_name": "Palak paneer + 4 roti                           ",
+                                "food_category": "Super Saver Meals",
+                                "food_description": "Palak Paneer served with 4 Roti ( Serves 1 )",
+                                "food_price": "Rs.260",
+                                "food_rating": -1.0,
+                                "food_type": "VEG"
+                            },
+                            ...
+                        ]
+                    },
+                    ...
+                ]
+            },
+            ...
+        }
+    ```
+    """
+
     def __init__(
         self,
         processing: Literal["series", "parallel"] = "parallel",
+        threads: int = 8,
+        max_parallel: int = 10,
         rt_config: RestaurantConfig = RestaurantConfig(),
         sc_config: ScrapeConfig = ScrapeConfig(),
     ):
         self.processing = processing
+        self.threads = threads
         self.rt_config = rt_config
         self.sc_config = sc_config
+        self.sc_config.max_parallel = max_parallel
 
     def get(self):
         try:
@@ -421,17 +498,11 @@ class RestaurantData:
         self.updated_city_data = city_data
 
         log_etl.info("Extraction: Getting urls to crawl")
-        urls_dict = {}
-        for city in self.updated_city_data.keys():
-            urls = [
-                self.rt_config.menu_api_ep.format(
-                    latitude=self.updated_city_data[city]["coords"][0],
-                    longitude=self.updated_city_data[city]["coords"][1],
-                    rstnID=self.updated_city_data[city]["restaurants"][i]["rstn_id"],
-                )
-                for i in range(len(self.updated_city_data[city]["restaurants"]))
-            ]
-            urls_dict.update({city: urls})
+        urls_dict = {
+            city: [self.updated_city_data[city]["restaurants"][i]["rstn_url"]]
+            for city in self.updated_city_data.keys()
+            for i in range(len(self.updated_city_data[city]["restaurants"]))
+        }
 
         for city in self.updated_city_data.keys():
             log_etl.info(
@@ -439,18 +510,19 @@ class RestaurantData:
             )
             # Using multithread operations here. One worker per city
             if self.processing == "parallel":
-                with ThreadPoolExecutor(max_workers=8) as executor:
-                    futures = []
-                    # how to get _city_data
-                    futures.append(
-                        executor.submit(
-                            self._scrape_one_city,
-                            urls_dict[city],
-                        )
-                    )
-                    # Wait for all futures to complete
-                    for future in as_completed(futures):
-                        pass
+                pass
+            #     with ThreadPoolExecutor(max_workers=8) as executor:
+            #         futures = []
+            #         # how to get _city_data
+            #         futures.append(
+            #             executor.submit(
+            #                 self._scrape_one_city,
+            #                 urls_dict[city],
+            #             )
+            #         )
+            #         # Wait for all futures to complete
+            #         for future in as_completed(futures):
+            #             pass
 
             # Using series operations here.
             elif self.processing == "series":
@@ -471,24 +543,36 @@ class RestaurantData:
 
     async def _scrape_one_city(self, urls):
         try:
-            async with AsyncWebCrawler(config=self.sc_config.browser_config) as crawler:
+            async with AsyncWebCrawler(
+                crawler_strategy=self.sc_config.crawler_strat,
+                config=self.sc_config.browser_config,
+            ) as crawler:
+                # 10 parallel crawlers for each city
                 results = await crawler.arun_many(
                     urls=urls,
                     config=self.sc_config.run_config_prxy_rot,
                     dispatcher=self.sc_config.mem_ada_dispatcher,
                 )
 
-                # get json_data from all urls
                 rstn_menu_city = []
                 for result in results:
-                    # parse string and extract json
-                    json_data_str = json.loads(result.extracted_content)
-                    print(json_data_str)
-                    # page didnt load. Might have to do with SSL certificates
-                    json_data_city = json.loads(json_data_str[0]["json_data"])
+                    try:
+                        for r in result.network_requests:
+                            # parse string and extract json
+                            if r[
+                                "event_type"
+                            ] == "response" and "/dapi/menu/pl?" in r.get("url", ""):
+                                json_data = json.loads(r["body"]["text"])
 
-                    # parse json to extract restaurant and menu details
-                    rstn_menu_city.append(self._extract_menu(json_data_city))
+                                # parse json to extract restaurant and menu details
+                                rstn_menu_city.append(self._extract_menu(json_data))
+
+                    except Exception as e:
+                        LogException(e, logger=log_etl)
+                        log_etl.info(
+                            f"Error when extracting json data from '{result.url}'"
+                        )
+                        continue
 
                 return rstn_menu_city
 
@@ -497,4 +581,4 @@ class RestaurantData:
             raise CustomException(e)
 
     def _extract_menu(self, json_data):
-        return [Restaurant(**json_data), Menu(**json_data)]
+        return [Restaurant(**json_data["data"]), Menu(**json_data["data"])]

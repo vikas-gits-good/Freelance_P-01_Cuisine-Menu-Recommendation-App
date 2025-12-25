@@ -9,7 +9,8 @@ from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
-
+from crawl4ai.browser_adapter import UndetectedAdapter
+from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
 from src.ETL.ETL_Constants import (
     SwiggyLinksConstants,
     NominatimOSMConstants,
@@ -266,34 +267,27 @@ class WebShareConfig:
 
 class ScrapeConfig:
     def __init__(self, max_parallel: int = 10, len_list: int = 0) -> None:
+        self.max_parallel = max_parallel
         self.browser_config = BrowserConfig(
             browser_type="chromium",
             headless=False,  # True, #
             verbose=False,
             enable_stealth=True,
         )
-        json_extract_strat = JsonCssExtractionStrategy(
-            schema={
-                "name": "Swiggy Data",
-                "baseSelector": "html > body",
-                "fields": [  # /html/body/pre/text()
-                    {
-                        "name": "json_data",
-                        "selector": "pre",
-                        "type": "text",
-                        "default": "[{'json_data': '{}'}]",
-                    },
-                ],
-            }
+
+        self.crawler_strat = AsyncPlaywrightCrawlerStrategy(
+            browser_config=self.browser_config,
+            browser_adapter=UndetectedAdapter(),
         )
 
         self.run_config_prxy_rot = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             js_code=[
-                """await new Promise(r=>setTimeout(r,Math.random()*1000+2000));"""
+                """await new Promise(r=>setTimeout(r,Math.random()*10000+5000));""",
+                """window.location.reload();""",  # Make some randomly chosen javascripts
             ],
-            # fetch_ssl_certificate=True,
-            extraction_strategy=json_extract_strat,
+            capture_network_requests=True,
+            # wait_for="css:html.body.div.div.div:first-child.div.div.div.div:nth-child(2).div:nth-child(2).div.h1",
             proxy_rotation_strategy=WebShareConfig().proxy_rotation_strat,
             stream=False,  # True,  #
         )
@@ -313,7 +307,7 @@ class ScrapeConfig:
 
         self.mem_ada_dispatcher = MemoryAdaptiveDispatcher(
             memory_threshold_percent=80.0,
-            max_session_permit=max_parallel,
+            max_session_permit=self.max_parallel,
             check_interval=1.0,
             rate_limiter=rate_limiter,
             monitor=crawl_monitor,

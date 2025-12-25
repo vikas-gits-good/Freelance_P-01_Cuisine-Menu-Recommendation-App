@@ -33,6 +33,6 @@ class NominatimOSMConstants:
 
 @dataclass
 class RestaurantConstants:
-    RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&submitAction=ENTER"
+    RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&catalog_qa=undefined&submitAction=ENTER"
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "final_menu_data.json"
