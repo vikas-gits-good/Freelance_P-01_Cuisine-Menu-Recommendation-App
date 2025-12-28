@@ -17,7 +17,7 @@ class SwiggyLinksConstants:
     JSON_SITEMAP_DATA_FILE_NAME = "sitemap_urls.json"  # All 3.2M+ urls
 
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
-    UNIQUE_DATA_FILE_NAME = "unique_data.json"  # "city_rstn_coords_data.json"  #
+    UNIQUE_DATA_FILE_NAME = "city_rstn_coords_data.json"  # "unique_data.json"  #
 
 
 @dataclass

@@ -6,7 +6,7 @@ if __name__ == "__main__":
     # _ = AllLinks().get()
 
     # # get coordinates of cities
-    # _ = CityCoordinates().get()
+    _ = CityCoordinates(task="proxy").get()
 
     # get restaurant menu data
-    RestaurantData(processing="series").get()
+    # RestaurantData(processing="series").get()

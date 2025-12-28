@@ -229,6 +229,7 @@ class AllLinks:
                     "jjajjar": "Jhajjar",
                     "shirdi-test-1": "Shirdi",
                     "surendranagar-dudhrej": "Surendranagar",
+                    "bangalore": "Bengaluru",
                     "-": " ",
                 }
                 for old, new in replacements.items():
@@ -323,7 +324,7 @@ class CityCoordinates:
 
     def __init__(
         self,
-        task: Literal["all", "coords", "proxy", "missing_proxy"] = "all",
+        task: Literal["all", "coords", "proxy"] = "all",
         source: Literal["OSM", "GMaps"] = "OSM",
         config: CoordsConfig = CoordsConfig(),
     ) -> None:
@@ -335,7 +336,7 @@ class CityCoordinates:
         try:
             read_path = self.config.read_unique_data_path
             save_path = self.config.save_unique_data_path
-            rqst_parm = self.config.request_params
+            self.rqst_parm = self.config.request_params
 
             self.city_dict = read_json(save_path=read_path)
 
@@ -343,15 +344,11 @@ class CityCoordinates:
                 log_etl.info(
                     f"Extraction: Getting {len(list(self.city_dict.keys())):04d} cities' coordinates & address details. This will take > 10 minutes."
                 )
-                self._add_coords_address(rqst_parm)
+                self._add_coords_address()
 
             if self.task in ["all", "proxy"]:
                 log_etl.info("Extraction: Adding city-wise proxy code")
-                self.city_dict = self._add_proxy_codes()
-
-            if self.task in ["all", "missing_proxy"]:
-                log_etl.info("Extraction: Adding missing city proxy code")
-                self.city_dict = self._add_missing_proxy()
+                self.city_dict = self._add_proxy_codes(city_data=self.city_dict)
 
             log_etl.info("Extraction: Saving updated data to file")
             save_json(data=self.city_dict, save_path=save_path)
@@ -360,14 +357,16 @@ class CityCoordinates:
             LogException(e, logger=log_etl)
             raise CustomException(e)
 
-    def _add_coords_address(self, rqst_parm):
+    def _add_coords_address(self):
         cnt = 1
         for city in self.city_dict.keys():
             try:
                 rp = {
-                    "url": rqst_parm["url"].format(query=quote(f"{city} in India")),
-                    "headers": rqst_parm["headers"],
-                    "timeout": rqst_parm["timeout"],
+                    "url": self.rqst_parm["url"].format(
+                        query=quote(f"{city} in India")
+                    ),
+                    "headers": self.rqst_parm["headers"],
+                    "timeout": self.rqst_parm["timeout"],
                 }
 
                 # make api call
@@ -420,56 +419,73 @@ class CityCoordinates:
                 cnt += 1
                 continue
 
-    def _add_proxy_codes(self):
-        city_data = self.city_dict
-        proxy_data = read_json(save_path=self.config.read_proxy_data_path)
-        for city in city_data:
-            try:
-                # cn_st = "IN-GJ" format
-                cn_st = city_data[city]["address"]["ISO3166-2-lvl4"]
-                for state in proxy_data["states"]:
-                    if state["code"] == cn_st.split("-")[-1]:
-                        # state['cities'] = ["jamnagar", "rajkot", "surat", "ahmedabad", "vadodara"]
-                        # Use H distance to select the closest city
-                        city_data[city]["proxy"] = (
-                            f"{cn_st}{''.join([f'-{cty}' for cty in state['cities']])}"
-                        )
-                        # city_data[city]["proxy"] = "IN-GJ-jamnagar-rajkot-surat-ahmedabad-vadodara"
-
-            except Exception as e:
-                LogException(e, logger=log_etl)
-                raise CustomException(e)
-
-        return city_data
-
-    def _add_missing_proxy(self):
-        city_data = self.city_dict
-        log_etl.info(
-            "Extraction: Getting coordinates of cities that have & dont have proxies"
-        )
+    def _add_proxy_codes(self, city_data):
         try:
-            missing_proxy = {
-                city: city_data[city]["coords"]
-                for city in city_data
-                if not city_data[city]["proxy"]
-            }
-            present_proxy = {
-                city: city_data[city]["coords"]
-                for city in city_data
-                if city_data[city]["proxy"]
-            }
-            log_etl.info(
-                "Extraction: Calculating Haversine Distance to find nearest city with proxy"
-            )
-            nearest_city_map = CityCoordinates.find_nearest_city(
-                missing_proxy, present_proxy
-            )
+            log_etl.info("Extraction: Finding nearest proxy city for major cities")
+            city_data = {key.lower(): val for key, val in city_data.items()}
+            proxy_data = read_json(save_path=self.config.read_proxy_data_path)
 
-            log_etl.info("Extraction: Updating missing proxy data")
-            for city_miss, city_near in zip(
-                missing_proxy.keys(), nearest_city_map.values()
-            ):
-                city_data[city_miss]["proxy"] = city_data[city_near]["proxy"]
+            all_proxy_cities = [
+                city for state in proxy_data["states"] for city in state["cities"]
+            ]
+            city_data_list = list(city_data.keys())
+            missing_cities = {}
+
+            for city_a in city_data_list:
+                cn_st = city_data[city_a]["address"]["ISO3166-2-lvl4"]
+                for city_b in all_proxy_cities:
+                    if city_a == city_b:  # direct assignment for same city
+                        city_data[city_a]["proxy"] = f"{cn_st}-{city_b}"
+
+                    else:  # a map b/w city and all proxies in same state
+                        for state in proxy_data["states"]:
+                            if state["code"] == cn_st.split("-")[-1]:
+                                missing_cities[city_a] = {
+                                    "state_code": cn_st,
+                                    "city_coords": city_data[city_a]["coords"],
+                                    "proxy_cities": state["coords"],
+                                }
+            """
+            missing_cities = {
+                "abohar": {
+                    "state_code": "IN-PB",
+                    "city_coords": [30.1450543, 74.1956597],
+                    "proxy_cities": [
+                        {"ludhiana": [30.9090157, 75.851601]},
+                        {"phagwara": [31.2206734, 75.7696463]},
+                        {"jalandhar": [31.2922312, 75.5678878]},
+                        {"amritsar": [31.6356659, 74.8787496]},
+                        {"kharar": [30.7488437, 76.6428994]},
+                        {"patiala": [30.2092778, 76.3397231]},
+                    ],
+                },
+                ...
+            }
+            """
+
+            log_etl.info("Extraction: Finding nearest proxy city for minor cities")
+            updated_cities = CityCoordinates.find_nearest_city(missing_cities)
+            """
+            updated_cities = {
+                "abohar": {
+                    "state_code": "IN-PB",
+                    "city_coords": [30.1450543, 74.1956597],
+                    "proxy_cities": [
+                        {"ludhiana": [30.9090157, 75.851601]},
+                        {"phagwara": [31.2206734, 75.7696463]},
+                        {"jalandhar": [31.2922312, 75.5678878]},
+                        {"amritsar": [31.6356659, 74.8787496]},
+                        {"kharar": [30.7488437, 76.6428994]},
+                        {"patiala": [30.2092778, 76.3397231]},
+                    ],
+                    "proxy": "IN-PB-amritsar",
+                },
+                ...
+            }
+            """
+
+            for city in updated_cities.keys():
+                city_data[city]["proxy"] = updated_cities[city]["proxy"]
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -478,34 +494,36 @@ class CityCoordinates:
         return city_data
 
     @staticmethod
-    def find_nearest_city(missing_data, present_data):
-        replacement_mapping = {}
-        try:
-            for m_city, m_coords in missing_data.items():
-                m_lat, m_lon = m_coords
-
+    def find_nearest_city(missing_cities):
+        for city in missing_cities.keys():
+            try:
+                m_lat, m_lon = missing_cities[city]["city_coords"]
                 c_city = None
                 min_distance = float("inf")
 
-                # Compare with all cities in present_data
-                for p_city, p_coords in present_data.items():
-                    p_lat, p_lon = p_coords
+                for p_item in missing_cities[city]["proxy_cities"]:
+                    for p_city, p_coords in p_item.items():
+                        p_lat, p_lon = p_coords
+                        distance = CityCoordinates.haversine_distance(
+                            m_lat, m_lon, p_lat, p_lon
+                        )
 
-                    distance = CityCoordinates.haversine_distance(
-                        m_lat, m_lon, p_lat, p_lon
-                    )
+                        if distance < min_distance:
+                            min_distance = distance
+                            c_city = p_city
 
-                    if distance < min_distance:
-                        min_distance = distance
-                        c_city = p_city
+                missing_cities[city]["proxy"] = (
+                    f"{missing_cities[city]['state_code']}-{c_city}"
+                )
 
-                replacement_mapping[m_city] = c_city
+            except Exception as e:
+                log_etl.info(
+                    f"Extraction: Error while trying to find the nearest city in {city}"
+                )
+                LogException(e, logger=log_etl)
+                continue
 
-        except Exception as e:
-            LogException(e, logger=log_etl)
-            raise CustomException(e)
-
-        return replacement_mapping
+        return missing_cities
 
     @staticmethod
     def haversine_distance(lat1, lon1, lat2, lon2):
