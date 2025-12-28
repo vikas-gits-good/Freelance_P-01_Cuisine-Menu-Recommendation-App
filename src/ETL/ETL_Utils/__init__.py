@@ -465,6 +465,7 @@ class CityCoordinates:
 
             log_etl.info("Extraction: Finding nearest proxy city for minor cities")
             updated_cities = CityCoordinates.find_nearest_city(missing_cities)
+
             """
             updated_cities = {
                 "abohar": {
@@ -486,6 +487,29 @@ class CityCoordinates:
 
             for city in updated_cities.keys():
                 city_data[city]["proxy"] = updated_cities[city]["proxy"]
+
+            # Theres some spelling mismatch in state codes
+            log_etl.info("Extraction: Finding nearest proxy city for remaining cities")
+            missing_cities = {}
+            proxy_coords = [
+                item for state in proxy_data["states"] for item in state["coords"]
+            ]
+
+            for city_a in city_data.keys():
+                if not city_data[city_a]["proxy"]:
+                    missing_cities[city_a] = {
+                        "state_code": "IN",  # placeholder
+                        "city_coords": city_data[city_a]["coords"],
+                        "proxy_cities": proxy_coords,
+                    }
+
+            updated_cities = CityCoordinates.find_nearest_city(missing_cities)
+
+            for city in updated_cities.keys():
+                p_city = updated_cities[city]["proxy"].split("-")[-1]
+                for state in proxy_data["states"]:
+                    if p_city in state["cities"]:
+                        city_data[city]["proxy"] = f"IN-{state['code']}-{p_city}"
 
         except Exception as e:
             LogException(e, logger=log_etl)
