@@ -17,12 +17,12 @@ class SwiggyLinksConstants:
     JSON_SITEMAP_DATA_FILE_NAME = "sitemap_urls.json"  # All 3.2M+ urls
 
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
-    UNIQUE_DATA_FILE_NAME = "unique_data.json"  # Filtered 0.47M+ restaurant urls
+    UNIQUE_DATA_FILE_NAME = "unique_data.json"  # "city_rstn_coords_data.json"  #
 
 
 @dataclass
 class NominatimOSMConstants:
-    API_ENDPOINT = "https://nominatim.openstreetmap.org/search?q={query}&format=jsonv2&addressdetails=1&limit=1"
+    API_ENDPOINT = "https://nominatim.openstreetmap.org/search?q={query}&countrycodes=IN&format=jsonv2&addressdetails=1&limit=1"
     SCRAPE_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
@@ -36,3 +36,9 @@ class RestaurantConstants:
     RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&catalog_qa=undefined&submitAction=ENTER"
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "final_menu_data.json"
+
+
+@dataclass
+class ProxyConstants:
+    PROXY_CITY_JSON_DIRECTORY = "src/ETL/ETL_Constants"
+    PROXY_CITY_JSON_FILE_NAME = "proxy_codes.json"

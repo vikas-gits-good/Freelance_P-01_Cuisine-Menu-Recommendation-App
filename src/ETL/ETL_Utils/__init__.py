@@ -10,6 +10,7 @@ from typing import Literal
 from requests import Response
 from urllib.parse import quote
 import xml.etree.ElementTree as ET
+from math import radians, sin, cos, sqrt, atan2
 from crawl4ai.async_webcrawler import AsyncWebCrawler
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -56,6 +57,7 @@ class AllLinks:
                     },
                     ...
                 ]
+                "proxy": ""
             },
             ...
     ```
@@ -98,7 +100,7 @@ class AllLinks:
                     continue
 
             log_etl.info(
-                "Extraction: Getting full sitemap of Swiggy! This is a slow process > 20 minutes."
+                "Extraction: Getting full sitemap of Swiggy! This is a slow process > 40 minutes."
             )
             _ = self._extract_urls(path_list=child_paths)
 
@@ -213,8 +215,26 @@ class AllLinks:
                 ]
                 if any(keyword in text for keyword in keywords):
                     return text.split("-")[0]
-                text = text.replace("jjajjar", "jhajjar")
-                return text.replace("-", " ")
+
+                replacements = {
+                    "bankabihar": "Banka",
+                    "bharabanki": "Barabanki",
+                    "bodhan-rural": "Bodhan",
+                    "jamkhambhaliya": "Khambhalia",
+                    "kendrapada": "Kendrapara",
+                    "mokameh-khas": "Mokameh",
+                    "mount-abu": "Mount Abu",
+                    "niranjanpura": "Niranjanpur",
+                    "pinjore-city": "Pinjore",
+                    "jjajjar": "Jhajjar",
+                    "shirdi-test-1": "Shirdi",
+                    "surendranagar-dudhrej": "Surendranagar",
+                    "-": " ",
+                }
+                for old, new in replacements.items():
+                    text = text.replace(old, new)
+
+                return text
 
             for url in urls_list:
                 match = re.search(search_pattern, url)
@@ -233,6 +253,7 @@ class AllLinks:
                                     "boundingbox": [],
                                     "address": {},
                                     "restaurants": [],
+                                    "proxy": "",
                                 }
                             }
                         )
@@ -257,7 +278,7 @@ class CityCoordinates:
     """Class to update address and coordinates of 750+ cities from `unique_cities.json`.
     Using [Nominatim's Open Street Map](https://nominatim.openstreetmap.org/) strategy
     is slow > 60 minutes. The [Google Maps](https://developers.google.com/maps/documentation/geocoding)
-    strategy is yet to be implemented.
+    strategy is not implemented and may not be necessary.
 
     Usage Example: -
     ```python
@@ -293,6 +314,7 @@ class CityCoordinates:
                     },
                     ...
                 ]
+                "proxy": "IN-PB-ludhiana-phagwara-jalandhar-amritsar-kharar-patiala"
             },
         ...
         }
@@ -301,9 +323,11 @@ class CityCoordinates:
 
     def __init__(
         self,
+        task: Literal["all", "coords", "proxy", "missing_proxy"] = "all",
         source: Literal["OSM", "GMaps"] = "OSM",
         config: CoordsConfig = CoordsConfig(),
     ) -> None:
+        self.task = task
         self.config = config
         self.source = source  # some address details is missing in OSM
 
@@ -313,80 +337,189 @@ class CityCoordinates:
             save_path = self.config.save_unique_data_path
             rqst_parm = self.config.request_params
 
-            city_dict = read_json(save_path=read_path)
+            self.city_dict = read_json(save_path=read_path)
 
-            log_etl.info(
-                f"Extraction: Getting {len(list(city_dict.keys())):04d} cities' coordinates & address details. This will take > 10 minutes."
-            )
-            cnt = 1
+            if self.task in ["all", "coords"]:
+                log_etl.info(
+                    f"Extraction: Getting {len(list(self.city_dict.keys())):04d} cities' coordinates & address details. This will take > 10 minutes."
+                )
+                self._add_coords_address(rqst_parm)
 
-            for city in city_dict.keys():
-                try:
-                    # prep request parameters
-                    rp = {
-                        "url": rqst_parm["url"].format(query=quote(f"{city} in India")),
-                        "headers": rqst_parm["headers"],
-                        "timeout": rqst_parm["timeout"],
-                    }
+            if self.task in ["all", "proxy"]:
+                log_etl.info("Extraction: Adding city-wise proxy code")
+                self.city_dict = self._add_proxy_codes()
 
-                    # make api call
-
-                    response = requests.get(**rp)
-                    if response.status_code == 200:
-                        json_data = response.json()
-
-                        if json_data:
-                            city_dict[city].update(
-                                {"name": json_data[0]["display_name"]}
-                            )
-                            city_dict[city].update(
-                                {
-                                    "coords": [
-                                        float(json_data[0]["lat"]),
-                                        float(json_data[0]["lon"]),
-                                    ]
-                                }
-                            )
-                            if "address" in json_data[0].keys():
-                                city_dict[city].update(
-                                    {"address": json_data[0]["address"]}
-                                )
-                            city_dict[city].update(
-                                {
-                                    "boundingbox": [
-                                        float(data)
-                                        for data in json_data[0]["boundingbox"]
-                                    ]
-                                }
-                            )
-
-                        else:
-                            log_etl.info(
-                                f"Extraction: Coordinates not found for '{city}'. Continuing"
-                            )
-
-                    if cnt % 100 == 0:
-                        log_etl.info(
-                            f"Extraction: Completed {cnt:04d} of {len(list(city_dict.keys())):04d} urls."
-                        )
-                        time.sleep(10)
-
-                    cnt += 1
-
-                    # rate limit < 1 request/second. Dont rtlm - (start - end)
-                    time.sleep(self.config.rtlm)
-
-                except Exception as e:
-                    LogException(e, logger=log_etl)
-                    cnt += 1
-                    continue
+            if self.task in ["all", "missing_proxy"]:
+                log_etl.info("Extraction: Adding missing city proxy code")
+                self.city_dict = self._add_missing_proxy()
 
             log_etl.info("Extraction: Saving updated data to file")
-            save_json(data=city_dict, save_path=save_path)
+            save_json(data=self.city_dict, save_path=save_path)
 
         except Exception as e:
             LogException(e, logger=log_etl)
             raise CustomException(e)
+
+    def _add_coords_address(self, rqst_parm):
+        cnt = 1
+        for city in self.city_dict.keys():
+            try:
+                rp = {
+                    "url": rqst_parm["url"].format(query=quote(f"{city} in India")),
+                    "headers": rqst_parm["headers"],
+                    "timeout": rqst_parm["timeout"],
+                }
+
+                # make api call
+                response = requests.get(**rp)
+                if response.status_code == 200:
+                    json_data = response.json()
+
+                    if json_data:
+                        self.city_dict[city].update(
+                            {"name": json_data[0]["display_name"]}
+                        )
+                        self.city_dict[city].update(
+                            {
+                                "coords": [
+                                    float(json_data[0]["lat"]),
+                                    float(json_data[0]["lon"]),
+                                ]
+                            }
+                        )
+                        if "address" in json_data[0].keys():
+                            self.city_dict[city].update(
+                                {"address": json_data[0]["address"]}
+                            )
+                        self.city_dict[city].update(
+                            {
+                                "boundingbox": [
+                                    float(data) for data in json_data[0]["boundingbox"]
+                                ]
+                            }
+                        )
+
+                    else:
+                        log_etl.info(
+                            f"Extraction: Coordinates not found for '{city}'. Continuing"
+                        )
+
+                if cnt % 100 == 0:
+                    log_etl.info(
+                        f"Extraction: Completed {cnt:04d} of {len(list(self.city_dict.keys())):04d} urls."
+                    )
+                    time.sleep(10)
+
+                cnt += 1
+
+                # rate limit < 1 request/second. Dont rtlm - (start - end)
+                time.sleep(self.config.rtlm)
+
+            except Exception as e:
+                LogException(e, logger=log_etl)
+                cnt += 1
+                continue
+
+    def _add_proxy_codes(self):
+        city_data = self.city_dict
+        proxy_data = read_json(save_path=self.config.read_proxy_data_path)
+        for city in city_data:
+            try:
+                # cn_st = "IN-GJ" format
+                cn_st = city_data[city]["address"]["ISO3166-2-lvl4"]
+                for state in proxy_data["states"]:
+                    if state["code"] == cn_st.split("-")[-1]:
+                        # state['cities'] = ["jamnagar", "rajkot", "surat", "ahmedabad", "vadodara"]
+                        # Use H distance to select the closest city
+                        city_data[city]["proxy"] = (
+                            f"{cn_st}{''.join([f'-{cty}' for cty in state['cities']])}"
+                        )
+                        # city_data[city]["proxy"] = "IN-GJ-jamnagar-rajkot-surat-ahmedabad-vadodara"
+
+            except Exception as e:
+                LogException(e, logger=log_etl)
+                raise CustomException(e)
+
+        return city_data
+
+    def _add_missing_proxy(self):
+        city_data = self.city_dict
+        log_etl.info(
+            "Extraction: Getting coordinates of cities that have & dont have proxies"
+        )
+        try:
+            missing_proxy = {
+                city: city_data[city]["coords"]
+                for city in city_data
+                if not city_data[city]["proxy"]
+            }
+            present_proxy = {
+                city: city_data[city]["coords"]
+                for city in city_data
+                if city_data[city]["proxy"]
+            }
+            log_etl.info(
+                "Extraction: Calculating Haversine Distance to find nearest city with proxy"
+            )
+            nearest_city_map = CityCoordinates.find_nearest_city(
+                missing_proxy, present_proxy
+            )
+
+            log_etl.info("Extraction: Updating missing proxy data")
+            for city_miss, city_near in zip(
+                missing_proxy.keys(), nearest_city_map.values()
+            ):
+                city_data[city_miss]["proxy"] = city_data[city_near]["proxy"]
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+        return city_data
+
+    @staticmethod
+    def find_nearest_city(missing_data, present_data):
+        replacement_mapping = {}
+        try:
+            for m_city, m_coords in missing_data.items():
+                m_lat, m_lon = m_coords
+
+                c_city = None
+                min_distance = float("inf")
+
+                # Compare with all cities in present_data
+                for p_city, p_coords in present_data.items():
+                    p_lat, p_lon = p_coords
+
+                    distance = CityCoordinates.haversine_distance(
+                        m_lat, m_lon, p_lat, p_lon
+                    )
+
+                    if distance < min_distance:
+                        min_distance = distance
+                        c_city = p_city
+
+                replacement_mapping[m_city] = c_city
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            raise CustomException(e)
+
+        return replacement_mapping
+
+    @staticmethod
+    def haversine_distance(lat1, lon1, lat2, lon2):
+        """Calculate distance between two coordinates on a sphere in kilometers"""
+        R = 6371  # Earth's radius
+
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+
+        a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return R * c
 
 
 class RestaurantData:

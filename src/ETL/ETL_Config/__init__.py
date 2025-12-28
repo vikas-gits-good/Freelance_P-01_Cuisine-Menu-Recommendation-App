@@ -1,4 +1,7 @@
 import os
+import re
+import requests
+from dataclasses import dataclass
 from dotenv import load_dotenv
 from typing import Literal, List, Dict, Any
 from pydantic import BaseModel, model_validator
@@ -15,6 +18,7 @@ from src.ETL.ETL_Constants import (
     SwiggyLinksConstants,
     NominatimOSMConstants,
     RestaurantConstants,
+    ProxyConstants,
 )
 
 
@@ -49,6 +53,10 @@ class CoordsConfig:
         self.save_unique_data_path = os.path.join(
             NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
             NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
+        )
+        self.read_proxy_data_path = os.path.join(
+            ProxyConstants.PROXY_CITY_JSON_DIRECTORY,
+            ProxyConstants.PROXY_CITY_JSON_FILE_NAME,
         )
         self.request_params = {
             "url": NominatimOSMConstants.API_ENDPOINT,
@@ -85,7 +93,7 @@ class RestaurantConfig:
 class Restaurant(BaseModel):
     """pydantic.BaseModel that returns restaurant details from scraped JSON.
 
-    Usage:
+    ## Usage:
     ```python
     >>> rstn_data = scraped_json['data']
     >>> rstn = Restaurant(**rstn_data)
@@ -215,7 +223,7 @@ class FoodItem(BaseModel):
 class Menu(BaseModel):
     """Pydantic.BaseModel class that returns a list of food items.
 
-    Usage example
+    ## Usage:
     ```python
     >>> menu_data = scraped_json['data']
     >>> menu = Menu(**menu_data)
@@ -250,26 +258,89 @@ class Menu(BaseModel):
 class WebShareConfig:
     def __init__(self, instances: int = 6):
         load_dotenv("src/Secrets/Secrets.env")
-        domain = os.getenv("DOMAIN")
-        port = os.getenv("PORT")
-        countries = os.getenv("COUNTRIES").split("-")
-        username = f"{os.getenv('PROXY_USERNAME')}{''.join([f'-{x}' for x in countries])}-rotate"
-        password = os.getenv("PROXY_PASSWORD")
-        server = f"http://{domain}:{port}"
 
-        self.proxy_url = f"http://{username}:{password}@{domain}:{port}"
-        self.proxy_configs = [
+        @dataclass
+        class Creds:
+            domain = os.getenv("DOMAIN")
+            port = os.getenv("PORT")
+            countries = os.getenv("COUNTRIES").split("-")
+            username = f"{os.getenv('PROXY_USERNAME')}{''.join([f'-{x}' for x in countries])}-rotate"
+            password = os.getenv("PROXY_PASSWORD")
+            server = f"http://{domain}:{port}"
+
+        proxy_configs = [
+            ProxyConfig(
+                server=Creds.server, username=Creds.username, password=Creds.password
+            )
+            for _ in range(instances)
+        ]
+        self.creds = Creds
+        self.proxy_url = (
+            f"http://{Creds.username}:{Creds.password}@{Creds.domain}:{Creds.port}"
+        )
+        self.proxy_rotation_strat = RoundRobinProxyStrategy(proxies=proxy_configs)
+
+
+class ProxyDictConfig:
+    def __init__(
+        self,
+        provider: Literal["Scrapeless", "NST", "Massive"] = "Scrapeless",
+        instances: int = 4,
+        **kwargs,
+    ):
+        load_dotenv("src/Secrets/proxy.env")
+        PROXY_DICT = os.getenv("PROXY_DICT", {})[provider]
+
+        if provider == "Scrapeless":
+            kwargs = (
+                {"proxyCountry": "IN", "proxyState": "KA", "proxyCity": "bengaluru"}
+                if not kwargs
+                else kwargs
+            )
+            api_url = PROXY_DICT["API_URL"].format(
+                CHANNEL_ID=PROXY_DICT["CHANNEL_ID"],
+                proxyCountry=kwargs["proxyCountry"],
+                proxyState=kwargs["proxyState"],
+                proxyCity=kwargs["proxyCity"],
+                API_KEY=PROXY_DICT["API_KEY"],
+            )
+            resp = requests.get(api_url)
+            if resp.status_code == 200:
+                pxy_url = resp.text
+            match = re.search(r"([^:]+):([^@]+)@([^:]+):(\d+)", pxy_url).groups()
+            username = match[0]
+            password = match[1]
+            domain = re.sub(r"gw-[a-z]+", "gw-ap", match[2])
+            port = match[3]
+            server = f"http://{domain}:{port}"
+
+        elif provider == "NST":
+            username = f""
+            password = f""
+            domain = f""
+            port = f""
+            server = f"http://{domain}:{port}"
+
+        elif provider == "Massive":
+            username = f""
+            password = f""
+            domain = f""
+            port = f""
+            server = f"http://{domain}:{port}"
+
+        proxy_configs = [
             ProxyConfig(server=server, username=username, password=password)
             for _ in range(instances)
         ]
-        self.proxy_rotation_strat = RoundRobinProxyStrategy(proxies=self.proxy_configs)
+        self.proxy_url = f"{username}:{password}@{domain}:{port}"
+        self.proxy_rotation_strat = RoundRobinProxyStrategy(proxies=proxy_configs)
 
 
 class ScrapeConfig:
     def __init__(self, max_parallel: int = 10, len_list: int = 0) -> None:
         self.max_parallel = max_parallel
         self.browser_config = BrowserConfig(
-            browser_type="chromium",
+            browser_type="firefox",
             headless=False,  # True, #
             verbose=False,
             enable_stealth=True,
@@ -282,13 +353,13 @@ class ScrapeConfig:
 
         self.run_config_prxy_rot = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
+            magic=True,
             js_code=[
                 """await new Promise(r=>setTimeout(r,Math.random()*10000+5000));""",
                 """window.location.reload();""",  # Make some randomly chosen javascripts
             ],
             capture_network_requests=True,
-            # wait_for="css:html.body.div.div.div:first-child.div.div.div.div:nth-child(2).div:nth-child(2).div.h1",
-            proxy_rotation_strategy=WebShareConfig().proxy_rotation_strat,
+            # proxy_rotation_strategy=ProxyDictConfig().proxy_rotation_strat, # init during call not here
             stream=False,  # True,  #
         )
 

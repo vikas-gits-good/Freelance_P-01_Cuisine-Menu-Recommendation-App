@@ -12,6 +12,7 @@ mlruns/
 Artifacts/
 Final_Artifacts/
 src/ETL/ETL_Data/sitemap/
+z_camoufox_data/
 catboost_info/
 src/Research/
 src/Secrets/

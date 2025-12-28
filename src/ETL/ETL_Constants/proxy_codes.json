@@ -1,0 +1,121 @@
+{
+  "name": "India",
+  "code": "IN",
+  "states": [
+    {
+      "name": "Haryana",
+      "code": "HR",
+      "cities": ["rohtak", "yamunanagar", "kaithal", "hisar"]
+    },
+    {
+      "name": "Maharashtra",
+      "code": "MH",
+      "cities": ["wardha", "pune", "nagpur", "mumbai", "nashik"]
+    },
+    {
+      "name": "Goa",
+      "code": "GA",
+      "cities": ["mormugao"]
+    },
+    {
+      "name": "Puducherry",
+      "code": "PY",
+      "cities": ["puducherry"]
+    },
+    {
+      "name": "Telangana",
+      "code": "TG",
+      "cities": ["hyderabad"]
+    },
+    {
+      "name": "Odisha",
+      "code": "OR",
+      "cities": ["bhubaneswar", "cuttack"]
+    },
+    {
+      "name": "Rajasthan",
+      "code": "RJ",
+      "cities": ["jodhpur", "jaipur", "kota"]
+    },
+    {
+      "name": "Punjab",
+      "code": "PB",
+      "cities": ["ludhiana", "phagwara", "jalandhar", "amritsar", "kharar", "patiala"]
+    },
+    {
+      "name": "Andhra Pradesh",
+      "code": "AP",
+      "cities": ["nellore", "vijayawada", "visakhapatnam"]
+    },
+    {
+      "name": "Himachal Pradesh",
+      "code": "HP",
+      "cities": ["shimla"]
+    },
+    {
+      "name": "Delhi",
+      "code": "DL",
+      "cities": ["new_delhi", "delhi"]
+    },
+    {
+      "name": "Uttar Pradesh",
+      "code": "UP",
+      "cities": ["agra", "varanasi", "kanpur", "lucknow"]
+    },
+    {
+      "name": "Jharkhand",
+      "code": "JH",
+      "cities": ["ranchi", "jamshedpur"]
+    },
+    {
+      "name": "Karnataka",
+      "code": "KA",
+      "cities": ["bengaluru"]
+    },
+    {
+      "name": "Assam",
+      "code": "AS",
+      "cities": ["guwahati"]
+    },
+    {
+      "name": "Kerala",
+      "code": "KL",
+      "cities": ["kottayam", "alappuzha", "kannur", "kollam", "malappuram", "thiruvananthapuram", "kozhikode", "thrissur"]
+    },
+    {
+      "name": "Gujarat",
+      "code": "GJ",
+      "cities": ["jamnagar", "rajkot", "surat", "ahmedabad", "vadodara"]
+    },
+    {
+      "name": "Chandigarh",
+      "code": "CH",
+      "cities": ["chandigarh"]
+    },
+    {
+      "name": "Tamil Nadu",
+      "code": "TN",
+      "cities": ["coimbatore", "salem", "tirunelveli", "chennai", "madurai"]
+    },
+    {
+      "name": "Bihar",
+      "code": "BR",
+      "cities": ["patna"]
+    },
+    {
+      "name": "Madhya Pradesh",
+      "code": "MP",
+      "cities": ["indore", "bhopal"]
+    },
+    {
+      "name": "Chhattisgarh",
+      "code": "CT",
+      "cities": ["raipur"]
+    },
+    {
+      "name": "West Bengal",
+      "code": "WB",
+      "cities": ["kolkata"]
+    }
+  ]
+}
