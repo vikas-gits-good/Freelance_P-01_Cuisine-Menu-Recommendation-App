@@ -92,7 +92,7 @@ def upsert_to_mongodb(
         elif isinstance(data, pd.DataFrame):
             record = df_to_json(data, log)
 
-        log.info(f"{prefix}: Communicating with MongoDB: {database}/{collection}")
+        log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
         mongo_client = MongoClient(db_config.mndb_conn_uri)
         colls = mongo_client[database][collection]
 
@@ -101,14 +101,7 @@ def upsert_to_mongodb(
         operations = []
 
         if database == "Swiggy_Data":
-            if collection == "01_Full_Sitemap":
-                for link in record["links"]:
-                    filter_query = {"link": link}  # Each link is unique
-                    operations.append(
-                        UpdateOne(filter_query, {"$set": {"link": link}}, upsert=True)
-                    )
-
-            elif collection == "02_Restaurant_Config":
+            if collection == "01_Restaurant_Config":
                 ## Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
                 for city_name, city_data in record.items():
                     filter_query = {"city": city_name}
@@ -117,7 +110,7 @@ def upsert_to_mongodb(
                         UpdateOne(filter_query, {"$set": document}, upsert=True)
                     )
 
-            elif collection == "03_Restaurant_Menu_JSON":
+            elif collection == "02_Scraped_JSON":
                 restaurant_id = record["data"]["cards"][2]["card"]["card"]["info"]["id"]
                 record["restaurant_id"] = restaurant_id  # restaurant id is unique
                 filter_query = {"restaurant_id": restaurant_id}
@@ -125,11 +118,21 @@ def upsert_to_mongodb(
                     UpdateOne(filter_query, {"$set": record}, upsert=True)
                 )
 
+            elif collection == "03_Restaurant_Menu_JSON":
+                ## Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
+                for city_name, city_data in record.items():
+                    filter_query = {"city": city_name}
+                    document = {"city": city_name, "config": city_data}
+                    operations.append(
+                        UpdateOne(filter_query, {"$set": document}, upsert=True)
+                    )
+
         if operations:
             log.info(
-                f"{prefix}: Upserting {len(operations)} document(s) to '{database}/{collection}'"
+                f"{prefix}: Started upserting {len(operations):,} document(s) to '{database}/{collection}'"
             )
             colls.bulk_write(operations)
+            log.info(f"{prefix}: Completed upserting {len(operations):,} document(s)")
 
     except Exception as e:
         LogException(e, logger=log)
@@ -144,7 +147,7 @@ def get_from_mongodb(
     log: Logger = log_etl,
 ) -> dict | pd.DataFrame:
     try:
-        log.info(f"{prefix}: Communicating with MongoDB: {database}/{collection}")
+        log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
         mongo_client = MongoClient(db_config.mndb_conn_uri)
         colls = mongo_client[database][collection]
         return {}

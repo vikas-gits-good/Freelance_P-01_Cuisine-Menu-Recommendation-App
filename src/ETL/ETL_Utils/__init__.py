@@ -15,7 +15,7 @@ from crawl4ai.async_webcrawler import AsyncWebCrawler
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-from src.Utils.main_utils import save_json, read_json
+from src.Utils.main_utils import save_json, read_json, upsert_to_mongodb
 from src.ETL.ETL_Config import (
     LinksConfig,
     CoordsConfig,
@@ -24,6 +24,7 @@ from src.ETL.ETL_Config import (
     Restaurant,
     Menu,
 )
+from src.Config import MongoDBConfig
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
@@ -352,6 +353,15 @@ class CityCoordinates:
 
             log_etl.info("Extraction: Saving updated data to file")
             save_json(data=self.city_dict, save_path=save_path)
+
+            log_etl.info("Extraction: Saving updated data to MongoDB")
+            mc = MongoDBConfig()
+            upsert_to_mongodb(
+                data=self.city_dict,
+                database=mc.swiggy.database,
+                collection=mc.swiggy.coll_rstn_cnfg,
+                prefix="Extraction",
+            )
 
         except Exception as e:
             LogException(e, logger=log_etl)

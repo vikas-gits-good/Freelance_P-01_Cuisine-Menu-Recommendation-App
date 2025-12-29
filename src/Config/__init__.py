@@ -1,7 +1,14 @@
 import os
 from dotenv import load_dotenv
-from dataclasses import dataclass
-from src.Constants import MongoDBConstats
+from src.Constants import MongoDBConstants
+
+
+class SwiggyConfig:
+    def __init__(self):
+        self.database = MongoDBConstants.SWIGGY.DATABASE_NAME
+        self.coll_rstn_cnfg = MongoDBConstants.SWIGGY.COLLECTION_RESTAURANT_CONFIG
+        self.coll_scrp_data = MongoDBConstants.SWIGGY.COLLECTION_SCRAPED_DATA
+        self.coll_rstn_menu = MongoDBConstants.SWIGGY.COLLECTION_RESTAURANT_MENU
 
 
 class MongoDBConfig:
@@ -10,14 +17,8 @@ class MongoDBConfig:
         MONGO_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
         MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
 
-        self.mndb_conn_uri = MongoDBConstats.CONNECTION_URI.format(
+        self.mndb_conn_uri = MongoDBConstants.CONNECTION_URI.format(
             username=MONGO_USERNAME,
             password=MONGO_PASSWORD,
         )
-
-        @dataclass
-        class swiggy:
-            database = MongoDBConstats.swiggy_cnsts.DATABASE_NAME
-            coll_sitemap = MongoDBConstats.swiggy_cnsts.COLLECTION_SITEMAP
-            coll_rstn_cnfg = MongoDBConstats.swiggy_cnsts.COLLECION_RESTAURANT_CONFIG
-            coll_rstn_menu = MongoDBConstats.swiggy_cnsts.COLLECTION_RESTAURANT_MENU
+        self.swiggy = SwiggyConfig()
