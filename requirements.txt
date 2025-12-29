@@ -22,3 +22,6 @@ playwright
 # data
 pandas
 numpy
+
+# database
+pymongo

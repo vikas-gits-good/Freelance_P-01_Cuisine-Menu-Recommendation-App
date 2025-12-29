@@ -315,7 +315,7 @@ class CityCoordinates:
                     },
                     ...
                 ]
-                "proxy": "IN-PB-ludhiana-phagwara-jalandhar-amritsar-kharar-patiala"
+                "proxy": "IN-PB-amritsar"
             },
         ...
         }
