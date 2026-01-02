@@ -77,7 +77,7 @@ def df_to_json(data: pd.DataFrame, log: Logger):
 
 
 def upsert_to_mongodb(
-    data: dict | pd.DataFrame,
+    data: dict | list[dict] | pd.DataFrame,
     database: str,
     collection: str,
     prefix: Literal["Extraction", "Transformation", "Load"] = "Extraction",
@@ -86,11 +86,15 @@ def upsert_to_mongodb(
 ):
     try:
         log.info(f"{prefix}: Checking datatype and converting")
-        if isinstance(data, dict):
-            record = data
+        record = data
+        # if isinstance(data, dict):
+        #     record = [data]
 
-        elif isinstance(data, pd.DataFrame):
-            record = df_to_json(data, log)
+        # elif isinstance(data, List):
+        #     record = data
+
+        # elif isinstance(data, pd.DataFrame):
+        #     record = df_to_json(data, log)
 
         log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
         mongo_client = MongoClient(db_config.mndb_conn_uri)
@@ -100,31 +104,93 @@ def upsert_to_mongodb(
 
         operations = []
 
-        if database == "Swiggy_Data":
-            if collection == "01_Restaurant_Config":
-                ## Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
+        if database == db_config.swiggy.database:
+            if (
+                collection == db_config.swiggy.coll_rstn_cnfg
+                or collection == db_config.swiggy.coll_rstn_menu
+            ):
+                # Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
                 for city_name, city_data in record.items():
                     filter_query = {"city": city_name}
-                    document = {"city": city_name, "config": city_data}
-                    operations.append(
-                        UpdateOne(filter_query, {"$set": document}, upsert=True)
+
+                    # First, ensure the city document exists with base structure
+                    colls.update_one(
+                        filter_query,
+                        {
+                            "$setOnInsert": {
+                                "city": city_name,
+                                "config": {"restaurants": []},
+                            }
+                        },
+                        upsert=True,
                     )
 
-            elif collection == "02_Scraped_JSON":
-                restaurant_id = record["data"]["cards"][2]["card"]["card"]["info"]["id"]
-                record["restaurant_id"] = restaurant_id  # restaurant id is unique
-                filter_query = {"restaurant_id": restaurant_id}
-                operations.append(
-                    UpdateOne(filter_query, {"$set": record}, upsert=True)
-                )
+                    # Update city-level fields (everything except restaurants)
+                    city_level_fields = {
+                        k: v for k, v in city_data.items() if k != "restaurants"
+                    }
 
-            elif collection == "03_Restaurant_Menu_JSON":
-                ## Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
-                for city_name, city_data in record.items():
-                    filter_query = {"city": city_name}
-                    document = {"city": city_name, "config": city_data}
+                    if city_level_fields:
+                        operations.append(
+                            UpdateOne(
+                                filter_query,
+                                {
+                                    "$set": {
+                                        f"config.{k}": v
+                                        for k, v in city_level_fields.items()
+                                    }
+                                },
+                            )
+                        )
+
+                    # Now update individual restaurants by rstn_id
+                    if "restaurants" in city_data:
+                        for restaurant in city_data["restaurants"]:
+                            rstn_id = restaurant.get("rstn_id")
+                            if rstn_id:
+                                # Filter for specific restaurant in the array
+                                restaurant_filter = {
+                                    "city": city_name,
+                                    "config.restaurants.rstn_id": rstn_id,
+                                }
+
+                                # Check if restaurant exists in array
+                                existing = colls.find_one(restaurant_filter)
+
+                                if existing:
+                                    # Update existing restaurant using positional operator
+                                    operations.append(
+                                        UpdateOne(
+                                            restaurant_filter,
+                                            {
+                                                "$set": {
+                                                    "config.restaurants.$": restaurant
+                                                }
+                                            },
+                                        )
+                                    )
+                                else:
+                                    # Add new restaurant to array
+                                    operations.append(
+                                        UpdateOne(
+                                            filter_query,
+                                            {
+                                                "$push": {
+                                                    "config.restaurants": restaurant
+                                                }
+                                            },
+                                        )
+                                    )
+
+            elif collection == db_config.swiggy.coll_scrp_data:
+                for rec in record:
+                    restaurant_id = rec["data"]["cards"][2]["card"]["card"]["info"][
+                        "id"
+                    ]
+                    rec["restaurant_id"] = restaurant_id  # restaurant id is unique
+                    filter_query = {"restaurant_id": restaurant_id}
                     operations.append(
-                        UpdateOne(filter_query, {"$set": document}, upsert=True)
+                        UpdateOne(filter_query, {"$set": rec}, upsert=True)
                     )
 
         if operations:
@@ -150,8 +216,51 @@ def get_from_mongodb(
         log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
         mongo_client = MongoClient(db_config.mndb_conn_uri)
         colls = mongo_client[database][collection]
-        return {}
+        # get data
+        data = list(colls.find())
+        """data = [
+            {
+                '_id': ObjectId('695238e68f4ca8f90d6caeef'), 
+                'city': 'abohar', 
+                'config': {
+                    'name': 'Abohar, Abohar Tahsil, Fazilka, Punjab, 152116, India', 
+                    'coords': [30.1450543, 74.1956597], 
+                    'boundingbox': [...],
+                    'address': {...},
+                    'restaurants': [{},...],
+                    'proxy': '...',
+                }
+            },
+            ...
+        ]
+        """
+        log.info(f"{prefix}: Restructuring data acquired from '{collection}'")
+        clean_data = {}
+
+        if (
+            collection == db_config.swiggy.coll_rstn_cnfg
+            or collection == db_config.swiggy.coll_rstn_menu
+        ):
+            for item in data:
+                clean_data.update({item["city"]: item["config"]})
+
+        elif collection == db_config.swiggy.coll_scrp_data:
+            pass
+
+        return clean_data
 
     except Exception as e:
         LogException(e, logger=log)
         return {}
+
+
+def save_browser_session(
+    log: Logger = log_etl,
+):
+    try:
+        ...
+        pass
+
+    except Exception as e:
+        LogException(e, logger=log)
+        raise CustomException(e)

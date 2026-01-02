@@ -11,7 +11,6 @@ from crawl4ai.components.crawler_monitor import CrawlerMonitor
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
-from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 from crawl4ai.browser_adapter import UndetectedAdapter
 from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
 from src.ETL.ETL_Constants import (
@@ -19,6 +18,7 @@ from src.ETL.ETL_Constants import (
     NominatimOSMConstants,
     RestaurantConstants,
     ProxyConstants,
+    BrowserConstants,
 )
 
 
@@ -69,22 +69,23 @@ class CoordsConfig:
 class RestaurantConfig:
     def __init__(self) -> None:
         self.read_unique_data_path = os.path.join(
-            # NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
-            # NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
-            "src/Research/sample_menus",
-            "1_sample_rstn_data.json",
+            NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
+            # "src/Research/sample_menus",
+            # "1_sample_rstn_data.json",
         )
         self.save_json_data_path = os.path.join(
-            # RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            RestaurantConstants.UNIQUE_DATA_FILE_NAME,
             # '2_sample_scrp_data.json',
-            "src/Research/sample_menus",
-            "2_sample_scrp_data.json",
+            # "src/Research/sample_menus",
+            # "2_sample_scrp_data.json",
         )
         self.save_unique_data_path = os.path.join(
-            # RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
-            # RestaurantConstants.UNIQUE_DATA_FILE_NAME,
-            "src/Research/sample_menus",
-            "3_sample_menu_data.json",
+            RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
+            RestaurantConstants.UNIQUE_DATA_FILE_NAME,
+            # "src/Research/sample_menus",
+            # "3_sample_menu_data.json",
         )
         self.menu_api_ep = RestaurantConstants.RESTAURANT_MENU_ENDPOINT
 
@@ -332,6 +333,12 @@ class ProxyDictConfig:
             ProxyConfig(server=server, username=username, password=password)
             for _ in range(instances)
         ]
+
+        self.pxy = {
+            "server": f"http://{domain}:{port}",
+            "username": username,
+            "password": password,
+        }
         self.proxy_url = f"{username}:{password}@{domain}:{port}"
         self.proxy_rotation_strat = RoundRobinProxyStrategy(proxies=proxy_configs)
 
@@ -340,10 +347,12 @@ class ScrapeConfig:
     def __init__(self, max_parallel: int = 10, len_list: int = 0) -> None:
         self.max_parallel = max_parallel
         self.browser_config = BrowserConfig(
-            browser_type="firefox",
+            browser_type="chromium",  # "firefox",  #
             headless=False,  # True, #
             verbose=False,
             enable_stealth=True,
+            # use_managed_browser=True,
+            # user_data_dir="/home/who/.crawl4ai/profiles/test_swiggy_463/",
         )
 
         self.crawler_strat = AsyncPlaywrightCrawlerStrategy(
@@ -355,17 +364,16 @@ class ScrapeConfig:
             cache_mode=CacheMode.BYPASS,
             magic=True,
             js_code=[
-                """await new Promise(r=>setTimeout(r,Math.random()*10000+5000));""",
-                """window.location.reload();""",  # Make some randomly chosen javascripts
+                """await new Promise(r=>setTimeout(r,Math.random()*5000+5000));""",
             ],
             capture_network_requests=True,
             # proxy_rotation_strategy=ProxyDictConfig().proxy_rotation_strat, # init during call not here
-            stream=False,  # True,  #
+            stream=True,  # clean_data
         )
 
         rate_limiter = RateLimiter(
             base_delay=(2, 12),
-            max_delay=60.0,
+            max_delay=30.0,
             max_retries=3,
             rate_limit_codes=[429, 503, 403],
         )
@@ -383,3 +391,27 @@ class ScrapeConfig:
             rate_limiter=rate_limiter,
             monitor=crawl_monitor,
         )
+
+
+class BrowserSessionConfig:
+    def __init__(self):
+        self.fingerprint_path = os.path.join(
+            BrowserConstants.BROWSER_DATA_SAVE_PATH,
+            "{session_id}",
+            BrowserConstants.BROWSER_FINGERPRINT_DIR_NAME,
+            BrowserConstants.BROWSER_FINGERPRINT_FILE_NAME,
+        )
+        self.browser_path = os.path.join(
+            BrowserConstants.BROWSER_DATA_SAVE_PATH,
+            "{session_id}",
+        )
+        self.save_data_path = os.path.join(
+            BrowserConstants.SCRAPED_DATA_SAVE_PATH,
+            # BrowserConstants.SCRAPED_DATA_FILE_NAME,
+            "{batch}",
+        )
+
+        self.max_cncr_cities = BrowserConstants.MAX_CONCURRENT_CITIES
+        self.max_scrp_per_city = BrowserConstants.MAX_SCRAPERS_PER_CITY
+        self.rate_limit_range = BrowserConstants.RATE_LIMI_RANGE
+        self.batch_size = BrowserConstants.SAVE_BATCH_SIZE

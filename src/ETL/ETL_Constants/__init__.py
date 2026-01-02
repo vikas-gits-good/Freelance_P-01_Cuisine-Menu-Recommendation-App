@@ -42,3 +42,18 @@ class RestaurantConstants:
 class ProxyConstants:
     PROXY_CITY_JSON_DIRECTORY = "src/ETL/ETL_Constants"
     PROXY_CITY_JSON_FILE_NAME = "proxy_codes.json"
+
+
+@dataclass
+class BrowserConstants:
+    BROWSER_DATA_SAVE_PATH = "src/ETL/ETL_Data/browser/"
+    BROWSER_FINGERPRINT_DIR_NAME = "fingerprint"
+    BROWSER_FINGERPRINT_FILE_NAME = "fingerprint.json"
+
+    SCRAPED_DATA_SAVE_PATH = "src/ETL/ETL_Data/scraped_json/"
+    SCRAPED_DATA_FILE_NAME = "scraped_data_{batch}.json"
+
+    MAX_CONCURRENT_CITIES: int = 4
+    MAX_SCRAPERS_PER_CITY: int = 8
+    RATE_LIMI_RANGE: tuple[int, int] = (2, 5)
+    SAVE_BATCH_SIZE: int = 5

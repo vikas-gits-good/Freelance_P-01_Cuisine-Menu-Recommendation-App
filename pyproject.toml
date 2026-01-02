@@ -5,6 +5,7 @@ description = "An application where user can enter a locality in a city and a cu
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiolimiter>=1.2.1",
     "apache-airflow>=3.1.5",
     "apache-airflow-providers-http>=5.6.1",
     "apache-airflow-providers-postgres>=6.5.1",
