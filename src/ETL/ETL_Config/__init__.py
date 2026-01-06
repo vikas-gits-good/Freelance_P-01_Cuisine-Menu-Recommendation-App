@@ -351,6 +351,7 @@ class ScrapeConfig:
             headless=False,  # True, #
             verbose=False,
             enable_stealth=True,
+            user_agent_mode="random",
             # use_managed_browser=True,
             # user_data_dir="/home/who/.crawl4ai/profiles/test_swiggy_463/",
         )
@@ -372,7 +373,7 @@ class ScrapeConfig:
         )
 
         rate_limiter = RateLimiter(
-            base_delay=(2, 12),
+            base_delay=(8, 12),
             max_delay=30.0,
             max_retries=3,
             rate_limit_codes=[429, 503, 403],

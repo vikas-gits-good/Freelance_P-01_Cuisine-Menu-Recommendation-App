@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SwiggyConstats:
+class SwiggyConstants:
     DATABASE_NAME = "Swiggy_Data"
     COLLECTION_RESTAURANT_CONFIG = "01_Restaurant_Config"
     COLLECTION_SCRAPED_DATA = "02_Scraped_JSON"
@@ -14,4 +14,4 @@ class MongoDBConstants:
     CONNECTION_URI = (
         "mongodb://{username}:{password}@localhost:27017/mongodb-local?authSource=admin"
     )
-    SWIGGY = SwiggyConstats()
+    SWIGGY = SwiggyConstants()

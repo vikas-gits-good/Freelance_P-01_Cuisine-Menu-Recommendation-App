@@ -13,6 +13,7 @@ Artifacts/
 Final_Artifacts/
 src/ETL/ETL_Data/sitemap/
 src/ETL/ETL_Data/browser/
+src/RAG/References/
 catboost_info/
 src/Research/
 src/Secrets/

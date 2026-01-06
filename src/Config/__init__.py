@@ -13,7 +13,7 @@ class SwiggyConfig:
 
 class MongoDBConfig:
     def __init__(self):
-        load_dotenv("src/Secrets/mongodb.env")
+        load_dotenv("src/Secrets/Database.env")
         MONGO_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
         MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
 

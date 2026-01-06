@@ -696,7 +696,7 @@ class RestaurantData:
             raise CustomException(e)
 
     async def _scrape_all_cities(self, city_data):
-        self.updated_city_data = city_data
+        # self.updated_city_data = city_data
         mc = MongoDBConfig()
         batch_size = 50  # Save every 50 restaurants
 
@@ -706,17 +706,19 @@ class RestaurantData:
         #     for city in self.updated_city_data.keys()
         #     for i in range(len(self.updated_city_data[city]["restaurants"]))
         # }
-        path = "./src/ETL/ETL_Data/sitemap/final_menu_data_1.json"
+        path_1 = "./src/ETL/ETL_Data/sitemap/final_menu_data_3000.json"
+        # this has 3019 data points "./src/ETL/ETL_Data/sitemap/final_menu_data_3000.json"
 
-        data_dict = read_json(path)
+        city_data = read_json(path_1)
+        self.updated_city_data = city_data
 
-        city_data = get_from_mongodb(
-            database=mc.swiggy.database,
-            collection=mc.swiggy.coll_rstn_menu,
-        )
-        for i, rstn in enumerate(data_dict["bengaluru"]["restaurants"]):
-            if "menu" in rstn.keys():
-                city_data["bengaluru"]["restaurants"][i] = rstn
+        # city_data = get_from_mongodb(
+        #     database=mc.swiggy.database,
+        #     collection=mc.swiggy.coll_rstn_menu,
+        # )
+        # for i, rstn in enumerate(data_dict_1["bengaluru"]["restaurants"]):
+        #     if "menu" in rstn.keys():
+        #         city_data["bengaluru"]["restaurants"][i] = rstn
 
         # wait wont this replace the rows where i have data with no data?
         urls_dict = {
