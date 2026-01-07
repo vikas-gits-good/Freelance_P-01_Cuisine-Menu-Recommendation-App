@@ -198,7 +198,7 @@ class FoodItem(BaseModel):
     food_name: str
     food_category: str
     food_description: str
-    food_price: str
+    food_price: int
     food_rating: float
     food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"  # str#
 
@@ -211,7 +211,7 @@ class FoodItem(BaseModel):
             "food_name": main_part.get("name", ""),
             "food_category": main_part.get("category", ""),
             "food_description": main_part.get("description", ""),
-            "food_price": f"Rs.{int(int(main_part.get('price', '-100')) / 100)}",
+            "food_price": round(int(main_part.get("price", "-100")) / 100),
             "food_rating": float(
                 main_part["ratings"]["aggregatedRating"].get("rating", "-1.0")
             ),

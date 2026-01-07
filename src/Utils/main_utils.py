@@ -254,13 +254,24 @@ def get_from_mongodb(
         return {}
 
 
-def save_browser_session(
+def read_cypher(
+    save_path: str,
+    chunk: bool = False,
     log: Logger = log_etl,
-):
+) -> str | List[str]:
+    data = ""
     try:
-        ...
-        pass
+        with open(save_path, mode="rt", encoding="utf-8", newline="\r\n") as f:
+            data = f.read()
+        data = (
+            [part.strip() for part in data.split("\n\n") if part.strip()]
+            if chunk
+            else data
+        )
+        log.info("Successfully read Cypher code from file")
 
     except Exception as e:
         LogException(e, logger=log)
-        raise CustomException(e)
+        # raise CustomException(e)
+
+    return data

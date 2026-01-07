@@ -22,6 +22,12 @@ playwright
 pandas
 numpy
 
+# nlp
+torch https://download.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl
+scikit-learn
+sentence-transformers
+
+
 # database
 pymongo
 FalkorDB
