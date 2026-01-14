@@ -2,7 +2,6 @@ import os
 from glob import glob
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from src.Utils.main_utils import read_cypher
 
 
 @dataclass

@@ -1,6 +1,6 @@
 import asyncio
-from src.ETL.ETL_Utils import AllLinks, CityCoordinates, RestaurantData
-from src.ETL.ETL_Utils.create_browsers import GenerateBrowsers
+from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
+# from src.ETL.Utils.create_browsers import GenerateBrowsers
 
 if __name__ == "__main__":
     # # Get full sitemap of Swiggy

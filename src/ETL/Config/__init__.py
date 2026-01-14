@@ -13,7 +13,7 @@ from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
 from crawl4ai.browser_adapter import UndetectedAdapter
 from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
-from src.ETL.ETL_Constants import (
+from src.ETL.Constants import (
     SwiggyLinksConstants,
     NominatimOSMConstants,
     RestaurantConstants,

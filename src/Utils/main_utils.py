@@ -105,10 +105,7 @@ def upsert_to_mongodb(
         operations = []
 
         if database == db_config.swiggy.database:
-            if (
-                collection == db_config.swiggy.coll_rstn_cnfg
-                or collection == db_config.swiggy.coll_rstn_menu
-            ):
+            if collection == db_config.swiggy.coll_rstn_cnfg:
                 # Data format: {'city_1':{city_1_data},'city_2':{city_2_data}}
                 for city_name, city_data in record.items():
                     filter_query = {"city": city_name}
@@ -184,11 +181,8 @@ def upsert_to_mongodb(
 
             elif collection == db_config.swiggy.coll_scrp_data:
                 for rec in record:
-                    restaurant_id = rec["data"]["cards"][2]["card"]["card"]["info"][
-                        "id"
-                    ]
-                    rec["restaurant_id"] = restaurant_id  # restaurant id is unique
-                    filter_query = {"restaurant_id": restaurant_id}
+                    # [{'rstn_id':123, 'config': {}},{'rstn_id':456, 'config': {}},...]
+                    filter_query = {"rstn_id": rec["rstn_id"]}
                     operations.append(
                         UpdateOne(filter_query, {"$set": rec}, upsert=True)
                     )
@@ -217,7 +211,7 @@ def get_from_mongodb(
         mongo_client = MongoClient(db_config.mndb_conn_uri)
         colls = mongo_client[database][collection]
         # get data
-        data = list(colls.find())
+        data = []  # list(colls.find())
         """data = [
             {
                 '_id': ObjectId('695238e68f4ca8f90d6caeef'), 
@@ -237,15 +231,19 @@ def get_from_mongodb(
         log.info(f"{prefix}: Restructuring data acquired from '{collection}'")
         clean_data = {}
 
-        if (
-            collection == db_config.swiggy.coll_rstn_cnfg
-            or collection == db_config.swiggy.coll_rstn_menu
-        ):
+        if collection == db_config.swiggy.coll_rstn_cnfg:
             for item in data:
                 clean_data.update({item["city"]: item["config"]})
 
         elif collection == db_config.swiggy.coll_scrp_data:
-            pass
+            # for item in data:
+            # clean_data.update({item["rstn_id"]: item["config"]})
+            colls.create_index("rstn_id", background=True)
+            cursor = colls.find({}, {"rstn_id": 1, "_id": 0}, batch_size=1000)
+            clean_data = {doc["rstn_id"]: "" for doc in cursor}
+            log_etl.info(
+                f"Extraction: Acquired {len(list(clean_data.keys())):,} rstn_ids"
+            )
 
         return clean_data
 

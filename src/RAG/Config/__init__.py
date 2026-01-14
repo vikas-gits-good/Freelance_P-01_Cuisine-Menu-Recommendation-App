@@ -38,7 +38,13 @@ class get_cypher_code:
             for file_item in self.all_cyp_paths
             if code in file_item.split("/")[-1]
         ][0]
-        return read_cypher(save_path=path, chunk=True)
+        cypher_list = read_cypher(save_path=path, chunk=True)
+        cypher_dict = {
+            match.group(1): match.group(2).strip()
+            for chunk in cypher_list
+            if (match := re.match(r"//\s*(\w+)\s*\n(.+)$", chunk, re.DOTALL))
+        }
+        return cypher_dict
 
 
 class CypherCodeConfig:

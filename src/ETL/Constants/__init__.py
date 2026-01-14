@@ -12,11 +12,11 @@ class SwiggyLinksConstants:
         "Accept": "application/json",
         "X-Requested-With": "XMLHttpRequest",
     }
-    SITEMAP_GZIP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap"
-    SITEMAP_JSON_SITEMAP_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    SITEMAP_GZIP_SAVE_DIRECTORY = "src/ETL/Data/sitemap"
+    SITEMAP_JSON_SITEMAP_SAVE_DIRECTORY = "src/ETL/Data/sitemap/"
     JSON_SITEMAP_DATA_FILE_NAME = "sitemap_urls.json"  # All 3.2M+ urls
 
-    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "unique_data.json"  # "city_rstn_coords_data.json"  #
 
 
@@ -27,14 +27,14 @@ class NominatimOSMConstants:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     RATE_LIMIT = 1.2
-    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "city_rstn_coords_data.json"
 
 
 @dataclass
 class RestaurantConstants:
     RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&catalog_qa=undefined&submitAction=ENTER"
-    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/ETL_Data/sitemap/"
+    UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "final_menu_data.json"
 
 
@@ -46,11 +46,11 @@ class ProxyConstants:
 
 @dataclass
 class BrowserConstants:
-    BROWSER_DATA_SAVE_PATH = "src/ETL/ETL_Data/browser/"
+    BROWSER_DATA_SAVE_PATH = "src/ETL/Data/browser/"
     BROWSER_FINGERPRINT_DIR_NAME = "fingerprint"
     BROWSER_FINGERPRINT_FILE_NAME = "fingerprint.json"
 
-    SCRAPED_DATA_SAVE_PATH = "src/ETL/ETL_Data/scraped_json/"
+    SCRAPED_DATA_SAVE_PATH = "src/ETL/Data/scraped_json/"
     SCRAPED_DATA_FILE_NAME = "scraped_data_{batch}.json"
 
     MAX_CONCURRENT_CITIES: int = 4

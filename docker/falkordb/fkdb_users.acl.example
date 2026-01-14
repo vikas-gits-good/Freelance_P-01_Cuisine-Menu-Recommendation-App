@@ -1,0 +1,10 @@
+user default off
+
+# Admin user
+user {admin_username} on >{admin_password} ~* &* +@all
+
+# AI agent
+user {agent_username} on >{agent_password} ~* +@read +@write
+
+# End user (restricted)
+user {app_username} on >{app_user_password} ~* +@read

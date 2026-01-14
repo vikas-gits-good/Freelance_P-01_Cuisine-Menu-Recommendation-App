@@ -22,7 +22,7 @@ from src.Utils.main_utils import (
     upsert_to_mongodb,
     get_from_mongodb,
 )
-from src.ETL.ETL_Config import (
+from src.ETL.Config import (
     LinksConfig,
     CoordsConfig,
     RestaurantConfig,
@@ -675,21 +675,10 @@ class RestaurantData:
             city_data = read_json(save_path=read_path)
 
             log_etl.info("Extraction: Preparing to get restaurant data.")
-            clean_data = asyncio.run(self._scrape_all_cities(city_data))
-
-            # implement streaming and .tmp based batch saving & make it one way.
-            # this will overwrite with stream
+            asyncio.run(self._scrape_all_cities(city_data))
             # log_etl.info("Extraction: Saving restaurant & menu data to local")
-            # save_json(data=clean_data, save_path=save_path)
 
             # log_etl.info("Extraction: Saving restaurant & menu data to MongoDB")
-            # mc = MongoDBConfig()
-            # upsert_to_mongodb(
-            #     data=clean_data,
-            #     database=mc.swiggy.database,
-            #     collection=mc.swiggy.coll_rstn_menu,
-            #     prefix="Extraction",
-            # )
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -698,7 +687,7 @@ class RestaurantData:
     async def _scrape_all_cities(self, city_data):
         # self.updated_city_data = city_data
         mc = MongoDBConfig()
-        batch_size = 50  # Save every 50 restaurants
+        batch_size = 100  # Save every 50 restaurants
 
         log_etl.info("Extraction: Getting urls to crawl")
         # urls_dict = {
@@ -706,11 +695,10 @@ class RestaurantData:
         #     for city in self.updated_city_data.keys()
         #     for i in range(len(self.updated_city_data[city]["restaurants"]))
         # }
-        path_1 = "./src/ETL/ETL_Data/sitemap/final_menu_data_3000.json"
-        # this has 3019 data points "./src/ETL/ETL_Data/sitemap/final_menu_data_3000.json"
+        path_1 = "src/ETL/Data/sitemap/city_rstn_coords_data.json"
 
         city_data = read_json(path_1)
-        self.updated_city_data = city_data
+        # self.updated_city_data = city_data
 
         # city_data = get_from_mongodb(
         #     database=mc.swiggy.database,
@@ -721,13 +709,42 @@ class RestaurantData:
         #         city_data["bengaluru"]["restaurants"][i] = rstn
 
         # wait wont this replace the rows where i have data with no data?
+        # urls_dict = {
+        #     "bengaluru": [
+        #         rstn["rstn_url"]
+        #         for rstn in city_data["bengaluru"]["restaurants"]
+        #         if "menu" not in rstn.keys()
+        #     ]
+        # }
+        from itertools import islice
+
+        data_limit = 2500
+        urls = get_from_mongodb(
+            database=mc.swiggy.database,
+            collection=mc.swiggy.coll_scrp_data,
+        )
+
+        # urls_dict = {
+        #     "bengaluru": list(
+        #         islice(
+        #             (
+        #                 rstn["rstn_url"]
+        #                 for rstn in city_data["bengaluru"]["restaurants"]
+        #                 if rstn["rstn_url"].split("-rest")[-1] not in urls.keys()
+        #             ),
+        #             data_limit,
+        #         )
+        #     )
+        # }
+
         urls_dict = {
             "bengaluru": [
                 rstn["rstn_url"]
                 for rstn in city_data["bengaluru"]["restaurants"]
-                if "menu" not in rstn.keys()
+                if int(rstn["rstn_url"].split("-rest")[-1]) not in list(urls.keys())
             ]
         }
+        log_etl.info(f"Extraction: urls_dict has {len(urls_dict['bengaluru']):,} urls")
 
         for city in urls_dict.keys():
             log_etl.info(
@@ -738,32 +755,48 @@ class RestaurantData:
             save_path = self.rt_config.save_unique_data_path
             temp_file = Path(save_path).with_suffix(".json.tmp")
 
-            restaurants_data = self.updated_city_data[city]["restaurants"]
+            restaurants_data = city_data[city]["restaurants"]
             count = 0
 
-            # Process streaming data as it arrives
-            async for menu_data in self._scrape_one_city(urls_dict[city]):
-                try:
-                    rstn, menu = menu_data
-                    # Update the in-memory data structure
-                    for i, rd in enumerate(restaurants_data):
-                        if rstn.rstn_id == rd["rstn_id"]:
-                            rd.update(rstn.model_dump())
-                            self.updated_city_data[city]["restaurants"][i]["menu"] = [
-                                item.model_dump() for item in menu.food_items
-                            ]
-                            count += 1
+            batch_json_data = []
 
-                            # Save to temp file every batch_size restaurants
-                            if count % batch_size == 0:
-                                log_etl.info(
-                                    f"Extraction: Saving batch to file ({count} restaurants)"
-                                )
-                                save_json(
-                                    data=self.updated_city_data,
-                                    save_path=str(temp_file),
-                                )
-                            break
+            # Process streaming data as it arrives
+            async for menu_data, json_data in self._scrape_one_city(urls_dict[city]):
+                try:
+                    # rstn, menu = menu_data
+                    # Update the in-memory data structure
+                    # for i, rd in enumerate(restaurants_data):
+                    #     if rstn.rstn_id == rd["rstn_id"]:
+                    # rd.update(rstn.model_dump())
+                    # self.updated_city_data[city]["restaurants"][i]["menu"] = [
+                    #     item.model_dump() for item in menu.food_items
+                    # ]
+                    batch_json_data.append(
+                        {
+                            "rstn_id": menu_data.rstn_id,
+                            "config": json_data,
+                        }
+                    )
+
+                    count += 1
+
+                    # Save to temp file every batch_size restaurants
+                    if count % batch_size == 0:  # or count == data_limit:
+                        log_etl.info(
+                            f"Extraction: Saving batch to file ({count} restaurants)"
+                        )
+                        # save_json(
+                        #     data=self.updated_city_data,
+                        #     save_path=str(temp_file),
+                        # )
+                        upsert_to_mongodb(
+                            data=batch_json_data,
+                            database=mc.swiggy.database,
+                            collection=mc.swiggy.coll_scrp_data,
+                        )
+                        batch_json_data = []
+
+                        # break
 
                 except Exception as e:
                     LogException(e, logger=log_etl)
@@ -771,13 +804,18 @@ class RestaurantData:
 
             # Save final batch and rename temp file to actual file
             log_etl.info(f"Extraction: Saving final batch ({count} total restaurants)")
-            save_json(data=self.updated_city_data, save_path=str(temp_file))
+            upsert_to_mongodb(
+                data=batch_json_data,
+                database=mc.swiggy.database,
+                collection=mc.swiggy.coll_scrp_data,
+            )
+        #     save_json(data=self.updated_city_data, save_path=str(temp_file))
 
-            # Rename .json.tmp to .json
-            log_etl.info(f"Extraction: Renaming {temp_file.name} to final file")
-            temp_file.rename(save_path)
+        #     # Rename .json.tmp to .json
+        #     log_etl.info(f"Extraction: Renaming {temp_file.name} to final file")
+        #     temp_file.rename(save_path)
 
-        return self.updated_city_data
+        # return self.updated_city_data
 
     async def _scrape_one_city(self, urls):
         try:
@@ -800,12 +838,11 @@ class RestaurantData:
                             if r[
                                 "event_type"
                             ] == "response" and "/dapi/menu/pl?" in r.get("url", ""):
-                                json_data = json.loads(r["body"]["text"])
+                                json_data: dict = json.loads(r["body"]["text"])
 
                                 # parse json to extract restaurant and menu details
-                                # rstn_menu_city.append(self._extract_menu(json_data))
                                 menu_data = self._extract_menu(json_data)
-                                yield menu_data
+                                yield menu_data, json_data
 
                     except Exception as e:
                         LogException(e, logger=log_etl)
@@ -814,11 +851,10 @@ class RestaurantData:
                         )
                         continue
 
-                # return rstn_menu_city
-
         except Exception as e:
             LogException(e, logger=log_etl)
             raise CustomException(e)
 
     def _extract_menu(self, json_data):
-        return [Restaurant(**json_data["data"]), Menu(**json_data["data"])]
+        # return [Restaurant(**json_data["data"]), Menu(**json_data["data"])]
+        return Restaurant(**json_data["data"])

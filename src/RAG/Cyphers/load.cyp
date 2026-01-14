@@ -22,7 +22,7 @@ ON CREATE SET
 MERGE (city)-[:LOCATED_IN]->(state)
 RETURN city
 
-//Load_Area
+// Load_Area
 MATCH (city:City {name: $city_name, state_name: $state_name})
 MERGE (area:Area {name: $area_name, city_name: $city_name})
 MERGE (area)-[:LOCATED_IN]->(city)
