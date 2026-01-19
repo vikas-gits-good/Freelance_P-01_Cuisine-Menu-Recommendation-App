@@ -16,5 +16,5 @@ class FalkorDBConstants:
 
 
 @dataclass
-class CypherConstants:
+class RAGCypherConstants:
     ALL_CYPHER_FILE_PATHS = glob("src/RAG/Cyphers/*.cyp")

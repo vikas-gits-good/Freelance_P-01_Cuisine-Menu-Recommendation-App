@@ -37,6 +37,6 @@ class RestaurantConstants:  # Deprecated method
 
 
 @dataclass
-class ProxyConstants:
+class ProxyConstants:  # Haven't implemented proxy
     PROXY_CITY_JSON_DIRECTORY = "src/ETL/Constants"
     PROXY_CITY_JSON_FILE_NAME = "proxy_codes.json"

@@ -1,7 +1,7 @@
 import re
 from typing import Literal
 from src.Utils.main_utils import read_cypher
-from src.RAG.Constants import FalkorDBConstants, CypherConstants
+from src.RAG.Constants import FalkorDBConstants, RAGCypherConstants
 
 
 class SwiggyFKDBConfig:
@@ -27,7 +27,7 @@ class FalkorDBConfig:
 
 class get_cypher_code:
     def __init__(self):
-        self.all_cyp_paths = CypherConstants.ALL_CYPHER_FILE_PATHS
+        self.all_cyp_paths = RAGCypherConstants.ALL_CYPHER_FILE_PATHS
         self.create = self.get_code(code="create")
         self.load = self.get_code(code="load")
         self.validate = self.get_code(code="validate")
