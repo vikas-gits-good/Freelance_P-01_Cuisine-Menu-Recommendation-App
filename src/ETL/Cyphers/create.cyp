@@ -12,9 +12,9 @@ SET loc.name = $name,
     loc.boundingbox = $boundingbox
 
 // create_location_relationship
-MATCH (loc1:{label1} {{name: $source_name}})
-MATCH (loc2:{label2} {{name: $target_name}})
-MERGE (loc1)-[:{relationship}]->(loc2)
+MATCH (src:{source_label} {{name: $source_name}})
+MATCH (tgt:{target_label} {{name: $target_name}})
+MERGE (src)-[:{relationship}]->(tgt)
 
 // create_index
 CREATE INDEX FOR (loc:{loc_label}) ON (loc.ids)

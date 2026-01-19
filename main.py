@@ -1,5 +1,6 @@
 import asyncio
 from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
+from src.ETL.Components.load import Loader
 
 if __name__ == "__main__":
     # # Get full sitemap of Swiggy
@@ -11,4 +12,5 @@ if __name__ == "__main__":
     # create browser instances
     # asyncio.run(GenerateBrowsers().start())
     # RestaurantData().get()
-    pass
+
+    Loader().run()

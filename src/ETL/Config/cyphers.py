@@ -1,5 +1,7 @@
+import os
 import re
 from typing import Literal
+from dotenv import load_dotenv
 from src.Utils.main_utils import read_cypher
 from src.ETL.Constants.cyphers import ETLCyphersConstants
 
@@ -26,6 +28,18 @@ class get_cypher_code:
         return cypher_dict
 
 
-class ETLCyphers:
+class ETLCypherConfig:
     def __init__(self):
+        load_dotenv("src/Secrets/Database.env")
+        FALKORDB_USERNAME = os.getenv("FALKORDB_USERNAME")
+        FALKORDB_PASSWORD = os.getenv("FALKORDB_PASSWORD")
+        FALKORDB_HOST = os.getenv("FALKORDB_HOST")
+        FALKORDB_PORT = os.getenv("FALKORDB_PORT")
+
         self.cp_code = get_cypher_code()
+        self.auth_params = {
+            "username": str(FALKORDB_USERNAME),
+            "password": str(FALKORDB_PASSWORD),
+            "host": str(FALKORDB_HOST),
+            "port": int(FALKORDB_PORT),
+        }
