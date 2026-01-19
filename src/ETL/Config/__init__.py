@@ -18,7 +18,6 @@ from src.ETL.Constants import (
     NominatimOSMConstants,
     RestaurantConstants,
     ProxyConstants,
-    BrowserConstants,
 )
 
 
@@ -71,21 +70,14 @@ class RestaurantConfig:
         self.read_unique_data_path = os.path.join(
             NominatimOSMConstants.UNIQUE_DATA_SAVE_DIRECTORY,
             NominatimOSMConstants.UNIQUE_DATA_FILE_NAME,
-            # "src/Research/sample_menus",
-            # "1_sample_rstn_data.json",
         )
         self.save_json_data_path = os.path.join(
             RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
             RestaurantConstants.UNIQUE_DATA_FILE_NAME,
-            # '2_sample_scrp_data.json',
-            # "src/Research/sample_menus",
-            # "2_sample_scrp_data.json",
         )
         self.save_unique_data_path = os.path.join(
             RestaurantConstants.UNIQUE_DATA_SAVE_DIRECTORY,
             RestaurantConstants.UNIQUE_DATA_FILE_NAME,
-            # "src/Research/sample_menus",
-            # "3_sample_menu_data.json",
         )
         self.menu_api_ep = RestaurantConstants.RESTAURANT_MENU_ENDPOINT
 
@@ -96,35 +88,36 @@ class Restaurant(BaseModel):
 
     ## Usage:
     ```python
-    >>> rstn_data = scraped_json['data']
-    >>> rstn = Restaurant(**rstn_data)
+    >>> rstn = Restaurant(**json_data['data'])
     >>> rstn
-    >>> Restaurant(rstn_id=8840, rstn_name='Smoke House Deli', rstn_city='Delhi', rstn_locality='Saket', rstn_area='Saket', rstn_cuisines=['Pizzas', 'Pastas'], rstn_rating=4.2, rstn_address='...')
+    >>> Restaurant(rstn_id=8840, rstn_name='Smoke House Deli', rstn_city='Delhi', rstn_locality='Saket', rstn_area='Saket', rstn_cuisines=['Pizzas', 'Pastas'], rstn_rating=4.2, rstn_address='...', rstn_coords='28.5286078,77.2160345', rstn_chain=True)
     ```
     Attributes:
-        rstn_id (int): Unique ID for each restaurants. There are > 0.47M IDs in total.
-        rstn_name (str): Restaurant name.
-        rstn_city (str): City location of restaurant.
-        rstn_locality (str): Locality of restaurant.
-        rstn_area (str): Area if restaurant.
-        rstn_cuisines (List['str']): List of cuisines available.
-        rstn_rating (float): Average customer rating for online ordering.
-        rstn_address (str): Physical address of restaurant.
-        rstn_chain (bool): Is it a restaurant chain? # Not implemented
+        rstn_id (int): Unique ID for each restaurants. Default -1.
+        rstn_name (str): Restaurant name. Default ''.
+        rstn_city (str): City of restaurant. Default ''.
+        rstn_area (str): Area of restaurant. Default ''.
+        rstn_locality (str): Locality of restaurant. Default ''.
+        rstn_cuisines (List['str']): List of cuisines available. Default [''].
+        rstn_rating (float): Average customer rating for online ordering. Default -1.0.
+        rstn_address (str): Physical address of restaurant. Default ''.
+        rstn_coords (str): Latitude, Longitude coordinates of restaurant. Default ''.
+        rstn_chain (bool): Is this a restaurant chain? Default False.
 
     Returns:
         Restaurant (BaseModel): A class object with variables as details
     """
 
-    rstn_id: int
-    rstn_name: str
-    rstn_city: str
-    rstn_locality: str
-    rstn_area: str
-    rstn_cuisines: List[str]
-    rstn_rating: float
-    rstn_address: str
-    # rstn_chain: bool = False
+    rstn_id: int = -1
+    rstn_name: str = ""
+    rstn_city: str = ""
+    rstn_area: str = ""
+    rstn_locality: str = ""
+    rstn_cuisines: List[str] = [""]
+    rstn_rating: float = -1.0
+    rstn_address: str = ""
+    rstn_coords: str = ""
+    rstn_chain: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -134,11 +127,13 @@ class Restaurant(BaseModel):
             "rstn_id": int(main_part["info"].get("id", "-1")),
             "rstn_name": main_part["info"].get("name", ""),
             "rstn_city": main_part["info"].get("city", ""),
-            "rstn_locality": main_part["info"].get("locality", ""),
             "rstn_area": main_part["info"].get("areaName", ""),
-            "rstn_cuisines": main_part["info"].get("cuisines", ""),
+            "rstn_locality": main_part["info"].get("locality", ""),
+            "rstn_cuisines": main_part["info"].get("cuisines", [""]),
             "rstn_rating": float(main_part["info"].get("avgRating", "-1.0")),
             "rstn_address": main_part["info"]["labels"][1].get("message", ""),
+            "rstn_coords": main_part["info"].get("latLong", ""),
+            "rstn_chain": main_part["info"].get("multiOutlet", False),
         }
         return clean_data
 
@@ -194,13 +189,14 @@ class MenuItemsList(BaseModel):
 
 # The actual food item
 class FoodItem(BaseModel):
-    food_id: str
-    food_name: str
-    food_category: str
-    food_description: str
-    food_price: int
-    food_rating: float
-    food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"  # str#
+    food_id: str = ""
+    food_name: str = ""
+    food_category: str = ""
+    food_description: str = ""
+    food_price: int = -1
+    food_rating: float = -1.0
+    food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"
+    food_cuisine: str = ""
 
     @model_validator(mode="before")
     @classmethod
@@ -226,8 +222,7 @@ class Menu(BaseModel):
 
     ## Usage:
     ```python
-    >>> menu_data = scraped_json['data']
-    >>> menu = Menu(**menu_data)
+    >>> menu = Menu(**json_data['data'])
     >>> menu.food_items
     >>> [
     FoodItem(food_id='146696388', food_name='Pink Pasta Feast Box', food_category='Premium Feast Boxes', food_description='pasta ...', food_price='Rs.450', food_type='VEG', food_rating=3.8),
@@ -347,13 +342,11 @@ class ScrapeConfig:
     def __init__(self, max_parallel: int = 10, len_list: int = 0) -> None:
         self.max_parallel = max_parallel
         self.browser_config = BrowserConfig(
-            browser_type="chromium",  # "firefox",  #
+            browser_type="chromium",
             headless=False,  # True, #
             verbose=False,
             enable_stealth=True,
             user_agent_mode="random",
-            # use_managed_browser=True,
-            # user_data_dir="/home/who/.crawl4ai/profiles/test_swiggy_463/",
         )
 
         self.crawler_strat = AsyncPlaywrightCrawlerStrategy(
@@ -368,8 +361,7 @@ class ScrapeConfig:
                 """await new Promise(r=>setTimeout(r,Math.random()*5000+5000));""",
             ],
             capture_network_requests=True,
-            # proxy_rotation_strategy=ProxyDictConfig().proxy_rotation_strat, # init during call not here
-            stream=True,  # clean_data
+            stream=True,
         )
 
         rate_limiter = RateLimiter(
@@ -386,33 +378,9 @@ class ScrapeConfig:
         )
 
         self.mem_ada_dispatcher = MemoryAdaptiveDispatcher(
-            memory_threshold_percent=80.0,
+            memory_threshold_percent=90.0,
             max_session_permit=self.max_parallel,
             check_interval=1.0,
             rate_limiter=rate_limiter,
             monitor=crawl_monitor,
         )
-
-
-class BrowserSessionConfig:
-    def __init__(self):
-        self.fingerprint_path = os.path.join(
-            BrowserConstants.BROWSER_DATA_SAVE_PATH,
-            "{session_id}",
-            BrowserConstants.BROWSER_FINGERPRINT_DIR_NAME,
-            BrowserConstants.BROWSER_FINGERPRINT_FILE_NAME,
-        )
-        self.browser_path = os.path.join(
-            BrowserConstants.BROWSER_DATA_SAVE_PATH,
-            "{session_id}",
-        )
-        self.save_data_path = os.path.join(
-            BrowserConstants.SCRAPED_DATA_SAVE_PATH,
-            # BrowserConstants.SCRAPED_DATA_FILE_NAME,
-            "{batch}",
-        )
-
-        self.max_cncr_cities = BrowserConstants.MAX_CONCURRENT_CITIES
-        self.max_scrp_per_city = BrowserConstants.MAX_SCRAPERS_PER_CITY
-        self.rate_limit_range = BrowserConstants.RATE_LIMI_RANGE
-        self.batch_size = BrowserConstants.SAVE_BATCH_SIZE

@@ -750,27 +750,12 @@ class RestaurantData:
             log_etl.info(
                 f"Extraction: Scraping menu data from all restaurants in '{city}'"
             )
-
-            # Setup file paths for batch saving
-            save_path = self.rt_config.save_unique_data_path
-            temp_file = Path(save_path).with_suffix(".json.tmp")
-
-            restaurants_data = city_data[city]["restaurants"]
             count = 0
-
             batch_json_data = []
 
             # Process streaming data as it arrives
             async for menu_data, json_data in self._scrape_one_city(urls_dict[city]):
                 try:
-                    # rstn, menu = menu_data
-                    # Update the in-memory data structure
-                    # for i, rd in enumerate(restaurants_data):
-                    #     if rstn.rstn_id == rd["rstn_id"]:
-                    # rd.update(rstn.model_dump())
-                    # self.updated_city_data[city]["restaurants"][i]["menu"] = [
-                    #     item.model_dump() for item in menu.food_items
-                    # ]
                     batch_json_data.append(
                         {
                             "rstn_id": menu_data.rstn_id,
@@ -781,22 +766,16 @@ class RestaurantData:
                     count += 1
 
                     # Save to temp file every batch_size restaurants
-                    if count % batch_size == 0:  # or count == data_limit:
+                    if count % batch_size == 0:
                         log_etl.info(
                             f"Extraction: Saving batch to file ({count} restaurants)"
                         )
-                        # save_json(
-                        #     data=self.updated_city_data,
-                        #     save_path=str(temp_file),
-                        # )
                         upsert_to_mongodb(
                             data=batch_json_data,
                             database=mc.swiggy.database,
                             collection=mc.swiggy.coll_scrp_data,
                         )
                         batch_json_data = []
-
-                        # break
 
                 except Exception as e:
                     LogException(e, logger=log_etl)
@@ -809,13 +788,6 @@ class RestaurantData:
                 database=mc.swiggy.database,
                 collection=mc.swiggy.coll_scrp_data,
             )
-        #     save_json(data=self.updated_city_data, save_path=str(temp_file))
-
-        #     # Rename .json.tmp to .json
-        #     log_etl.info(f"Extraction: Renaming {temp_file.name} to final file")
-        #     temp_file.rename(save_path)
-
-        # return self.updated_city_data
 
     async def _scrape_one_city(self, urls):
         try:
@@ -847,7 +819,7 @@ class RestaurantData:
                     except Exception as e:
                         LogException(e, logger=log_etl)
                         log_etl.info(
-                            f"Error when extracting json data from '{result.url}'"
+                            f"'{result.url}', {result.status_code}, {result.error_message}"
                         )
                         continue
 
@@ -856,5 +828,4 @@ class RestaurantData:
             raise CustomException(e)
 
     def _extract_menu(self, json_data):
-        # return [Restaurant(**json_data["data"]), Menu(**json_data["data"])]
         return Restaurant(**json_data["data"])

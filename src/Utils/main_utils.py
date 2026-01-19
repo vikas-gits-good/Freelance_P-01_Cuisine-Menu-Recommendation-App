@@ -205,7 +205,7 @@ def get_from_mongodb(
     prefix: Literal["Extraction", "Transformation", "Load"] = "Extraction",
     db_config: MongoDBConfig = MongoDBConfig(),
     log: Logger = log_etl,
-) -> dict | pd.DataFrame:
+) -> dict | list:
     try:
         log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
         mongo_client = MongoClient(db_config.mndb_conn_uri)
@@ -236,14 +236,12 @@ def get_from_mongodb(
                 clean_data.update({item["city"]: item["config"]})
 
         elif collection == db_config.swiggy.coll_scrp_data:
-            # for item in data:
-            # clean_data.update({item["rstn_id"]: item["config"]})
             colls.create_index("rstn_id", background=True)
-            cursor = colls.find({}, {"rstn_id": 1, "_id": 0}, batch_size=1000)
-            clean_data = {doc["rstn_id"]: "" for doc in cursor}
-            log_etl.info(
-                f"Extraction: Acquired {len(list(clean_data.keys())):,} rstn_ids"
+            cursor = colls.find(
+                {}, {"rstn_id": 0, "config": 1, "_id": 0}, batch_size=1000
             )
+            clean_data = [doc["config"] for doc in cursor]
+            log_etl.info(f"Extraction: Acquired {len(clean_data):,} rstn_ids")
 
         return clean_data
 

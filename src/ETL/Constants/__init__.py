@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from src.Utils.main_utils import read_json
-from random import random
 
 
 @dataclass
@@ -32,7 +30,7 @@ class NominatimOSMConstants:
 
 
 @dataclass
-class RestaurantConstants:
+class RestaurantConstants:  # Deprecated method
     RESTAURANT_MENU_ENDPOINT = "https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat={latitude}&lng={longitude}&restaurantId={rstnID}&catalog_qa=undefined&submitAction=ENTER"
     UNIQUE_DATA_SAVE_DIRECTORY = "src/ETL/Data/sitemap/"
     UNIQUE_DATA_FILE_NAME = "final_menu_data.json"
@@ -40,20 +38,5 @@ class RestaurantConstants:
 
 @dataclass
 class ProxyConstants:
-    PROXY_CITY_JSON_DIRECTORY = "src/ETL/ETL_Constants"
+    PROXY_CITY_JSON_DIRECTORY = "src/ETL/Constants"
     PROXY_CITY_JSON_FILE_NAME = "proxy_codes.json"
-
-
-@dataclass
-class BrowserConstants:
-    BROWSER_DATA_SAVE_PATH = "src/ETL/Data/browser/"
-    BROWSER_FINGERPRINT_DIR_NAME = "fingerprint"
-    BROWSER_FINGERPRINT_FILE_NAME = "fingerprint.json"
-
-    SCRAPED_DATA_SAVE_PATH = "src/ETL/Data/scraped_json/"
-    SCRAPED_DATA_FILE_NAME = "scraped_data_{batch}.json"
-
-    MAX_CONCURRENT_CITIES: int = 4
-    MAX_SCRAPERS_PER_CITY: int = 8
-    RATE_LIMI_RANGE: tuple[int, int] = (2, 5)
-    SAVE_BATCH_SIZE: int = 5
