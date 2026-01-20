@@ -189,21 +189,21 @@ class MenuItemsList(BaseModel):
 
 # The actual food item
 class FoodItem(BaseModel):
-    ids: str = ""
+    # ids: str = "" # leave this out.
     name: str = ""
     category: str = ""
     description: str = ""
     price: int = -1
     rating: float = -1.0
     types: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"
-    cuisine: str = ""
+    cuisine: str = ""  # make subcuisine later, maincuisine now
 
     @model_validator(mode="before")
     @classmethod
     def extract_and_transform(cls, data):
         main_part = data["card"]["info"]
         clean_data = {
-            "ids": main_part.get("id", ""),
+            # "ids": main_part.get("id", ""),
             "name": main_part.get("name", ""),
             "category": main_part.get("category", ""),
             "description": main_part.get("description", ""),

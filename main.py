@@ -14,3 +14,4 @@ if __name__ == "__main__":
     # RestaurantData().get()
 
     Loader().run()
+    pass

@@ -116,11 +116,13 @@ class Loader:
     def upsert(self, graph: Graph) -> Graph:
         try:
             # identify the attributes of the node types
+            # Area, Locality, Restaurant, Menu | (Sub_cuisine) Main Cuisine
             # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
-            # find a way to get json_data in batches of 1024 - 2048
-            # figure out what falttened format will allow you to create all nodes
-            # run json_data in stream async/concurrent 4 workers fashion to flatten
             # for the time being you'll also need to use sentence transformer to classify
+
+            # figure out what falttened format will allow you to create all nodes
+            # find a way to get json_data in batches of 1024 - 2048
+            # run json_data in stream async/concurrent 4 workers fashion to flatten
             # the food item cuisine
             # create general template cyphers to upsert based on node attributes
 
@@ -157,11 +159,11 @@ class Loader:
 
 """
 Area:
-    ids: f"area_{rstn_area.replace(' ', '-')}__city_{city_relation:123456}"
+    ids: f"area_{rstn_area.replace(' ', '-')}__city_{city_name}-{relation:123456}"
     name: rstn_area
 
 Locality:
-    ids: f"locality_{rstn_locality.replace(' ', '-')}__area_{rstn_area.replace(' ', '-')}__city_{city_relation:123456}"
+    ids: f"locality_{rstn_locality.replace(' ', '-')}__area_{rstn_area.replace(' ', '-')}__city_{city_name}-{relation:123456}"
     name: rstn_locality
 
 Restaurant: # change either graph attribute or BaseModel attribute names. No rstn_*, food_* prefixes
@@ -176,7 +178,7 @@ Restaurant: # change either graph attribute or BaseModel attribute names. No rst
     rstn_coords: str
     rstn_chain: bool # dont conv dtype
 
-Menu | MenuItem:
+Menu:
     food_name: str
     food_category: str # do i need this
     food_description: str # some data aren't descriptions. do i '' those?
@@ -187,7 +189,3 @@ Menu | MenuItem:
 
 
 """
-
-from pydantic import BaseModel
-
-Area()

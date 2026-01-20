@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Literal
 from pydantic import BaseModel, model_validator
 
 from src.ETL.Config import Restaurant
@@ -95,7 +95,7 @@ class Area(BaseLocation):
     >>> area = Area((city_id, rstn))
     >>> area
     Area(
-        ids='area_Koramangala__city_relation:7902476',
+        ids='area_Koramangala__city_Bengaluru-relation:7902476',
         name='Koramangala',
         iso_code = None,
         coords = None,
@@ -105,7 +105,7 @@ class Area(BaseLocation):
 
     Args:
         ids (str): Unique id derive from area and city.
-            `Ex: "area_{name}__city_{osmtype}:{osmid}"`
+            `Ex: "area_Koramangala__city_Bengaluru-relation:7902476"`
         name (str): Location name in human readable form.
             `Example: "Koramangala"`
         iso_code (Optional[str]): ISO Code for the location.
@@ -147,9 +147,9 @@ class Locality(BaseLocation):
 
     Args:
         ids (str): Unique id derive from locality, area and city.
-            `Ex: "location_{name}__area_{name}__city_{osmtype}:{osmid}"`
+            `Ex: "locality_5th-Block__area_Koramangala__city_Bengaluru-relation:7902476"`
         name (str): Location name in human readable form.
-            `Example: "Assam"`
+            `Example: "5th Block"`
         iso_code (Optional[str]): ISO Code for the location.
             `Ex: "IN-AS"`
         coords (Optional[str]): Latitude, Longitude with `,` delimiter.
@@ -166,6 +166,20 @@ class Locality(BaseLocation):
             "name": data[-1].locality,
         }
         return clean_data
+
+
+class Cuisine(BaseModel):
+    # ids: Optional[str]  # str = name.lower().replace(" ", "-")  #
+    name: str
+
+
+class MainCuisine(Cuisine):
+    sub_cuisine_list: list[str]
+
+
+class SubCuisine(Cuisine):
+    # name: Literal["sub_cuisine_list"]
+    pass
 
 
 class RelationshipParams(BaseModel):

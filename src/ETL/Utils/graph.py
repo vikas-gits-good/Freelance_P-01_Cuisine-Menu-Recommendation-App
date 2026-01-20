@@ -32,7 +32,7 @@ def create_location_nodes(
     Generic function to create location nodes (Country, State, or City)
 
     Args:
-        graph (Graph): `Falkordb.graph.Graph` object to create nodes on.
+        graph (Graph): `falkordb.graph.Graph` object to create nodes on.
         location_model: Pydantic model class (Country, State, City, Area, Locality).
         data_dict: Dictionary containing location data.
 
@@ -40,53 +40,13 @@ def create_location_nodes(
         graph (Graph): Updated `Graph` object.
     """
     location_label = location_model.__name__
-    has_iso_code = "iso_code" in location_model.model_fields
 
     for data in data_dict.values():
         try:
-            if has_iso_code:
-                query = ecc.cp_code.create.get(
-                    "create_location_with_iso_code", ""
-                ).format(loc_label=location_label)
-            else:
-                query = ecc.cp_code.create.get(
-                    "create_location_without_iso_code", ""
-                ).format(loc_label=location_label)
-
-            # Create Pydantic model instance and convert to dict
-            if location_label == "Country":
-                location_obj = location_model(
-                    ids=data["ids"],
-                    name=data["name"],
-                    iso_code=data["iso_code"],
-                    coords=data["coords"],
-                    boundingbox=data["boundingbox"],
-                )
-            elif location_label == "State":
-                location_obj = location_model(
-                    ids=data["ids"],
-                    name=data["name"],
-                    iso_code=data["address"].get("ISO3166-2-lvl4", ""),
-                    coords=data["coords"],
-                    boundingbox=data["boundingbox"],
-                )
-            elif location_label == "City":
-                location_obj = location_model(
-                    ids=data["ids"],
-                    name=data["name"],
-                    coords=data["coords"],
-                    boundingbox=data["boundingbox"],
-                )
-            elif location_label == "Area":
-                location_obj = location_model(
-                    ids=data["ids"],
-                    name=data["name"],
-                )
-            elif location_label == "Locality":
-                location_obj = location_model(
-                    ids=data["ids"],
-                    name=data["name"],
-                )
+            query = ecc.cp_code.create.get(
+                "create_country_state_city_area_locality", ""
+            ).format(loc_label=location_label)
+            location_obj = location_model(**data)
 
             params = location_obj.model_dump()
             graph.query(query, params)
@@ -103,7 +63,7 @@ def create_relationship(graph: Graph, params: RelationshipParams) -> Graph:
     Generic function to create relationships between nodes.
 
     Args:
-        graph (Graph): `Falkordb.graph.Graph` object to create nodes on.
+        graph (Graph): `falkordb.graph.Graph` object to create nodes on.
         params: RelationshipParams object containing all relationship information
 
     Returns:
@@ -138,7 +98,7 @@ def create_location_relationships(
     Unified function to create relationships between location nodes
 
     Args:
-        graph (Graph): `Falkordb.graph.Graph` object to create nodes on.
+        graph (Graph): `falkordb.graph.Graph` object to create nodes on.
         labels: `RelationshipParams` object with labels and relationship.
         extraction_config: DataExtractionConfig object with keys and defaults for data extraction
         data_dict: Dictionary containing data for target nodes

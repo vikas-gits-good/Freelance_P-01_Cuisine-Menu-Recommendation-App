@@ -1,13 +1,7 @@
-// create_location_with_iso_code
+// create_country_state_city_area_locality
 MERGE (loc:{loc_label} {{ids: $ids}})
 SET loc.name = $name,
     loc.iso_code = $iso_code,
-    loc.coords = $coords,
-    loc.boundingbox = $boundingbox
-
-// create_location_without_iso_code
-MERGE (loc:{loc_label} {{ids: $ids}})
-SET loc.name = $name,
     loc.coords = $coords,
     loc.boundingbox = $boundingbox
 
