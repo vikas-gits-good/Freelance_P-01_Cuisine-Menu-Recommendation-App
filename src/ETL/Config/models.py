@@ -120,7 +120,7 @@ class Area(BaseLocation):
     @classmethod
     def extract_and_transform(cls, data: Tuple[str, Restaurant]):
         clean_data = {
-            "ids": f"area_{data[-1].area.replace(' ', '-')}__city_{data[0]}",
+            "ids": f"area_{data[-1].area.replace(' ', '-')}__city_{data[-1].city.replace(' ', '-')}-{data[0]}",
             "name": data[-1].area,
         }
         return clean_data
@@ -162,7 +162,7 @@ class Locality(BaseLocation):
     @classmethod
     def extract_and_transform(cls, data: Tuple[str, Restaurant]):
         clean_data = {
-            "ids": f"locality_{data[-1].locality.replace(' ', '-')}__area_{data[-1].area.replace(' ', '-')}__city_{data[0]}",
+            "ids": f"locality_{data[-1].locality.replace(' ', '-')}__area_{data[-1].area.replace(' ', '-')}__city_{data[-1].city.replace(' ', '-')}-{data[0]}",
             "name": data[-1].locality,
         }
         return clean_data
@@ -174,7 +174,8 @@ class Cuisine(BaseModel):
 
 
 class MainCuisine(Cuisine):
-    sub_cuisine_list: list[str]
+    # sub_cuisine_list: list[str] = [""]
+    pass
 
 
 class SubCuisine(Cuisine):
@@ -188,10 +189,10 @@ class RelationshipParams(BaseModel):
     Args:
         source_label (str): Source node label.
             `Ex: Literal["Country", "State", "City", "Area", "Locality", "Restaurant", "Sub_Cuisine", "Main_Cuisine", "Menu_Item"]`
-        target_label (str): Target node label.
-            `Ex: Literal["Country", "State", "City", "Area", "Locality", "Restaurant", "Sub_Cuisine", "Main_Cuisine", "Menu_Item"]`
         relationship (str): Relationship name.
             `Ex: Literal["HAS_STATE", "HAS_CITY", "HAS_AREA", "HAS_LOCALITY", "HAS_RESTAURANT", "SERVES_SUB_CUISINE", "SERVES_MAIN_CUISINE", "HAS_MENU_ITEM"]`
+        target_label (str): Target node label.
+            `Ex: Literal["Country", "State", "City", "Area", "Locality", "Restaurant", "Sub_Cuisine", "Main_Cuisine", "Menu_Item"]`
         source_name (Optional[str]): Source node name.
             `Ex: "India"`
         target_name (Optional[str]): Target node name.
@@ -199,8 +200,8 @@ class RelationshipParams(BaseModel):
     """
 
     source_label: str
-    target_label: str
     relationship: str
+    target_label: str
     source_name: Optional[str] = None
     target_name: Optional[str] = None
 

@@ -1,5 +1,5 @@
 // create_restaurant
-MERGE (rstn:{rstn_label} {{ids: $ids}})
+MERGE (rstn:{label} {{ids: $ids}})
 SET rstn.name = $name,
     rstn.city = $city,
     rstn.area = $area,
@@ -11,7 +11,7 @@ SET rstn.name = $name,
     rstn.chain = $chain
 
 // create_menu
-MERGE (food:{food_label} {{name: $name}})
+MERGE (food:{label} {{name: $name}})
 SET food.category = $category,
     food.description = $description,
     food.price = $price,
@@ -20,4 +20,4 @@ SET food.category = $category,
     food.cuisine = $cuisine
 
 // create_cuisine
-MERGE (cuis:{cuis_label} {{name: $name}})
+MERGE (cuis:{label} {{name: $name}})

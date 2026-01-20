@@ -14,16 +14,17 @@ class LocationConstants:
     LOCATION_DATA_FILE_PATHS = glob("src/ETL/Data/sitemap/backups/unq_ids_*.json")
 
 
-class NodeLabels(str, Enum):
+class NodeLabels(str, Enum):  # do not reorder Location Enums
     COUNTRY = "Country"
     STATE = "State"
     CITY = "City"
     AREA = "Area"
     LOCALITY = "Locality"
+    # ------------------- #
     RESTAURANT = "Restaurant"
-    SUB_CUISINE = "Sub_Cuisine"
-    MAIN_CUISINE = "Main_Cuisine"
-    MENU_ITEM = "Menu_Item"
+    SUBCUISINE = "SubCuisine"
+    MAINCUISINE = "MainCuisine"
+    MENU = "Menu"
 
 
 class RelationshipTypes(str, Enum):
@@ -34,4 +35,4 @@ class RelationshipTypes(str, Enum):
     HAS_RESTAURANT = "HAS_RESTAURANT"
     SERVES_SUB_CUISINE = "SERVES_SUB_CUISINE"
     SERVES_MAIN_CUISINE = "SERVES_MAIN_CUISINE"
-    HAS_MENU_ITEM = "HAS_MENU_ITEM"
+    HAS_MENU = "HAS_MENU"

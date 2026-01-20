@@ -18,8 +18,8 @@ from src.ETL.Constants.cyphers import (
 )
 from src.ETL.Utils.graph import (
     create_indexes,
-    create_location_nodes,
-    create_location_relationships,
+    create_nodes,
+    create_relationships,
 )
 from src.Utils.main_utils import read_json
 
@@ -66,7 +66,7 @@ class Loader:
             model_list = [Country, State, City]  # Dont add Area and Locality here
             data_list = self._get_loc_data()
             for model, data in zip(model_list, data_list):
-                graph = create_location_nodes(graph, model, data)
+                graph = create_nodes(graph, model, data)
 
             log_etl.info("Load: Creating relationships b/w Country and State")
             # MERGE (:Country)-[:HAS_STATE]->(:State)
@@ -81,7 +81,7 @@ class Loader:
                 address_key="address",
                 default_source="India",
             )
-            graph = create_location_relationships(
+            graph = create_relationships(
                 graph=graph,
                 labels=rp,
                 extraction_config=dec,
@@ -100,7 +100,7 @@ class Loader:
                 target_key="name",
                 address_key="address",
             )
-            graph = create_location_relationships(
+            graph = create_relationships(
                 graph=graph,
                 labels=rp,
                 extraction_config=dec,
@@ -119,6 +119,16 @@ class Loader:
             # Area, Locality, Restaurant, Menu | (Sub_cuisine) Main Cuisine
             # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
             # for the time being you'll also need to use sentence transformer to classify
+            # json_data = mdg
+            # rstn = Restaurant(**json_data["data"])
+            # menu = Menu(**json_data["data"])
+            # area = Area
+
+            # model_list = [Area, Locality, Restaurant, Menu]
+            # data_list = [area_dict, lclt_dict, rstn_dict, menu_dict]
+
+            # for model, data in zip(model_list, data_list):
+            #     graph = create_nodes(graph, model, data)
 
             # figure out what falttened format will allow you to create all nodes
             # find a way to get json_data in batches of 1024 - 2048
@@ -186,6 +196,4 @@ Menu:
     food_rating: float # dont conv dtype
     food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"]
     food_cuisine: str
-
-
 """
