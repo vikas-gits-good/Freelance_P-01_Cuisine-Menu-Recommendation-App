@@ -90,50 +90,50 @@ class Restaurant(BaseModel):
     ```python
     >>> rstn = Restaurant(**json_data['data'])
     >>> rstn
-    >>> Restaurant(rstn_id=8840, rstn_name='Smoke House Deli', rstn_city='Delhi', rstn_locality='Saket', rstn_area='Saket', rstn_cuisines=['Pizzas', 'Pastas'], rstn_rating=4.2, rstn_address='...', rstn_coords='28.5286078,77.2160345', rstn_chain=True)
+    >>> Restaurant(ids=8840, name='Smoke House Deli', city='Delhi', locality='Saket', area='Saket', cuisines=['Pizzas', 'Pastas'], rating=4.2, address='...', coords='28.5286078,77.2160345', chain=True)
     ```
     Attributes:
-        rstn_id (int): Unique ID for each restaurants. Default -1.
-        rstn_name (str): Restaurant name. Default ''.
-        rstn_city (str): City of restaurant. Default ''.
-        rstn_area (str): Area of restaurant. Default ''.
-        rstn_locality (str): Locality of restaurant. Default ''.
-        rstn_cuisines (List['str']): List of cuisines available. Default [''].
-        rstn_rating (float): Average customer rating for online ordering. Default -1.0.
-        rstn_address (str): Physical address of restaurant. Default ''.
-        rstn_coords (str): Latitude, Longitude coordinates of restaurant. Default ''.
-        rstn_chain (bool): Is this a restaurant chain? Default False.
+        ids (int): Unique ID for each restaurants. Default -1.
+        name (str): Restaurant name. Default ''.
+        city (str): City of restaurant. Default ''.
+        area (str): Area of restaurant. Default ''.
+        locality (str): Locality of restaurant. Default ''.
+        cuisines (List['str']): List of cuisines available. Default [''].
+        rating (float): Average customer rating for online ordering. Default -1.0.
+        address (str): Physical address of restaurant. Default ''.
+        coords (str): Latitude, Longitude coordinates of restaurant. Default ''.
+        chain (bool): Is this a restaurant chain? Default False.
 
     Returns:
         Restaurant (BaseModel): A class object with variables as details
     """
 
-    rstn_id: int = -1
-    rstn_name: str = ""
-    rstn_city: str = ""
-    rstn_area: str = ""
-    rstn_locality: str = ""
-    rstn_cuisines: List[str] = [""]
-    rstn_rating: float = -1.0
-    rstn_address: str = ""
-    rstn_coords: str = ""
-    rstn_chain: bool = False
+    ids: int = -1
+    name: str = ""
+    city: str = ""
+    area: str = ""
+    locality: str = ""
+    cuisines: List[str] = [""]
+    rating: float = -1.0
+    address: str = ""
+    coords: str = ""
+    chain: bool = False
 
     @model_validator(mode="before")
     @classmethod
     def extract_and_transform(cls, data):
         main_part = data["cards"][2]["card"]["card"]
         clean_data = {
-            "rstn_id": int(main_part["info"].get("id", "-1")),
-            "rstn_name": main_part["info"].get("name", ""),
-            "rstn_city": main_part["info"].get("city", ""),
-            "rstn_area": main_part["info"].get("areaName", ""),
-            "rstn_locality": main_part["info"].get("locality", ""),
-            "rstn_cuisines": main_part["info"].get("cuisines", [""]),
-            "rstn_rating": float(main_part["info"].get("avgRating", "-1.0")),
-            "rstn_address": main_part["info"]["labels"][1].get("message", ""),
-            "rstn_coords": main_part["info"].get("latLong", ""),
-            "rstn_chain": main_part["info"].get("multiOutlet", False),
+            "ids": int(main_part["info"].get("id", "-1")),
+            "name": main_part["info"].get("name", ""),
+            "city": main_part["info"].get("city", ""),
+            "area": main_part["info"].get("areaName", ""),
+            "locality": main_part["info"].get("locality", ""),
+            "cuisines": main_part["info"].get("cuisines", [""]),
+            "rating": float(main_part["info"].get("avgRating", "-1.0")),
+            "address": main_part["info"]["labels"][1].get("message", ""),
+            "coords": main_part["info"].get("latLong", ""),
+            "chain": main_part["info"].get("multiOutlet", False),
         }
         return clean_data
 
@@ -189,29 +189,29 @@ class MenuItemsList(BaseModel):
 
 # The actual food item
 class FoodItem(BaseModel):
-    food_id: str = ""
-    food_name: str = ""
-    food_category: str = ""
-    food_description: str = ""
-    food_price: int = -1
-    food_rating: float = -1.0
-    food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"
-    food_cuisine: str = ""
+    ids: str = ""
+    name: str = ""
+    category: str = ""
+    description: str = ""
+    price: int = -1
+    rating: float = -1.0
+    types: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"
+    cuisine: str = ""
 
     @model_validator(mode="before")
     @classmethod
     def extract_and_transform(cls, data):
         main_part = data["card"]["info"]
         clean_data = {
-            "food_id": main_part.get("id", ""),
-            "food_name": main_part.get("name", ""),
-            "food_category": main_part.get("category", ""),
-            "food_description": main_part.get("description", ""),
-            "food_price": round(int(main_part.get("price", "-100")) / 100),
-            "food_rating": float(
+            "ids": main_part.get("id", ""),
+            "name": main_part.get("name", ""),
+            "category": main_part.get("category", ""),
+            "description": main_part.get("description", ""),
+            "price": round(int(main_part.get("price", "-100")) / 100),
+            "rating": float(
                 main_part["ratings"]["aggregatedRating"].get("rating", "-1.0")
             ),
-            "food_type": main_part["itemAttribute"].get("vegClassifier", "UNKNOWN"),
+            "types": main_part["itemAttribute"].get("vegClassifier", "UNKNOWN"),
         }
         return clean_data
 
@@ -225,8 +225,8 @@ class Menu(BaseModel):
     >>> menu = Menu(**json_data['data'])
     >>> menu.food_items
     >>> [
-    FoodItem(food_id='146696388', food_name='Pink Pasta Feast Box', food_category='Premium Feast Boxes', food_description='pasta ...', food_price='Rs.450', food_type='VEG', food_rating=3.8),
-    FoodItem(food_id='146696386', food_name='Cottage Cheese Steak Box', food_category='Premium Feast Boxes', food_description='cheese steak ...', food_price='Rs.450', food_type='VEG', food_rating=4.4)
+    FoodItem(ids='146696388', name='Pink Pasta Feast Box', category='Premium Feast Boxes', description='pasta ...', price='Rs.450', types='VEG', rating=3.8),
+    FoodItem(ids='146696386', name='Cottage Cheese Steak Box', category='Premium Feast Boxes', description='cheese steak ...', price='Rs.450', types='VEG', rating=4.4)
     ]
     ```
 

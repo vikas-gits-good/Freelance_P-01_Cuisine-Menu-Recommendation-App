@@ -1,5 +1,7 @@
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, Tuple
+from pydantic import BaseModel, model_validator
+
+from src.ETL.Config import Restaurant
 
 
 class BaseLocation(BaseModel):
@@ -85,24 +87,63 @@ class City(BaseLocation):
 class Area(BaseLocation):
     """Model for `Area` node.
 
+    ## Usage:
+    ```python
+    >>> from src.ETL.Config import Restaurant
+    >>> rstn = Restaurant(**json_data['data'])
+    >>> city_id = city_json['id'] # <- double check this
+    >>> area = Area((city_id, rstn))
+    >>> area
+    Area(
+        ids='area_Koramangala__city_relation:7902476',
+        name='Koramangala',
+        iso_code = None,
+        coords = None,
+        boundingbox = None,
+    )
+    ```
+
     Args:
         ids (str): Unique id derive from area and city.
             `Ex: "area_{name}__city_{osmtype}:{osmid}"`
         name (str): Location name in human readable form.
-            `Example: "Assam"`
+            `Example: "Koramangala"`
         iso_code (Optional[str]): ISO Code for the location.
-            `Ex: "IN-AS"`
+            `Ex: "IN-KA"`
         coords (Optional[str]): Latitude, Longitude with `,` delimiter.
             `Ex: "19.5670323,76.4164557"`
         boundingbox (Optional[str]): Location enclosing latitude, longitude with `,` delimiter.
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
-    pass
+    @model_validator(mode="before")
+    @classmethod
+    def extract_and_transform(cls, data: Tuple[str, Restaurant]):
+        clean_data = {
+            "ids": f"area_{data[-1].area.replace(' ', '-')}__city_{data[0]}",
+            "name": data[-1].area,
+        }
+        return clean_data
 
 
 class Locality(BaseLocation):
     """Model for `Locality` node.
+
+    ## Usage:
+    ```python
+    >>> from src.ETL.Config import Restaurant
+    >>> rstn = Restaurant(**json_data['data'])
+    >>> city_id = city_json['id'] # <- double check this
+    >>> locality = Locality((city_id, rstn))
+    >>> locality
+    >>> Locality(
+        ids='locality_5th-Block__area_Koramangala__city_Bengaluru-relation:7902476',
+        name='5th Block',
+        iso_code = None,
+        coords = None,
+        boundingbox = None,
+    )
+    ```
 
     Args:
         ids (str): Unique id derive from locality, area and city.
@@ -117,7 +158,14 @@ class Locality(BaseLocation):
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
-    pass
+    @model_validator(mode="before")
+    @classmethod
+    def extract_and_transform(cls, data: Tuple[str, Restaurant]):
+        clean_data = {
+            "ids": f"locality_{data[-1].locality.replace(' ', '-')}__area_{data[-1].area.replace(' ', '-')}__city_{data[0]}",
+            "name": data[-1].locality,
+        }
+        return clean_data
 
 
 class RelationshipParams(BaseModel):
