@@ -1,6 +1,5 @@
 from falkordb.graph import Graph
-from typing import Dict, Any
-from src.ETL.Config import Restaurant, Menu
+from typing import Dict, Any, List
 from src.ETL.Config.cyphers import ETLCypherConfig
 from src.ETL.Config.models import (
     BaseLocation,
@@ -19,15 +18,15 @@ ecc = ETLCypherConfig()
 def create_indexes(graph: Graph) -> Graph:
     """
     Create indexes on node IDs and name for better query performance.
+
     ## Format
     ```cypher
     CREATE INDEX {index_name} FOR (c:{index_label}) ON (c.{index_id})
     ```
     """
-    try:
-        label_lookup = {label.value.lower(): label.value for label in NodeLabels}
-        query_list = []
-        for index_name in IndexName:
+    label_lookup = {label.value.lower(): label.value for label in NodeLabels}
+    for index_name in IndexName:
+        try:
             parts = index_name.value.split("_")
             label_key = parts[0]  # "country", "subcuisine"
             id_type = parts[1]  # "ids", "name"
@@ -37,101 +36,56 @@ def create_indexes(graph: Graph) -> Graph:
                 index_label=label_lookup[label_key],
                 index_id=id_type,
             )
-            query_list.append(query)
+            graph.query(query)
 
-        for q in query_list:
-            graph.query(q)
-
-    except Exception as e:
-        LogException(e, logger=log_etl)
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            continue
 
     return graph
 
 
 def create_nodes(
     graph: Graph,
-    model: type[BaseLocation] | type[Restaurant] | type[Menu] | type[Cuisine],
-    data: Dict[Any, Any],
+    data: Dict[NodeLabels, List[Any]],
 ):
     """
     Generic function to create nodes for `Country, State, City, Area, Locality, Restaurant, Menu, MainCuisine, SubCuisine`.
 
     Args:
         graph (Graph): `falkordb.graph.Graph` object to create nodes on.
-        model (type[BaseLocation] | type[Restaurant] | type[Menu] | type[Cuisine]): Pydantic model class.
-        data (Dict[str, Any]): Dictionary containing data.
+        data (Dict[NodeLabels, Any]): Dictionary containing data.
 
 
     Returns:
         graph (Graph): Updated `Graph` object.
     """
+    for node_name, node_params in data.items():
+        try:
+            if node_name in [loc.value for loc in NodeLabels][:5]:
+                query = ecc.cp_code.create["create_country_state_city_area_locality"]
 
-    try:
-        label: str = model.__name__
-        location_lables: list[str] = [member.value for member in NodeLabels][:5]
-        location: bool = label in location_lables
+            elif node_name == NodeLabels.RESTAURANT.value:
+                query = ecc.cp_code.upsert["upsert_restaurant"]
 
-        key, code = {
-            **(
-                {
-                    label: [
-                        "create_country_state_city_area_locality",
-                        ecc.cp_code.create,
-                    ]
-                }
-                if location
-                else {}
-            ),
-            "Restaurant": [
-                "create_restaurant",
-                ecc.cp_code.upsert,
-            ],
-            "Menu": [
-                "create_menu",
-                ecc.cp_code.upsert,
-            ],
-            "Cuisine": [
-                "create_cuisine",
-                ecc.cp_code.upsert,
-            ],
-        }.get(label, ["", ""])
+            elif node_name == NodeLabels.MENU.value:
+                query = ecc.cp_code.upsert["upsert_menu"]
 
-        query = code[key].format(label=label)
+            elif node_name == NodeLabels.MAINCUISINE.value:
+                query = ecc.cp_code.upsert["upsert_cuisine"]
 
-        for val in data.values():
-            try:
-                # For Country, State, City
-                if label in location_lables[:3]:
-                    location_obj = model(**val)
+            # elif node_name == NodeLabels.SUBCUISINE.value:
+            #     query = ecc.cp_code.upsert["upsert_cuisine"]
 
-                # For Area, Locality
-                elif label in location_lables[3:]:
-                    location_obj = model((val["city_id"], val["rstn"]))
+            else:
+                query = ""
 
-                # For Restaurant, Menu
-                elif label in ["Restaurant", "Menu"]:
-                    if isinstance(val, dict):  # json_data
-                        location_obj = model(**val["data"])
-                    else:  # Restaurant | Menu class
-                        location_obj = val
+            query = query.format(label=node_name)
+            graph.query(query, {"rows": node_params})
 
-                # For MainCuisine, SubCuisine
-                elif label in ["MainCuisine", "SubCuisine"]:
-                    location_obj = model(val)
-
-                else:
-                    location_obj = {}
-
-                params = location_obj.model_dump()
-                graph.query(query, params)
-
-            except Exception as e:
-                LogException(e, logger=log_etl)
-                continue
-
-    except Exception as e:
-        LogException(e, logger=log_etl)
-        raise CustomException(e)
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            continue
 
     return graph
 

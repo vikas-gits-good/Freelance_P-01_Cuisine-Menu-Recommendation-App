@@ -92,7 +92,7 @@ class Area(BaseLocation):
     >>> from src.ETL.Config import Restaurant
     >>> rstn = Restaurant(**json_data['data'])
     >>> city_id = city_json['id'] # <- double check this
-    >>> area = Area((city_id, rstn))
+    >>> area = Area.from_data((city_id, rstn))
     >>> area
     Area(
         ids='area_Koramangala__city_Bengaluru-relation:7902476',
@@ -116,11 +116,13 @@ class Area(BaseLocation):
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
-    @model_validator(mode="before")
     @classmethod
-    def extract_and_transform(cls, data: Tuple[str, Restaurant]):
+    def from_data(cls, data: Tuple[str, Restaurant]):
+        area_name = data[-1].area.replace(" ", "-")
+        city_name = data[-1].city.replace(" ", "-")
+        city_id = data[0]
         clean_data = {
-            "ids": f"area_{data[-1].area.replace(' ', '-')}__city_{data[-1].city.replace(' ', '-')}-{data[0]}",
+            "ids": f"area_{area_name}__city_{city_name}-{city_id}",
             "name": data[-1].area,
         }
         return clean_data
@@ -134,7 +136,7 @@ class Locality(BaseLocation):
     >>> from src.ETL.Config import Restaurant
     >>> rstn = Restaurant(**json_data['data'])
     >>> city_id = city_json['id'] # <- double check this
-    >>> locality = Locality((city_id, rstn))
+    >>> locality = Locality.from_data((city_id, rstn))
     >>> locality
     >>> Locality(
         ids='locality_5th-Block__area_Koramangala__city_Bengaluru-relation:7902476',
@@ -158,11 +160,14 @@ class Locality(BaseLocation):
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
-    @model_validator(mode="before")
     @classmethod
-    def extract_and_transform(cls, data: Tuple[str, Restaurant]):
+    def from_data(cls, data: Tuple[str, Restaurant]):
+        area_name = data[-1].area.replace(" ", "-")
+        lclt_name = data[-1].locality.replace(" ", "-")
+        city_name = data[-1].city.replace(" ", "-")
+        city_id = data[0]
         clean_data = {
-            "ids": f"locality_{data[-1].locality.replace(' ', '-')}__area_{data[-1].area.replace(' ', '-')}__city_{data[-1].city.replace(' ', '-')}-{data[0]}",
+            "ids": f"locality_{lclt_name}__area_{area_name}__city_{city_name}-{city_id}",
             "name": data[-1].locality,
         }
         return clean_data
@@ -175,10 +180,9 @@ class Cuisine(BaseModel):
 class MainCuisine:
     main_cuisines: List[Cuisine]
 
-    @model_validator(mode="before")
     @classmethod  # create these cuisines manually later from Wikipedia
-    def extract_and_transform(cls, data: Restaurant):
-        return [Cuisine(name=c_name) for c_name in data.cuisines]
+    def from_data(cls, data: Restaurant):
+        return [{"name": cuis} for cuis in data.cuisines]
 
 
 class SubCuisine:

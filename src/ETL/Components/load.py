@@ -1,6 +1,6 @@
-from pathlib import Path
 from falkordb import FalkorDB
 from falkordb.graph import Graph
+from typing import Literal, List, Any, Dict, Optional, Union
 
 from src.ETL.Config import Restaurant, Menu
 from src.ETL.Config.cyphers import ETLCypherConfig
@@ -19,7 +19,6 @@ from src.ETL.Constants.cyphers import (
     NodeLabels,
     RelationshipLabels,
     LocationConstants,
-    IndexName,
 )
 from src.ETL.Utils.graph import (
     create_indexes,
@@ -64,14 +63,19 @@ class Loader:
     def tapa(self, graph: Graph) -> Graph:
         try:
             log_etl.info("Load: Creating indexes on nodes")
-            # for node in [NodeLabels.COUNTRY, NodeLabels.STATE, NodeLabels.CITY]:
             graph = create_indexes(graph)
 
-            log_etl.info("Load: Creating initial nodes for Country, State, City")
-            model_list = [Country, State, City]  # Dont add Area and Locality here
-            data_list = self._get_loc_data()
-            for model, data in zip(model_list, data_list):
-                graph = create_nodes(graph, model, data)
+            log_etl.info("Load: Preparing data for nodes")
+            node_data = self._get_node_data(purpose="create")
+
+            log_etl.info("Load: Creating initial nodes")
+            graph = create_nodes(graph, node_data)
+
+            log_etl.info("Load: Preparing data for relationships")
+            node_data = self._get_relationship_data(purpose="create")
+
+            log_etl.info("Load: Creating initial relationships")
+            graph = create_relationships(graph, node_data)
 
             log_etl.info("Load: Creating relationships b/w Country and State")
             # MERGE (:Country)-[:HAS_STATE]->(:State)
@@ -175,95 +179,78 @@ class Loader:
 
         return graph
 
-    def _concurrent_node_creation(self, scraped_data: list[dict]):
+    def _get_node_data(
+        self,
+        purpose: Literal["create", "upsert"] = "create",
+        data_list: List[Dict[str, Any]] = [{}],
+    ) -> Dict[NodeLabels, List[Any]]:
+        # see if you can add another variable that can keep relationship data
+        node_data = {}
         try:
-            json_data_list: list[dict] = [{}]
-            area_dict, rstn_dict, menu_dict, mcui_dict, scui_dict = {}, {}, {}, {}, {}
+            log_etl.info("Load: Appending node data")
+            if purpose == "create":
+                node_data = {
+                    NodeLabels.COUNTRY: [],
+                    NodeLabels.STATE: [],
+                    NodeLabels.CITY: [],
+                }
+                path_list = LocationConstants.LOCATION_DATA_FILE_PATHS
+                for path in path_list:
+                    # "unq_ids_city.json" -> "City"
+                    key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
+                    node_data[key].append(read_json(path))
 
-            for i, json_data in enumerate(json_data_list):
-                rstn = Restaurant(**json_data["data"])
-                menu = Menu(**json_data["data"])  # list[FoodItem]
+            elif purpose == "upsert":
+                log_etl.info("Load: Extracting from scraped json data")
+                node_data = {
+                    NodeLabels.AREA: [],
+                    NodeLabels.LOCALITY: [],
+                    NodeLabels.RESTAURANT: [],
+                    NodeLabels.MENU: [],
+                    NodeLabels.MAINCUISINE: [],
+                    # NodeLabels.SUBCUISINE: [],  # include in production
+                }
 
-                area_dict.update({i: {"city_id": "", "rstn": rstn}})
-                rstn_dict.update({i: {"rstn": rstn}})
-                menu_dict.update({i: {"menu": menu}})
-                mcui_dict.update({i: {"rstn": rstn}})
-                # scui_dict.update({i: {"rstn": rstn}})
+                city_path = "src/ETL/Data/unq_ids_city.json"
+                city_data = read_json(city_path)
+                city_keys = {key: val["ids"] for key, val in city_data.items()}
+                del city_data  # clear memory
 
-            # area and locality share same data_dict
-            model_list = [
-                Area,
-                Locality,
-                Restaurant,
-                Menu,
-                MainCuisine,
-                # SubCuisine,
-            ]
-            data_list = [
-                area_dict,
-                area_dict,
-                rstn_dict,
-                menu_dict,
-                mcui_dict,
-                # scui_dict,
-            ]
+                for json_data in data_list:
+                    try:
+                        rstn = Restaurant(**json_data["data"])
+                        menu = Menu(**json_data["data"])
+                        key = rstn.city.lower()
+                        city_id = city_keys.get(key, "").get("ids", "")
+                        # see if you can generate uuid for city_id incase of failure
 
-            for model, data in zip(model_list, data_list):
-                graph = create_nodes(graph, model, data)
+                        node_data[NodeLabels.AREA].append(
+                            Area.from_data((city_id, rstn))
+                        )
+                        node_data[NodeLabels.LOCALITY].append(
+                            Locality.from_data((city_id, rstn))
+                        )
+                        node_data[NodeLabels.RESTAURANT].append(rstn.model_dump())
+                        node_data[NodeLabels.MENU].append(
+                            menu.model_dump()["food_items"]
+                        )
+                        node_data[NodeLabels.MAINCUISINE].append(
+                            MainCuisine.from_data(rstn)
+                        )
+                        # node_data[NodeLabels.SUBCUISINE].append(SubCuisine())
+
+                    except Exception as e:
+                        LogException(e, logger=log_etl)
+                        continue
+
+                del data_list  # clear memory
+
+            else:
+                log_etl.info("Load: This is not supposed to happen!")
+                pass
 
         except Exception as e:
             LogException(e, logger=log_etl)
             # raise CustomException(e)
 
-    def _get_loc_data(self):
-        data = []
-        try:
-            path_list = LocationConstants.LOCATION_DATA_FILE_PATHS
-            # reorder list
-            order = {
-                "unq_ids_country.json": 0,
-                "unq_ids_state.json": 1,  # use same order as model_list
-                "unq_ids_city.json": 2,
-            }
-            path_list = sorted(
-                path_list, key=lambda path: order.get(Path(path).name, 999)
-            )
-            data = [read_json(path) for path in path_list]
-
-        except Exception as e:
-            LogException(e, logger=log_etl)
-            # raise CustomException(e)
-
-        return data
-
-
-"""
-Area:
-    ids: f"area_{rstn_area.replace(' ', '-')}__city_{city_name}-{relation:123456}"
-    name: rstn_area
-
-Locality:
-    ids: f"locality_{rstn_locality.replace(' ', '-')}__area_{rstn_area.replace(' ', '-')}__city_{city_name}-{relation:123456}"
-    name: rstn_locality
-
-Restaurant: # change either graph attribute or BaseModel attribute names. No rstn_*, food_* prefixes
-    rstn_id: int # dont conv dtype
-    rstn_name: str
-    rstn_city: str
-    rstn_area: str
-    rstn_locality: str
-    rstn_cuisines: List[str] # main cuisine now, sub cuisine later.
-    rstn_rating: float # dont conv dtype
-    rstn_address: str
-    rstn_coords: str
-    rstn_chain: bool # dont conv dtype
-
-Menu:
-    food_name: str
-    food_category: str # do i need this
-    food_description: str # some data aren't descriptions. do i '' those?
-    food_price: int # dont conv dtype
-    food_rating: float # dont conv dtype
-    food_type: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"]
-    food_cuisine: str
-"""
+        return node_data

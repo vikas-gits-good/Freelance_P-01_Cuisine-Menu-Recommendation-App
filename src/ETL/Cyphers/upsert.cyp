@@ -1,4 +1,4 @@
-// create_restaurant
+// upsert_restaurant
 UNWIND $rows AS row
 MERGE (rstn:{label} {{ids: row.ids}})
 SET rstn.name = row.name,
@@ -11,11 +11,13 @@ SET rstn.name = row.name,
     rstn.coords = row.coords,
     rstn.chain = row.chain
 
-// create_menu
+// upsert_menu
 UNWIND $rows AS row
-MERGE (food:{label} {{name: row.name}})
-SET food.types = row.types
+UNWIND row as food_items
+MERGE (food:{label} {{name: food_items.name}})
+SET food.types = food_items.types
 
-// create_cuisine
+// upsert_cuisine
 UNWIND $rows AS row
-MERGE (cuis:{label} {{name: row.name}})
+UNWIND row as cuisine
+MERGE (cuis:{label} {{name: cuisine.name}})
