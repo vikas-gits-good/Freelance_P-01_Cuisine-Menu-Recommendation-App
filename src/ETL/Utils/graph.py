@@ -8,7 +8,7 @@ from src.ETL.Config.models import (
     DataExtractionConfig,
     Cuisine,
 )
-from src.ETL.Constants.cyphers import NodeLabels
+from src.ETL.Constants.cyphers import NodeLabels, IndexName
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
@@ -16,12 +16,30 @@ from src.Exception.exception import LogException, CustomException
 ecc = ETLCypherConfig()
 
 
-def create_indexes(graph: Graph, label: str) -> Graph:
-    """Create indexes on node IDs and name for better query performance."""
+def create_indexes(graph: Graph) -> Graph:
+    """
+    Create indexes on node IDs and name for better query performance.
+    ## Format
+    ```cypher
+    CREATE INDEX {index_name} FOR (c:{index_label}) ON (c.{index_id})
+    ```
+    """
     try:
-        query = ecc.cp_code.create.get("create_index", "").format(label=label)
-        # you need to split the query for index
-        for q in query.split("\n"):
+        label_lookup = {label.value.lower(): label.value for label in NodeLabels}
+        query_list = []
+        for index_name in IndexName:
+            parts = index_name.value.split("_")
+            label_key = parts[0]  # "country", "subcuisine"
+            id_type = parts[1]  # "ids", "name"
+
+            query = ecc.cp_code.create.get("create_index", "").format(
+                index_name=index_name.value,
+                index_label=label_lookup[label_key],
+                index_id=id_type,
+            )
+            query_list.append(query)
+
+        for q in query_list:
             graph.query(q)
 
     except Exception as e:
@@ -90,13 +108,19 @@ def create_nodes(
                 elif label in location_lables[3:]:
                     location_obj = model((val["city_id"], val["rstn"]))
 
-                # For Restaurant, Menu, Cuisine?
+                # For Restaurant, Menu
                 elif label in ["Restaurant", "Menu"]:
-                    location_obj = model(**val["data"])
+                    if isinstance(val, dict):  # json_data
+                        location_obj = model(**val["data"])
+                    else:  # Restaurant | Menu class
+                        location_obj = val
 
                 # For MainCuisine, SubCuisine
-                else:
+                elif label in ["MainCuisine", "SubCuisine"]:
                     location_obj = model(val)
+
+                else:
+                    location_obj = {}
 
                 params = location_obj.model_dump()
                 graph.query(query, params)
@@ -107,7 +131,7 @@ def create_nodes(
 
     except Exception as e:
         LogException(e, logger=log_etl)
-        # raise CustomException(e)
+        raise CustomException(e)
 
     return graph
 

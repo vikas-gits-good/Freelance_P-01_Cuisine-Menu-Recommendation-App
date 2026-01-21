@@ -2,19 +2,24 @@ from pathlib import Path
 from falkordb import FalkorDB
 from falkordb.graph import Graph
 
+from src.ETL.Config import Restaurant, Menu
 from src.ETL.Config.cyphers import ETLCypherConfig
 from src.ETL.Config.models import (
     Country,
     State,
     City,
+    Area,
+    Locality,
+    MainCuisine,
     RelationshipParams,
     DataExtractionConfig,
 )
 from src.ETL.Constants.cyphers import (
     ETLCyphersConstants,
     NodeLabels,
-    RelationshipTypes,
+    RelationshipLabels,
     LocationConstants,
+    IndexName,
 )
 from src.ETL.Utils.graph import (
     create_indexes,
@@ -59,8 +64,8 @@ class Loader:
     def tapa(self, graph: Graph) -> Graph:
         try:
             log_etl.info("Load: Creating indexes on nodes")
-            for node in [NodeLabels.COUNTRY, NodeLabels.STATE, NodeLabels.CITY]:
-                graph = create_indexes(graph, node.value)
+            # for node in [NodeLabels.COUNTRY, NodeLabels.STATE, NodeLabels.CITY]:
+            graph = create_indexes(graph)
 
             log_etl.info("Load: Creating initial nodes for Country, State, City")
             model_list = [Country, State, City]  # Dont add Area and Locality here
@@ -72,7 +77,7 @@ class Loader:
             # MERGE (:Country)-[:HAS_STATE]->(:State)
             rp = RelationshipParams(
                 source_label=NodeLabels.COUNTRY.value,
-                relationship=RelationshipTypes.HAS_STATE.value,
+                relationship=RelationshipLabels.HAS_STATE.value,
                 target_label=NodeLabels.STATE.value,
             )
             dec = DataExtractionConfig(
@@ -92,7 +97,7 @@ class Loader:
             # MERGE (:State)-[:HAS_CITY]->(:City)
             rp = RelationshipParams(
                 source_label=NodeLabels.STATE.value,
-                relationship=RelationshipTypes.HAS_CITY.value,
+                relationship=RelationshipLabels.HAS_CITY.value,
                 target_label=NodeLabels.CITY.value,
             )
             dec = DataExtractionConfig(
@@ -119,16 +124,41 @@ class Loader:
             # Area, Locality, Restaurant, Menu | (Sub_cuisine) Main Cuisine
             # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
             # for the time being you'll also need to use sentence transformer to classify
-            # json_data = mdg
-            # rstn = Restaurant(**json_data["data"])
-            # menu = Menu(**json_data["data"])
-            # area = Area
+            log_etl.info("Load: Creating nodes in parallel")
 
-            # model_list = [Area, Locality, Restaurant, Menu]
-            # data_list = [area_dict, lclt_dict, rstn_dict, menu_dict]
+            json_data_list: list[dict] = [{}]
+            area_dict, rstn_dict, menu_dict, mcui_dict, scui_dict = {}, {}, {}, {}, {}
 
-            # for model, data in zip(model_list, data_list):
-            #     graph = create_nodes(graph, model, data)
+            for i, json_data in enumerate(json_data_list):
+                rstn = Restaurant(**json_data["data"])
+                menu = Menu(**json_data["data"])  # list[FoodItem]
+
+                area_dict.update({i: {"city_id": "", "rstn": rstn}})
+                rstn_dict.update({i: {"rstn": rstn}})
+                menu_dict.update({i: {"menu": menu}})
+                mcui_dict.update({i: {"rstn": rstn}})
+                # scui_dict.update({i: {"rstn": rstn}})
+
+            # area and locality share same data_dict
+            model_list = [
+                Area,
+                Locality,
+                Restaurant,
+                Menu,
+                MainCuisine,
+                # SubCuisine,
+            ]
+            data_list = [
+                area_dict,
+                area_dict,
+                rstn_dict,
+                menu_dict,
+                mcui_dict,
+                # scui_dict,
+            ]
+
+            for model, data in zip(model_list, data_list):
+                graph = create_nodes(graph, model, data)
 
             # figure out what falttened format will allow you to create all nodes
             # find a way to get json_data in batches of 1024 - 2048
@@ -144,6 +174,46 @@ class Loader:
             # raise CustomException(e)
 
         return graph
+
+    def _concurrent_node_creation(self, scraped_data: list[dict]):
+        try:
+            json_data_list: list[dict] = [{}]
+            area_dict, rstn_dict, menu_dict, mcui_dict, scui_dict = {}, {}, {}, {}, {}
+
+            for i, json_data in enumerate(json_data_list):
+                rstn = Restaurant(**json_data["data"])
+                menu = Menu(**json_data["data"])  # list[FoodItem]
+
+                area_dict.update({i: {"city_id": "", "rstn": rstn}})
+                rstn_dict.update({i: {"rstn": rstn}})
+                menu_dict.update({i: {"menu": menu}})
+                mcui_dict.update({i: {"rstn": rstn}})
+                # scui_dict.update({i: {"rstn": rstn}})
+
+            # area and locality share same data_dict
+            model_list = [
+                Area,
+                Locality,
+                Restaurant,
+                Menu,
+                MainCuisine,
+                # SubCuisine,
+            ]
+            data_list = [
+                area_dict,
+                area_dict,
+                rstn_dict,
+                menu_dict,
+                mcui_dict,
+                # scui_dict,
+            ]
+
+            for model, data in zip(model_list, data_list):
+                graph = create_nodes(graph, model, data)
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
 
     def _get_loc_data(self):
         data = []

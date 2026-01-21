@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Literal
+from typing import Optional, Tuple, Literal, List
 from pydantic import BaseModel, model_validator
 
 from src.ETL.Config import Restaurant
@@ -169,18 +169,25 @@ class Locality(BaseLocation):
 
 
 class Cuisine(BaseModel):
-    # ids: Optional[str]  # str = name.lower().replace(" ", "-")  #
     name: str
 
 
-class MainCuisine(Cuisine):
-    # sub_cuisine_list: list[str] = [""]
-    pass
+class MainCuisine:
+    main_cuisines: List[Cuisine]
+
+    @model_validator(mode="before")
+    @classmethod  # create these cuisines manually later from Wikipedia
+    def extract_and_transform(cls, data: Restaurant):
+        return [Cuisine(name=c_name) for c_name in data.cuisines]
 
 
-class SubCuisine(Cuisine):
-    # name: Literal["sub_cuisine_list"]
-    pass
+class SubCuisine:
+    sub_cuisines: List[Cuisine]
+
+    @model_validator(mode="before")
+    @classmethod  # This is placeholder func
+    def extract_and_transform(cls, data):
+        return [Cuisine(name=_) for _ in data]
 
 
 class RelationshipParams(BaseModel):

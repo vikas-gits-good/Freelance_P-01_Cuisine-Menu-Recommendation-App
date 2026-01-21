@@ -1,23 +1,21 @@
 // create_restaurant
-MERGE (rstn:{label} {{ids: $ids}})
-SET rstn.name = $name,
-    rstn.city = $city,
-    rstn.area = $area,
-    rstn.locality = $locality,
-    rstn.cuisines = $cuisines,
-    rstn.rating = $rating,
-    rstn.address = $address,
-    rstn.coords = $coords,
-    rstn.chain = $chain
+UNWIND $rows AS row
+MERGE (rstn:{label} {{ids: row.ids}})
+SET rstn.name = row.name,
+    rstn.city = row.city,
+    rstn.area = row.area,
+    rstn.locality = row.locality,
+    rstn.cuisines = row.cuisines,
+    rstn.rating = row.rating,
+    rstn.address = row.address,
+    rstn.coords = row.coords,
+    rstn.chain = row.chain
 
 // create_menu
-MERGE (food:{label} {{name: $name}})
-SET food.category = $category,
-    food.description = $description,
-    food.price = $price,
-    food.rating = $rating,
-    food.types = $types,
-    food.cuisine = $cuisine
+UNWIND $rows AS row
+MERGE (food:{label} {{name: row.name}})
+SET food.types = row.types
 
 // create_cuisine
-MERGE (cuis:{label} {{name: $name}})
+UNWIND $rows AS row
+MERGE (cuis:{label} {{name: row.name}})
