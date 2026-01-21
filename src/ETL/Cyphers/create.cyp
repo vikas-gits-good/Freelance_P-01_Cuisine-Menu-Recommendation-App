@@ -8,8 +8,8 @@ SET loc.name = row.name,
 
 // create_location_relationship
 UNWIND $rows AS row
-MATCH (src:{source_label} {{name: row.source_name}})
-MATCH (tgt:{target_label} {{name: row.target_name}})
+MATCH (src:{source_label} {{name: row.source_ids}})
+MATCH (tgt:{target_label} {{name: row.target_ids}})
 MERGE (src)-[:{relationship}]->(tgt)
 
 // create_index

@@ -1,7 +1,8 @@
-from typing import Optional, Tuple, Literal, List
+from typing import Optional, Tuple, Dict, List, Any, Union
 from pydantic import BaseModel, model_validator
 
-from src.ETL.Config import Restaurant
+from src.ETL.Config import Restaurant, FoodItem
+from src.ETL.Constants.cyphers import NodeLabels, RelationshipLabels
 
 
 class BaseLocation(BaseModel):
@@ -195,39 +196,88 @@ class SubCuisine:
 
 
 class RelationshipParams(BaseModel):
-    """Model for relationship parameters that combines labels with node names.
-
-    Args:
-        source_label (str): Source node label.
-            `Ex: Literal["Country", "State", "City", "Area", "Locality", "Restaurant", "Sub_Cuisine", "Main_Cuisine", "Menu_Item"]`
-        relationship (str): Relationship name.
-            `Ex: Literal["HAS_STATE", "HAS_CITY", "HAS_AREA", "HAS_LOCALITY", "HAS_RESTAURANT", "SERVES_SUB_CUISINE", "SERVES_MAIN_CUISINE", "HAS_MENU_ITEM"]`
-        target_label (str): Target node label.
-            `Ex: Literal["Country", "State", "City", "Area", "Locality", "Restaurant", "Sub_Cuisine", "Main_Cuisine", "Menu_Item"]`
-        source_name (Optional[str]): Source node name.
-            `Ex: "India"`
-        target_name (Optional[str]): Target node name.
-            `Ex: "Assam"`
-    """
-
+    source_ids: str | int
+    target_ids: str | int
     source_label: str
-    relationship: str
     target_label: str
-    source_name: Optional[str] = None
-    target_name: Optional[str] = None
+    relationship: str
+    params: dict
 
+    @classmethod
+    def from_data(
+        cls,
+        data: dict,
+        types: RelationshipLabels,
+        item: FoodItem = FoodItem(),
+    ) -> Dict[str, Any]:
+        if types == RelationshipLabels.HAS_AREA:
+            clean_data = {
+                "source_ids": data["city_id"],
+                "target_ids": data["area_dict_node"]["ids"],
+                "source_label": NodeLabels.CITY.value,
+                "target_label": NodeLabels.AREA.value,
+                "relationship": types.value,
+                "params": {},
+            }
 
-class DataExtractionConfig(BaseModel):
-    """Model for configuring how to extract data from source dictionary
+        elif types == RelationshipLabels.HAS_LOCALITY:
+            clean_data = {
+                "source_ids": data["area_dict_node"]["ids"],
+                "target_ids": data["lclt_dict_node"]["ids"],
+                "source_label": NodeLabels.AREA.value,
+                "target_label": NodeLabels.LOCALITY.value,
+                "relationship": types.value,
+                "params": {},
+            }
 
-    Args:
-        source_key (str): Key to get source node name from data.
-        target_key (str): Key to get target node name from data
-        address_key (Optional[str]): Nested dict key if source is in address
-        default_source (Optional[str]): Default source name if not found in data
-    """
+        elif types == RelationshipLabels.HAS_RESTAURANT:
+            clean_data = {
+                "source_ids": data["lclt_dict_node"]["ids"],
+                "target_ids": data["rstn"].ids,
+                "source_label": NodeLabels.LOCALITY.value,
+                "target_label": NodeLabels.RESTAURANT.value,
+                "relationship": types.value,
+                "params": {},
+            }
 
-    source_key: str
-    target_key: str = "name"
-    address_key: Optional[str] = None
-    default_source: Optional[str] = None
+        elif types == RelationshipLabels.HAS_MENU:
+            clean_data = {
+                "source_ids": data["rstn"].ids,
+                "target_ids": item.name,
+                "source_label": NodeLabels.RESTAURANT.value,
+                "target_label": NodeLabels.MENU.value,
+                "relationship": types.value,
+                "params": {"price": item.price, "rating": item.rating},
+            }
+
+        elif types == RelationshipLabels.SERVES_MAIN_CUISINE:
+            clean_data = {
+                "source_ids": data["rstn"].ids,
+                "target_ids": item,
+                "source_label": NodeLabels.RESTAURANT.value,
+                "target_label": NodeLabels.MAINCUISINE.value,
+                "relationship": types.value,
+                "params": {},
+            }
+
+        elif types == RelationshipLabels.SERVES_SUB_CUISINE:
+            clean_data = {
+                "source_ids": "",
+                "target_ids": "",
+                "source_label": "",
+                "target_label": "",
+                "relationship": "",
+                "params": {},
+            }
+
+        else:
+            clean_data = {
+                "source_ids": "",
+                "target_ids": "",
+                "source_label": "",
+                "target_label": "",
+                "relationship": "",
+                "params": {},
+            }
+
+        return clean_data

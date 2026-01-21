@@ -21,3 +21,18 @@ SET food.types = food_items.types
 UNWIND $rows AS row
 UNWIND row as cuisine
 MERGE (cuis:{label} {{name: cuisine.name}})
+
+// upsert_relationship_with_params
+UNWIND $rows AS row
+UNWIND row AS data
+MATCH (src:{source_label} {{name: data.source_ids}})
+MATCH (tgt:{target_label} {{name: data.target_ids}})
+MERGE (src)-[rlsp:{relationship}]->(tgt)
+SET rlsp += data.params
+
+// UNWIND $rows AS row
+// UNWIND row AS data
+// MATCH (src:source_label {name: data.source_ids})
+// MATCH (tgt:target_label {name: data.target_ids})
+// MERGE (src)-[rlsp:{relationship}]->(tgt)
+// SET rlsp += data.params

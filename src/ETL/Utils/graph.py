@@ -1,13 +1,8 @@
 from falkordb.graph import Graph
 from typing import Dict, Any, List
 from src.ETL.Config.cyphers import ETLCypherConfig
-from src.ETL.Config.models import (
-    BaseLocation,
-    RelationshipParams,
-    DataExtractionConfig,
-    Cuisine,
-)
-from src.ETL.Constants.cyphers import NodeLabels, IndexName
+from src.ETL.Config.models import RelationshipParams
+from src.ETL.Constants.cyphers import NodeLabels, IndexName, RelationshipLabels
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
@@ -62,19 +57,19 @@ def create_nodes(
     """
     for node_name, node_params in data.items():
         try:
-            if node_name in [loc.value for loc in NodeLabels][:5]:
+            if node_name in [loc for loc in NodeLabels][:5]:
                 query = ecc.cp_code.create["create_country_state_city_area_locality"]
 
-            elif node_name == NodeLabels.RESTAURANT.value:
+            elif node_name == NodeLabels.RESTAURANT:
                 query = ecc.cp_code.upsert["upsert_restaurant"]
 
-            elif node_name == NodeLabels.MENU.value:
+            elif node_name == NodeLabels.MENU:
                 query = ecc.cp_code.upsert["upsert_menu"]
 
-            elif node_name == NodeLabels.MAINCUISINE.value:
+            elif node_name == NodeLabels.MAINCUISINE:
                 query = ecc.cp_code.upsert["upsert_cuisine"]
 
-            # elif node_name == NodeLabels.SUBCUISINE.value:
+            # elif node_name == NodeLabels.SUBCUISINE:
             #     query = ecc.cp_code.upsert["upsert_cuisine"]
 
             else:
@@ -90,72 +85,48 @@ def create_nodes(
     return graph
 
 
-def create_link(graph: Graph, params: RelationshipParams) -> Graph:
+def create_relationships(
+    graph: Graph,
+    data_dict: Dict[RelationshipLabels, List[Any]],
+):
     """
     Generic function to create relationships between nodes.
 
     Args:
         graph (Graph): `falkordb.graph.Graph` object to create nodes on.
-        params (RelationshipParams): `RelationshipParams` object containing all relationship information
+        data_dict: Dictionary containing data for nodes.
 
     Returns:
         graph (Graph): Updated `Graph` object.
     """
-    try:
-        query = ecc.cp_code.create.get("create_location_relationship", "").format(
-            source_label=params.source_label,
-            target_label=params.target_label,
-            relationship=params.relationship,
-        )
-        query_params = {
-            "source_name": params.source_name,
-            "target_name": params.target_name,
-        }
-        graph.query(query, query_params)
-
-    except Exception as e:
-        LogException(e, logger=log_etl)
-        # raise CustomException(e)
-
-    return graph
-
-
-def create_relationships(
-    graph: Graph,
-    labels: RelationshipParams,
-    extraction_config: DataExtractionConfig,
-    data_dict: dict,
-):
-    """
-    Generic function to create relationships between nodes
-
-    Args:
-        graph (Graph): `falkordb.graph.Graph` object to create nodes on.
-        labels: `RelationshipParams` object with labels and relationship.
-        extraction_config: DataExtractionConfig object with keys and defaults for data extraction
-        data_dict: Dictionary containing data for target nodes
-
-    Returns:
-        graph (Graph): Updated `Graph` object.
-    """
-
-    for data in data_dict.values():
+    rlsp_label_list = [rlsp for rlsp in RelationshipLabels]
+    for rlsp_name, rlsp_params in data_dict.items():
         try:
-            if extraction_config.address_key:
-                source_name = data.get(extraction_config.address_key, {}).get(
-                    extraction_config.source_key, extraction_config.default_source
-                )
+            if rlsp_name in rlsp_label_list[:5]:
+                query = ecc.cp_code.create["create_location_relationship"]
+
+            elif rlsp_name in rlsp_label_list[5:]:
+                query = ecc.cp_code.upsert["upsert_relationship_with_params"]
+
             else:
-                source_name = data.get(
-                    extraction_config.source_key, extraction_config.default_source
+                query = ""
+
+            # rlsp_params is a list[dict] or a list[list[dict]]
+            is_nested = isinstance(rlsp_params[0], list)
+
+            if is_nested:  # for menu and cuisine
+                query = query.format(
+                    source_label=rlsp_params[0][0]["source_label"],
+                    target_label=rlsp_params[0][0]["target_label"],
+                    relationship=rlsp_params[0][0]["relationship"],
                 )
-            target_name = data.get(extraction_config.target_key)
-
-            setattr(labels, "source_name", source_name)
-            setattr(labels, "target_name", target_name)
-
-            # Create the relationship
-            graph = create_link(graph, labels)
+            else:  # for area, locality, restaurant
+                query = query.format(
+                    source_label=rlsp_params[0]["source_label"],
+                    target_label=rlsp_params[0]["target_label"],
+                    relationship=rlsp_params[0]["relationship"],
+                )
+            graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:
             LogException(e, logger=log_etl)

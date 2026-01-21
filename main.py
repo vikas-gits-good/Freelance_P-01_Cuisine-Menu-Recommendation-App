@@ -15,28 +15,3 @@ if __name__ == "__main__":
 
     # Loader().run()
     pass
-
-from src.ETL.Constants.cyphers import NodeLabels
-from typing import Dict, Any
-
-data = {
-    NodeLabels.COUNTRY: [],
-    NodeLabels.STATE: [],
-    NodeLabels.CITY: [],
-    NodeLabels.AREA: [],
-    NodeLabels.LOCALITY: [],
-}
-
-data = {
-    NodeLabels.COUNTRY.value: [],
-    NodeLabels.STATE.value: [],
-    NodeLabels.CITY.value: [],
-    NodeLabels.AREA.value: [],
-    NodeLabels.LOCALITY.value: [],
-}
-
-
-def printer(data: Dict[NodeLabels, Any]):
-    for name, val in data.items():
-        if name == NodeLabels.COUNTRY:
-            print(NodeLabels.COUNTRY.value)

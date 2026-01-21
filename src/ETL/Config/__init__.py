@@ -118,6 +118,7 @@ class Restaurant(BaseModel):
     address: str = ""
     coords: str = ""
     chain: bool = False
+    city_id: str = ""
 
     @model_validator(mode="before")
     @classmethod
@@ -128,12 +129,15 @@ class Restaurant(BaseModel):
             "name": main_part["info"].get("name", ""),
             "city": main_part["info"].get("city", ""),
             "area": main_part["info"].get("areaName", ""),
-            "locality": main_part["info"].get("locality", ""),
+            "locality": main_part["info"].get(
+                "locality", main_part["info"].get("areaName", "")
+            ),
             "cuisines": main_part["info"].get("cuisines", [""]),
             "rating": float(main_part["info"].get("avgRating", "-1.0")),
             "address": main_part["info"]["labels"][1].get("message", ""),
             "coords": main_part["info"].get("latLong", ""),
             "chain": main_part["info"].get("multiOutlet", False),
+            "city_id": main_part["info"]["slugs"].get("city", ""),
         }
         return clean_data
 
