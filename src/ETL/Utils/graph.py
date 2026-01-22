@@ -27,7 +27,7 @@ def create_indexes(graph: Graph) -> Graph:
             id_type = parts[1]  # "ids", "name"
 
             query = ecc.cp_code.create.get("create_index", "").format(
-                index_name=index_name.value,
+                # index_name=index_name.value,
                 index_label=label_lookup[label_key],
                 index_id=id_type,
             )
@@ -75,7 +75,9 @@ def create_nodes(
             else:
                 query = ""
 
-            query = query.format(label=node_name)
+            # log_etl.info(f"query\n{query}")
+            # log_etl.info(f"node_params\n{node_params}")
+            query = query.format(label=node_name.value)
             graph.query(query, {"rows": node_params})
 
         except Exception as e:
@@ -126,6 +128,8 @@ def create_relationships(
                     target_label=rlsp_params[0]["target_label"],
                     relationship=rlsp_params[0]["relationship"],
                 )
+            log_etl.info(f"query\n{query}")
+            log_etl.info(f"rlsp_params\n{rlsp_params}")
             graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:

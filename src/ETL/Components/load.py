@@ -75,14 +75,14 @@ class Loader:
             result = graph.query("MATCH (st: State) RETURN count(st) AS count")
             is_empty = result.result_set[0][0] == 0  # 33 for is_empty = False
 
-            if is_empty:
-                log_etl.info("Load: Starting initial Knowledge Graph setup")
-                graph = self.create(graph)
+            # if is_empty:
+            #     log_etl.info("Load: Starting initial Knowledge Graph setup")
+            graph = self.create(graph)
 
-            else:
-                log_etl.info(
-                    "Load: Knowledge Graph exists. Moving to upsert operations"
-                )
+            # else:
+            #     log_etl.info(
+            #         "Load: Knowledge Graph exists. Moving to upsert operations"
+            #     )
 
             # graph = self.upsert(graph)
 
@@ -186,39 +186,43 @@ class Loader:
                 for path in path_list:
                     # "unq_ids_city.json" -> "City"
                     key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
-                    node_data[NodeLabels(key)].append(read_json(path))
+                    for data in read_json(path).values():
+                        # the '-' in 'ISO3166-2-lvl4' is causing Cypher to fail
+                        # data.pop("address", None)
+                        data["address"].pop("ISO3166-2-lvl4", None)
+                        node_data[NodeLabels(key)].append(data)
 
                 log_etl.info("Load: Appending relationship data")
-                country_lookup = {
-                    item["name"]: {"ids": item["ids"]}
-                    for item in node_data[NodeLabels.COUNTRY]
+                srch_data = {
+                    "country_lookup": {
+                        item["name"]: {"ids": item["ids"]}
+                        for item in node_data[NodeLabels.COUNTRY]
+                    },
+                    "state_lookup": {
+                        item["name"]: {"ids": item["ids"]}
+                        for item in node_data[NodeLabels.STATE]
+                    },
                 }
-                state_lookup = {
-                    item["name"]: {"ids": item["ids"]}
-                    for item in node_data[NodeLabels.STATE]
-                }
+                log_etl.info(f"srch_data\n{srch_data}")
 
                 # MERGE (:Country {ids: ''})-[:HAS_STATE]->(:State {ids: ''})
-                rlsp_data[RelationshipLabels.HAS_STATE] = [
-                    {
-                        "source": country_lookup.get(item["address"]["country"], {}),
-                        "target": {"ids": item["ids"]},
-                        "params": {},
-                    }
+                stte_dict_rlsp = [
+                    RelationshipParams.from_data(
+                        srch_data, RelationshipLabels.HAS_STATE, item
+                    )
                     for item in node_data[NodeLabels.STATE]
                 ]
-                del country_lookup
+                rlsp_data[RelationshipLabels.HAS_STATE] = stte_dict_rlsp
 
                 # MERGE (:State {ids: ''})-[:HAS_CITY]->(:City {ids: ''})
-                rlsp_data[RelationshipLabels.HAS_CITY] = [
-                    {
-                        "source": state_lookup.get(item["address"]["state"], {}),
-                        "target": {"ids": item["ids"]},
-                        "params": {},
-                    }
+                city_dict_rlsp = [
+                    RelationshipParams.from_data(
+                        srch_data, RelationshipLabels.HAS_CITY, item
+                    )
                     for item in node_data[NodeLabels.CITY]
                 ]
-                del state_lookup
+                rlsp_data[RelationshipLabels.HAS_CITY] = city_dict_rlsp
+                del srch_data
 
             elif purpose == "upsert":
                 log_etl.info("Load: Extracting from scraped json data")
@@ -241,7 +245,7 @@ class Loader:
                 }
 
                 city_path = "src/ETL/Data/unq_ids_city.json"
-                city_data = read_json(city_path)  #
+                city_data = read_json(city_path)  # change the keys to reflect
                 city_keys = {key: val["ids"] for key, val in city_data.items()}
                 del city_data  # clear memory
 
@@ -278,13 +282,13 @@ class Loader:
                         }
 
                         area_dict_rlsp = RelationshipParams.from_data(
-                            rl_data, types=RelationshipLabels.HAS_AREA
+                            rl_data, RelationshipLabels.HAS_AREA
                         )
                         lclt_dict_rlsp = RelationshipParams.from_data(
-                            rl_data, types=RelationshipLabels.HAS_LOCALITY
+                            rl_data, RelationshipLabels.HAS_LOCALITY
                         )
                         rstn_dict_rlsp = RelationshipParams.from_data(
-                            rl_data, types=RelationshipLabels.HAS_RESTAURANT
+                            rl_data, RelationshipLabels.HAS_RESTAURANT
                         )
                         menu_dict_rlsp = [
                             RelationshipParams.from_data(

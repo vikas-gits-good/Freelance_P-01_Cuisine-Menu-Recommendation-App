@@ -13,4 +13,4 @@ MATCH (tgt:{target_label} {{name: row.target_ids}})
 MERGE (src)-[:{relationship}]->(tgt)
 
 // create_index
-CREATE INDEX {index_name} FOR (c:{index_label}) ON (c.{index_id})
+CREATE INDEX FOR (c:{index_label}) ON (c.{index_id})

@@ -4,6 +4,9 @@ from pydantic import BaseModel, model_validator
 from src.ETL.Config import Restaurant, FoodItem
 from src.ETL.Constants.cyphers import NodeLabels, RelationshipLabels
 
+from src.Logging.logger import log_etl
+from src.Utils.main_utils import LogException, CustomException
+
 
 class BaseLocation(BaseModel):
     """Base model with common attributes for all location nodes.
@@ -208,76 +211,97 @@ class RelationshipParams(BaseModel):
         cls,
         data: dict,
         types: RelationshipLabels,
-        item: FoodItem = FoodItem(),
+        item: Any = "",
     ) -> Dict[str, Any]:
-        if types == RelationshipLabels.HAS_AREA:
-            clean_data = {
-                "source_ids": data["city_id"],
-                "target_ids": data["area_dict_node"]["ids"],
-                "source_label": NodeLabels.CITY.value,
-                "target_label": NodeLabels.AREA.value,
-                "relationship": types.value,
-                "params": {},
-            }
+        clean_data = {
+            "source_ids": "",
+            "target_ids": "",
+            "source_label": "",
+            "target_label": "",
+            "relationship": "",
+            "params": {},
+        }
+        try:
+            if types == RelationshipLabels.HAS_STATE:
+                clean_data = {
+                    "source_ids": data["country_lookup"]
+                    .get(item["address"]["country"], "")
+                    .get("ids", ""),
+                    "target_ids": item["ids"],
+                    "source_label": NodeLabels.COUNTRY.value,
+                    "target_label": NodeLabels.STATE.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
+            elif types == RelationshipLabels.HAS_CITY:
+                clean_data = {
+                    "source_ids": data["state_lookup"]
+                    .get(item["address"]["state"], "")
+                    .get("ids", ""),
+                    "target_ids": item["ids"],
+                    "source_label": NodeLabels.STATE.value,
+                    "target_label": NodeLabels.CITY.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
+            elif types == RelationshipLabels.HAS_AREA:
+                clean_data = {
+                    "source_ids": data["city_id"],
+                    "target_ids": data["area_dict_node"]["ids"],
+                    "source_label": NodeLabels.CITY.value,
+                    "target_label": NodeLabels.AREA.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
 
-        elif types == RelationshipLabels.HAS_LOCALITY:
-            clean_data = {
-                "source_ids": data["area_dict_node"]["ids"],
-                "target_ids": data["lclt_dict_node"]["ids"],
-                "source_label": NodeLabels.AREA.value,
-                "target_label": NodeLabels.LOCALITY.value,
-                "relationship": types.value,
-                "params": {},
-            }
+            elif types == RelationshipLabels.HAS_LOCALITY:
+                clean_data = {
+                    "source_ids": data["area_dict_node"]["ids"],
+                    "target_ids": data["lclt_dict_node"]["ids"],
+                    "source_label": NodeLabels.AREA.value,
+                    "target_label": NodeLabels.LOCALITY.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
 
-        elif types == RelationshipLabels.HAS_RESTAURANT:
-            clean_data = {
-                "source_ids": data["lclt_dict_node"]["ids"],
-                "target_ids": data["rstn"].ids,
-                "source_label": NodeLabels.LOCALITY.value,
-                "target_label": NodeLabels.RESTAURANT.value,
-                "relationship": types.value,
-                "params": {},
-            }
+            elif types == RelationshipLabels.HAS_RESTAURANT:
+                clean_data = {
+                    "source_ids": data["lclt_dict_node"]["ids"],
+                    "target_ids": data["rstn"].ids,
+                    "source_label": NodeLabels.LOCALITY.value,
+                    "target_label": NodeLabels.RESTAURANT.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
 
-        elif types == RelationshipLabels.HAS_MENU:
-            clean_data = {
-                "source_ids": data["rstn"].ids,
-                "target_ids": item.name,
-                "source_label": NodeLabels.RESTAURANT.value,
-                "target_label": NodeLabels.MENU.value,
-                "relationship": types.value,
-                "params": {"price": item.price, "rating": item.rating},
-            }
+            elif types == RelationshipLabels.HAS_MENU:
+                clean_data = {
+                    "source_ids": data["rstn"].ids,
+                    "target_ids": item.name,
+                    "source_label": NodeLabels.RESTAURANT.value,
+                    "target_label": NodeLabels.MENU.value,
+                    "relationship": types.value,
+                    "params": {"price": item.price, "rating": item.rating},
+                }
 
-        elif types == RelationshipLabels.SERVES_MAIN_CUISINE:
-            clean_data = {
-                "source_ids": data["rstn"].ids,
-                "target_ids": item,
-                "source_label": NodeLabels.RESTAURANT.value,
-                "target_label": NodeLabels.MAINCUISINE.value,
-                "relationship": types.value,
-                "params": {},
-            }
+            elif types == RelationshipLabels.SERVES_MAIN_CUISINE:
+                clean_data = {
+                    "source_ids": data["rstn"].ids,
+                    "target_ids": item,
+                    "source_label": NodeLabels.RESTAURANT.value,
+                    "target_label": NodeLabels.MAINCUISINE.value,
+                    "relationship": types.value,
+                    "params": {},
+                }
 
-        elif types == RelationshipLabels.SERVES_SUB_CUISINE:
-            clean_data = {
-                "source_ids": "",
-                "target_ids": "",
-                "source_label": "",
-                "target_label": "",
-                "relationship": "",
-                "params": {},
-            }
+            elif types == RelationshipLabels.SERVES_SUB_CUISINE:
+                pass
 
-        else:
-            clean_data = {
-                "source_ids": "",
-                "target_ids": "",
-                "source_label": "",
-                "target_label": "",
-                "relationship": "",
-                "params": {},
-            }
+            else:
+                pass
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
 
         return clean_data
