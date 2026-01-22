@@ -116,48 +116,15 @@ class Loader:
             # identify the attributes of the node types
             # Area, Locality, Restaurant, Menu | (Sub_cuisine) Main Cuisine
             # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
-            # for the time being you'll also need to use sentence transformer to classify
+            # figure out what falttened format will allow you to create all nodes
+            # create general template cyphers to upsert based on node attributes
             log_etl.info("Load: Creating nodes in parallel")
 
-            json_data_list: list[dict] = [{}]
-            area_dict, rstn_dict, menu_dict, mcui_dict, scui_dict = {}, {}, {}, {}, {}
-
-            for i, json_data in enumerate(json_data_list):
-                rstn = Restaurant(**json_data["data"])
-                menu = Menu(**json_data["data"])  # list[FoodItem]
-
-                area_dict.update({i: {"city_id": "", "rstn": rstn}})
-                rstn_dict.update({i: {"rstn": rstn}})
-                menu_dict.update({i: {"menu": menu}})
-                mcui_dict.update({i: {"rstn": rstn}})
-                # scui_dict.update({i: {"rstn": rstn}})
-
-            # area and locality share same data_dict
-            model_list = [
-                Area,
-                Locality,
-                Restaurant,
-                Menu,
-                MainCuisine,
-                # SubCuisine,
-            ]
-            data_list = [
-                area_dict,
-                area_dict,
-                rstn_dict,
-                menu_dict,
-                mcui_dict,
-                # scui_dict,
-            ]
-
-            for model, data in zip(model_list, data_list):
-                graph = create_nodes(graph, model, data)
-
-            # figure out what falttened format will allow you to create all nodes
             # find a way to get json_data in batches of 1024 - 2048
             # run json_data in stream async/concurrent 4 workers fashion to flatten
+
+            # for the time being you'll also need to use sentence transformer to classify
             # the food item cuisine
-            # create general template cyphers to upsert based on node attributes
 
             ...
             pass

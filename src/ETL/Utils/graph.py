@@ -93,8 +93,8 @@ def create_relationships(
     Generic function to create relationships between nodes.
 
     Args:
-        graph (Graph): `falkordb.graph.Graph` object to create nodes on.
-        data_dict: Dictionary containing data for nodes.
+        graph (Graph): `falkordb.graph.Graph` object to create relationships on.
+        data_dict: Dictionary containing data for relationships.
 
     Returns:
         graph (Graph): Updated `Graph` object.
@@ -112,21 +112,16 @@ def create_relationships(
                 query = ""
 
             # rlsp_params is a list[dict] or a list[list[dict]]
-            is_nested = isinstance(rlsp_params[0], list)
-
-            if is_nested:  # for menu and cuisine
-                query = query.format(
-                    source_label=rlsp_params[0][0]["source_label"],
-                    target_label=rlsp_params[0][0]["target_label"],
-                    relationship=rlsp_params[0][0]["relationship"],
-                )
-            else:  # for country, state, city, area, locality, restaurant
-                query = query.format(
-                    source_label=rlsp_params[0]["source_label"],
-                    target_label=rlsp_params[0]["target_label"],
-                    relationship=rlsp_params[0]["relationship"],
-                )
-
+            first_item = (
+                rlsp_params[0][0]
+                if isinstance(rlsp_params[0], list)
+                else rlsp_params[0]
+            )
+            query = query.format(
+                source_label=first_item["source_label"],
+                target_label=first_item["target_label"],
+                relationship=first_item["relationship"],
+            )
             graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:

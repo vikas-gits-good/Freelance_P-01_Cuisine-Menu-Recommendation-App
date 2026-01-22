@@ -271,3 +271,36 @@ def read_cypher(
         # raise CustomException(e)
 
     return data
+
+
+async def fetch_batches(
+    batch_size: int = 1024,
+    db_config: MongoDBConfig = MongoDBConfig(),
+    prefix: Literal["Extraction", "Transformation", "Load"] = "Extraction",
+    log: Logger = log_etl,
+):
+    try:
+        database = db_config.swiggy.database
+        collection = db_config.swiggy.coll_scrp_data
+
+        log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
+        mongo_client = MongoClient(db_config.mndb_conn_uri)
+        colls = mongo_client[database][collection]
+
+        cursor = colls.find(
+            {}, {"config": 1, "rstn_id": 0, "_id": 0}, batch_size=batch_size
+        )
+
+        batch = []
+        async for doc in cursor:
+            batch.append(doc)
+            if len(batch) == batch_size:
+                yield batch
+                batch = []
+
+        if batch:
+            yield batch
+
+    except Exception as e:
+        LogException(e, logger=log)
+        # raise CustomException(e)
