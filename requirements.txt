@@ -31,7 +31,6 @@ sentence-transformers
 # database
 pymongo
 FalkorDB
-motor
 
 # practise
 groq

@@ -1,9 +1,10 @@
+from queue import Queue
+from itertools import chain
 from falkordb import FalkorDB
 from falkordb.graph import Graph
-from typing import Literal, List, Any, Dict, Optional, Union, Tuple
+from concurrent.futures import ThreadPoolExecutor, wait
+from typing import Literal, List, Any, Dict, Optional, Tuple
 
-from asyncio import Queue
-from itertools import chain
 
 from src.ETL.Config import Restaurant, Menu
 from src.ETL.Config.cyphers import ETLCypherConfig
@@ -19,7 +20,7 @@ from src.ETL.Utils.graph import (
     create_nodes,
     create_relationships,
 )
-from src.Utils.main_utils import read_json
+from src.Utils.main_utils import read_json, fetch_batches
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
@@ -29,24 +30,24 @@ class GraphPool:
     """Quick method to create Graph instances for sync/async/concurrent purposes."""
 
     def __init__(self, size: int = 4):
-        """
-        Initialising this class will append `size` number of `falkordb.graph.Graph` instances
-        for async/concurrent use to an `asyncio.Queue`.
+        self._pool = Queue(maxsize=size)
 
-        Args:
-            size (int): Number of graph instances, one per worker. Defaults to 4.
-        """
-        self.pool = Queue()
-        _ = [self.pool.put(GraphPool.get_graph()) for _ in range(size)]
+        for _ in range(size):
+            self._pool.put(GraphPool.get_graph())
 
-    def get(self):
+    def acquire(self) -> Graph:
         """
-        Method to left-pop a `Graph` instance from `asyncio.Queue` for worker's use.
+        Blocks until a Graph is available.
+        Safe for ThreadPoolExecutor workers.
+        """
+        return self._pool.get(block=True)
 
-        Returns:
-            graph (Graph): Graph object for async/concurrent use.
+    def release(self, graph: Graph) -> None:
         """
-        return self.pool.get()
+        Returns a Graph to the pool.
+        MUST be called in finally block.
+        """
+        self._pool.put(graph)
 
     @staticmethod
     def get_graph(graph_name: Optional[str] = None) -> Graph:
@@ -85,7 +86,7 @@ class Loader:
                     "Load: Knowledge Graph exists. Moving to upsert operations"
                 )
 
-            # graph = self.upsert(graph)
+            self.upsert(graph)
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -113,30 +114,56 @@ class Loader:
 
     def upsert(self, graph: Graph) -> Graph:
         try:
-            # identify the attributes of the node types
-            # Area, Locality, Restaurant, Menu | (Sub_cuisine) Main Cuisine
-            # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
-            # figure out what falttened format will allow you to create all nodes
-            # create general template cyphers to upsert based on node attributes
-            # find a way to get json_data in batches of 1024 - 2048
-            log_etl.info("Load: Creating nodes in parallel")
+            instances = ETLCyphersConstants.NUMBER_OF_MT_WORKERS
+            log_etl.info(f"Load: Preparing a KG pool of {instances}")
+            self.graph_pool = GraphPool(instances)
 
-            # run json_data in stream async/concurrent 4 workers fashion to flatten
+            log_etl.info("Load: Starting batch upsertion with multi-threading")
+            with ThreadPoolExecutor(max_workers=instances) as pool:
+                for batch in fetch_batches(batch_size=10):
+                    log_etl.info(
+                        "Load: Preparing batch data for node and link creation"
+                    )
+                    prepared = []
+                    for i in range(instances):
+                        slc = Loader.slice_batch(batch, i, instances)
+                        node_data, rlsp_data = self._get_data("upsert", slc)
+                        prepared.append((node_data, rlsp_data))
 
-            # for the time being you'll also need to use sentence transformer to classify
-            # the food item cuisine
+                    log_etl.info("Load: Started node creation for batch")
+                    node_futures = []
 
-            ...
-            pass
+                    for node_data, _ in prepared:
+                        graph = self.graph_pool.acquire()
+                        node_futures.append(
+                            pool.submit(self._create_node_worker, graph, node_data)
+                        )
+
+                    wait(node_futures)  # HARD BARRIER
+
+                    log_etl.info("Load: Started link creation for batch")
+                    rlsp_futures = []
+
+                    for _, rlsp_data in prepared:
+                        graph = self.graph_pool.acquire()
+                        rlsp_futures.append(
+                            pool.submit(self._create_link_worker, graph, rlsp_data)
+                        )
+
+                    wait(rlsp_futures)  # HARD BARRIER
+
+            log_etl.info("Load: Completed full upsertion!")
 
         except Exception as e:
             LogException(e, logger=log_etl)
             # raise CustomException(e)
 
-        return graph
-
     @staticmethod
-    def slice_batch(batch: List[Dict[str, Any]], w_id: int, num_w: int):
+    def slice_batch(
+        batch: List[Dict[str, Any]],
+        w_id: int,
+        num_w: int,
+    ) -> List[Dict[str, Any]]:
         """Static method that performs Round-Robin slicing on data.
 
         Args:
@@ -148,6 +175,38 @@ class Loader:
             sliced_batch (List[Dict[str, Any]]): Non-overlapping sliced batch data for multi-thread processing.
         """
         return batch[w_id::num_w]
+
+    def _create_node_worker(
+        self,
+        graph: Graph,
+        node_data: Dict[NodeLabels, List[Any]],
+    ):
+        """Method to run node creation for each worker with sliced data.
+
+        Args:
+            graph (Graph): Graph instance to update
+            node_data (Dict[NodeLabels, List[Any]]): Sliced data for node creation.
+        """
+        try:
+            create_nodes(graph, node_data)
+        finally:
+            self.graph_pool.release(graph)
+
+    def _create_link_worker(
+        self,
+        graph: Graph,
+        rlsp_data: Dict[RelationshipLabels, List[Any]],
+    ):
+        """Method to run link creation for each worker with sliced data.
+
+        Args:
+            graph (Graph): Graph instance to update
+            node_data (Dict[RelationshipLabels, List[Any]]): Sliced data for link creation.
+        """
+        try:
+            create_relationships(graph, rlsp_data)
+        finally:
+            self.graph_pool.release(graph)
 
     def _get_data(
         self,

@@ -4,8 +4,7 @@ import pandas as pd
 from logging import Logger
 from pymongo import MongoClient, UpdateOne, AsyncMongoClient
 
-# from motor.motor_asyncio import AsyncIOMotorClient
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Iterator, AsyncIterator
 
 from src.Config import MongoDBConfig
 from src.Logging.logger import log_etl
@@ -275,26 +274,66 @@ def read_cypher(
     return data
 
 
-async def fetch_batches(
+def fetch_batches(
     batch_size: int = 1024,
     db_config: MongoDBConfig = MongoDBConfig(),
     prefix: Literal["Extraction", "Transformation", "Load"] = "Load",
     log: Logger = log_etl,
-):
+) -> Iterator[List[Dict[str, Any]]]:
     try:
         database = db_config.swiggy.database
         collection = db_config.swiggy.coll_scrp_data
 
         log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
-        async with AsyncMongoClient(db_config.mndb_conn_uri) as amc:
-            colls = amc[database][collection]
+        with MongoClient(db_config.mndb_conn_uri) as mgcl:
+            colls = mgcl[database][collection]
             cursor = colls.find(
                 {}, {"_id": 0, "config": 1}, batch_size=batch_size
             ).limit(20)  # limiting for test
 
             batch = []
-            async for doc in cursor:
+            for doc in cursor:
+                if "config" not in doc.keys():
+                    continue
+
                 batch.append(doc["config"])
+
+                if len(batch) == batch_size:
+                    yield batch
+                    batch = []
+
+            if batch:
+                yield batch
+
+    except Exception as e:
+        LogException(e, logger=log)
+        # raise CustomException(e)
+
+
+async def async_fetch_batches(
+    batch_size: int = 1024,
+    db_config: MongoDBConfig = MongoDBConfig(),
+    prefix: Literal["Extraction", "Transformation", "Load"] = "Load",
+    log: Logger = log_etl,
+) -> AsyncIterator[List[Dict[str, Any]]]:
+    try:
+        database = db_config.swiggy.database
+        collection = db_config.swiggy.coll_scrp_data
+
+        log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
+        async with AsyncMongoClient(db_config.mndb_conn_uri) as amgcl:
+            colls = amgcl[database][collection]
+            cursor = colls.find(
+                {}, {"_id": 0, "config": 1}, batch_size=batch_size
+            )  # .limit(20)  # limiting for test
+
+            batch = []
+            async for doc in cursor:
+                if "config" not in doc.keys():
+                    continue
+
+                batch.append(doc["config"])
+
                 if len(batch) == batch_size:
                     yield batch
                     batch = []
