@@ -144,11 +144,11 @@
     },
     "Delhi": {
         "ids": "relation:2763541",
-        "name": "New Delhi",
+        "name": "Delhi",
         "coords": "28.6138954,77.2090057",
         "boundingbox": "28.4812209,28.6456842,77.0503708,77.2551392",
         "address": {
-            "city": "New Delhi",
+            "city": "Delhi",
             "ISO3166-2-lvl4": "IN-DL",
             "country": "India",
             "country_code": "in"
@@ -431,5 +431,44 @@
             "country_code": "in"
         },
         "iso_code": "IN-AN"
+    },
+    "Dadra and Nagar Haveli and Daman and Diu": {
+        "ids": "relation:1952530",
+        "name": "Dadra and Nagar Haveli and Daman and Diu",
+        "coords": "20.7181750,70.9323834",
+        "boundingbox": "20.0473907,20.7677936,70.8734588,73.2178258",
+        "address": {
+            "state": "Dadra and Nagar Haveli and Daman and Diu",
+            "ISO3166-2-lvl4": "IN-DH",
+            "country": "India",
+            "country_code": "in"
+        },
+        "iso_code": "IN-DH"
+    },
+    "Lakshadweep": {
+        "ids": "relation:2027460",
+        "name": "Lakshadweep",
+        "coords": "10.3337313,72.9205386",
+        "boundingbox": "8.0648198,12.6010064,71.5180377,73.9061436",
+        "address": {
+            "state": "Lakshadweep",
+            "ISO3166-2-lvl4": "IN-LD",
+            "country": "India",
+            "country_code": "in"
+        },
+        "iso_code": "IN-LD"
+    },
+    "Ladakh": {
+        "ids": "relation:5515045",
+        "name": "Ladakh",
+        "coords": "33.9456407,77.6568576",
+        "boundingbox": "32.3357400,35.6745457,75.3269726,79.4607280",
+        "address": {
+            "state": "Ladakh",
+            "ISO3166-2-lvl4": "IN-LA",
+            "country": "India",
+            "country_code": "in"
+        },
+        "iso_code": "IN-LA"
     }
 }

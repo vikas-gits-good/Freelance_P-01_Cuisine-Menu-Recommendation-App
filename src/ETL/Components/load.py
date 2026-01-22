@@ -3,6 +3,7 @@ from falkordb.graph import Graph
 from typing import Literal, List, Any, Dict, Optional, Union, Tuple
 
 from asyncio import Queue
+from itertools import chain
 
 from src.ETL.Config import Restaurant, Menu
 from src.ETL.Config.cyphers import ETLCypherConfig
@@ -75,14 +76,14 @@ class Loader:
             result = graph.query("MATCH (st: State) RETURN count(st) AS count")
             is_empty = result.result_set[0][0] == 0  # 33 for is_empty = False
 
-            # if is_empty:
-            #     log_etl.info("Load: Starting initial Knowledge Graph setup")
-            graph = self.create(graph)
+            if is_empty:
+                log_etl.info("Load: Starting initial Knowledge Graph setup")
+                graph = self.create(graph)
 
-            # else:
-            #     log_etl.info(
-            #         "Load: Knowledge Graph exists. Moving to upsert operations"
-            #     )
+            else:
+                log_etl.info(
+                    "Load: Knowledge Graph exists. Moving to upsert operations"
+                )
 
             # graph = self.upsert(graph)
 
@@ -203,7 +204,6 @@ class Loader:
                         for item in node_data[NodeLabels.STATE]
                     },
                 }
-                log_etl.info(f"srch_data\n{srch_data}")
 
                 # MERGE (:Country {ids: ''})-[:HAS_STATE]->(:State {ids: ''})
                 stte_dict_rlsp = [
@@ -222,7 +222,12 @@ class Loader:
                     for item in node_data[NodeLabels.CITY]
                 ]
                 rlsp_data[RelationshipLabels.HAS_CITY] = city_dict_rlsp
+
                 del srch_data
+                for item in chain.from_iterable(
+                    chain(rlsp_data.values(), node_data.values())
+                ):
+                    item.pop("address", None)
 
             elif purpose == "upsert":
                 log_etl.info("Load: Extracting from scraped json data")

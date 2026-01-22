@@ -225,7 +225,7 @@ class RelationshipParams(BaseModel):
             if types == RelationshipLabels.HAS_STATE:
                 clean_data = {
                     "source_ids": data["country_lookup"]
-                    .get(item["address"]["country"], "")
+                    .get(item["address"]["country"], {})
                     .get("ids", ""),
                     "target_ids": item["ids"],
                     "source_label": NodeLabels.COUNTRY.value,

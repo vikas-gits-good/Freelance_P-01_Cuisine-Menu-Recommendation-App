@@ -75,8 +75,6 @@ def create_nodes(
             else:
                 query = ""
 
-            # log_etl.info(f"query\n{query}")
-            # log_etl.info(f"node_params\n{node_params}")
             query = query.format(label=node_name.value)
             graph.query(query, {"rows": node_params})
 
@@ -122,14 +120,13 @@ def create_relationships(
                     target_label=rlsp_params[0][0]["target_label"],
                     relationship=rlsp_params[0][0]["relationship"],
                 )
-            else:  # for area, locality, restaurant
+            else:  # for country, state, city, area, locality, restaurant
                 query = query.format(
                     source_label=rlsp_params[0]["source_label"],
                     target_label=rlsp_params[0]["target_label"],
                     relationship=rlsp_params[0]["relationship"],
                 )
-            log_etl.info(f"query\n{query}")
-            log_etl.info(f"rlsp_params\n{rlsp_params}")
+
             graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:
