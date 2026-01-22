@@ -2,7 +2,9 @@ import os
 import json
 import pandas as pd
 from logging import Logger
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient, UpdateOne, AsyncMongoClient
+
+# from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any, Dict, List, Literal
 
 from src.Config import MongoDBConfig
@@ -276,7 +278,7 @@ def read_cypher(
 async def fetch_batches(
     batch_size: int = 1024,
     db_config: MongoDBConfig = MongoDBConfig(),
-    prefix: Literal["Extraction", "Transformation", "Load"] = "Extraction",
+    prefix: Literal["Extraction", "Transformation", "Load"] = "Load",
     log: Logger = log_etl,
 ):
     try:
@@ -284,22 +286,21 @@ async def fetch_batches(
         collection = db_config.swiggy.coll_scrp_data
 
         log.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
-        mongo_client = MongoClient(db_config.mndb_conn_uri)
-        colls = mongo_client[database][collection]
+        async with AsyncMongoClient(db_config.mndb_conn_uri) as amc:
+            colls = amc[database][collection]
+            cursor = colls.find(
+                {}, {"_id": 0, "config": 1}, batch_size=batch_size
+            ).limit(20)  # limiting for test
 
-        cursor = colls.find(
-            {}, {"config": 1, "rstn_id": 0, "_id": 0}, batch_size=batch_size
-        )
+            batch = []
+            async for doc in cursor:
+                batch.append(doc["config"])
+                if len(batch) == batch_size:
+                    yield batch
+                    batch = []
 
-        batch = []
-        async for doc in cursor:
-            batch.append(doc)
-            if len(batch) == batch_size:
+            if batch:
                 yield batch
-                batch = []
-
-        if batch:
-            yield batch
 
     except Exception as e:
         LogException(e, logger=log)

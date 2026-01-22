@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class ETLCyphersConstants:
     ALL_CYPHER_FILE_PATHS = glob("src/ETL/Cyphers/*.cyp")
     KNOWLEDGE_GRAPH_NAME = "Swiggy_KG"
+    NUMBER_OF_MT_WORKERS = 4
 
 
 @dataclass

@@ -118,9 +118,9 @@ class Loader:
             # area, locality, restaurant, menu_item, main_cuisine (dont add subcuisine)
             # figure out what falttened format will allow you to create all nodes
             # create general template cyphers to upsert based on node attributes
+            # find a way to get json_data in batches of 1024 - 2048
             log_etl.info("Load: Creating nodes in parallel")
 
-            # find a way to get json_data in batches of 1024 - 2048
             # run json_data in stream async/concurrent 4 workers fashion to flatten
 
             # for the time being you'll also need to use sentence transformer to classify
@@ -134,6 +134,20 @@ class Loader:
             # raise CustomException(e)
 
         return graph
+
+    @staticmethod
+    def slice_batch(batch: List[Dict[str, Any]], w_id: int, num_w: int):
+        """Static method that performs Round-Robin slicing on data.
+
+        Args:
+            batch (List[Dict[str, Any]]): Scraped Json data obtained in async batch format.
+            w_id (int): Unique id for multi-threading worker.
+            num_w (int): Total number of multi-threading workers.
+
+        Returns:
+            sliced_batch (List[Dict[str, Any]]): Non-overlapping sliced batch data for multi-thread processing.
+        """
+        return batch[w_id::num_w]
 
     def _get_data(
         self,
