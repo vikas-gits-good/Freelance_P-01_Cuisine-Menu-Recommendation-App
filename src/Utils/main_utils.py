@@ -276,6 +276,7 @@ def read_cypher(
 
 def fetch_batches(
     batch_size: int = 1024,
+    limit: int = 0,
     db_config: MongoDBConfig = MongoDBConfig(),
     prefix: Literal["Extraction", "Transformation", "Load"] = "Load",
     log: Logger = log_etl,
@@ -289,7 +290,7 @@ def fetch_batches(
             colls = mgcl[database][collection]
             cursor = colls.find(
                 {}, {"_id": 0, "config": 1}, batch_size=batch_size
-            ).limit(20)  # limiting for test
+            ).limit(limit)  # limit=0 => no limits
 
             batch = []
             for doc in cursor:
@@ -299,10 +300,12 @@ def fetch_batches(
                 batch.append(doc["config"])
 
                 if len(batch) == batch_size:
+                    log.info(f"{prefix}: Sending {batch_size:,} rows of data")
                     yield batch
                     batch = []
 
             if batch:
+                log.info(f"{prefix}: Sending final {batch_size:,} rows of data")
                 yield batch
 
     except Exception as e:
@@ -344,3 +347,10 @@ async def async_fetch_batches(
     except Exception as e:
         LogException(e, logger=log)
         # raise CustomException(e)
+
+
+def format_time(seconds: float) -> str:
+    """Format elapsed time as '00 hr, 00 min, 00 sec'."""
+    hrs, rem = divmod(seconds, 3600)
+    mins, secs = divmod(rem, 60)
+    return f"{int(hrs):2d} hr, {int(mins):2d} min, {int(secs):2d} sec"

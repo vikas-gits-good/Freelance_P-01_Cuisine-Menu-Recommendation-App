@@ -85,16 +85,18 @@ def create_nodes(
     return graph
 
 
-def create_relationships(
+def create_links(
     graph: Graph,
     data_dict: Dict[RelationshipLabels, List[Any]],
+    chunk_size: int = 200,
 ):
     """
     Generic function to create relationships between nodes.
 
     Args:
         graph (Graph): `falkordb.graph.Graph` object to create relationships on.
-        data_dict: Dictionary containing data for relationships.
+        data_dict (Dict[RelationshipLabels, List[Any]]): Dictionary containing data for relationships.
+        chunk_size (int): chunk large data into smaller sizes.
 
     Returns:
         graph (Graph): Updated `Graph` object.
@@ -122,6 +124,11 @@ def create_relationships(
                 target_label=first_item["target_label"],
                 relationship=first_item["relationship"],
             )
+            # Chunk the data instead of sending all at once
+            # for i in range(0, len(rlsp_params), chunk_size):
+            #     chunk = rlsp_params[i : i + chunk_size]
+            #     graph.query(query, {"rows": chunk})
+
             graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:

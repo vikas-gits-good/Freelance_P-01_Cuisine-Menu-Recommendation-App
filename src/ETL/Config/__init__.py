@@ -13,12 +13,16 @@ from crawl4ai.proxy_strategy import RoundRobinProxyStrategy, ProxyConfig
 from crawl4ai.async_dispatcher import RateLimiter, MemoryAdaptiveDispatcher
 from crawl4ai.browser_adapter import UndetectedAdapter
 from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+
 from src.ETL.Constants import (
     SwiggyLinksConstants,
     NominatimOSMConstants,
     RestaurantConstants,
     ProxyConstants,
 )
+
+from src.Logging.logger import log_etl
+from src.Exception.exception import LogException, CustomException
 
 
 # For processing sitemaps
@@ -114,7 +118,7 @@ class Restaurant(BaseModel):
     area: str = ""
     locality: str = ""
     cuisines: List[str] = [""]
-    rating: float = -1.0
+    rating: float | None = None
     address: str = ""
     coords: str = ""
     chain: bool = False
@@ -126,18 +130,22 @@ class Restaurant(BaseModel):
         main_part = data["cards"][2]["card"]["card"]
         clean_data = {
             "ids": int(main_part["info"].get("id", "-1")),
-            "name": main_part["info"].get("name", ""),
-            "city": main_part["info"].get("city", ""),
-            "area": main_part["info"].get("areaName", ""),
-            "locality": main_part["info"].get(
-                "locality", main_part["info"].get("areaName", "")
-            ),
+            "name": main_part["info"].get("name", "").strip(),
+            "city": main_part["info"].get("city", "").strip(),
+            "area": main_part["info"].get("areaName", "").strip(),
+            "locality": main_part["info"]
+            .get("locality", main_part["info"].get("areaName", ""))
+            .strip(),
             "cuisines": main_part["info"].get("cuisines", [""]),
-            "rating": float(main_part["info"].get("avgRating", "-1.0")),
-            "address": main_part["info"]["labels"][1].get("message", ""),
-            "coords": main_part["info"].get("latLong", ""),
+            "rating": float(rating)
+            if (rating := main_part["info"].get("avgRating")) is not None
+            else None,
+            "address": main_part["info"]["labels"][1].get("message", "").strip(),
+            "coords": main_part["info"].get("latLong", "").strip(),
             "chain": main_part["info"].get("multiOutlet", False),
-            "city_id": main_part["info"]["slugs"].get("city", ""),
+            "city_id": re.sub(
+                r"[-_]", " ", main_part["info"]["slugs"].get("city", "")
+            ).strip(),
         }
         return clean_data
 
@@ -197,8 +205,8 @@ class FoodItem(BaseModel):
     name: str = ""
     category: str = ""
     description: str = ""
-    price: int = -1
-    rating: float = -1.0
+    price: int | None = None
+    rating: float | None = None
     types: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"] = "UNKNOWN"
     cuisine: str = ""  # make subcuisine later, maincuisine now
 
@@ -206,16 +214,28 @@ class FoodItem(BaseModel):
     @classmethod
     def extract_and_transform(cls, data):
         main_part = data["card"]["info"]
+        valid_types = {"VEG", "NONVEG", "EGG"}
+        if "itemAttribute" in main_part:
+            _types = main_part["itemAttribute"].get("vegClassifier", "UNKNOWN").strip()
+        else:
+            _types = next(
+                (t for t in main_part.get("menuFilterIds", []) if t in valid_types),
+                "UNKNOWN",
+            )
+
         clean_data = {
             # "ids": main_part.get("id", ""),
-            "name": main_part.get("name", ""),
-            "category": main_part.get("category", ""),
-            "description": main_part.get("description", ""),
-            "price": round(int(main_part.get("price", "-100")) / 100),
-            "rating": float(
-                main_part["ratings"]["aggregatedRating"].get("rating", "-1.0")
-            ),
-            "types": main_part["itemAttribute"].get("vegClassifier", "UNKNOWN"),
+            "name": main_part.get("name", "").strip(),
+            "category": main_part.get("category", "").strip(),
+            "description": main_part.get("description", "").strip(),
+            "price": round(int(price))
+            if (price := main_part.get("price")) is not None
+            else None,
+            "rating": float(rating)
+            if (rating := main_part["ratings"]["aggregatedRating"].get("rating"))
+            is not None
+            else None,
+            "types": _types,
         }
         return clean_data
 
@@ -252,6 +272,7 @@ class Menu(BaseModel):
             for menu_item in menu_items_list
             for mi in menu_item.menu_items_list
         ]
+
         return {"food_items": food_list}
 
 

@@ -4,6 +4,7 @@ from falkordb import FalkorDB
 from falkordb.graph import Graph
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Literal, List, Any, Dict, Optional, Tuple
+from time import time
 
 
 from src.ETL.Config import Restaurant, Menu
@@ -18,16 +19,16 @@ from src.ETL.Constants.cyphers import (
 from src.ETL.Utils.graph import (
     create_indexes,
     create_nodes,
-    create_relationships,
+    create_links,
 )
-from src.Utils.main_utils import read_json, fetch_batches
+from src.Utils.main_utils import read_json, fetch_batches, format_time
 
 from src.Logging.logger import log_etl
 from src.Exception.exception import LogException, CustomException
 
 
 class GraphPool:
-    """Quick method to create Graph instances for sync/async/concurrent purposes."""
+    """Quick method to create Graph instances for concurrent purposes."""
 
     def __init__(self, size: int = 4):
         self._pool = Queue(maxsize=size)
@@ -60,6 +61,7 @@ class GraphPool:
         graph_name = (
             ETLCyphersConstants.KNOWLEDGE_GRAPH_NAME if not graph_name else graph_name
         )
+        #  split params into admin_user and code_user
         fdb = FalkorDB()  # (**self.cyp_config.auth_params)
         return fdb.select_graph(graph_name)
 
@@ -71,11 +73,10 @@ class Loader:
     def run(self):
         try:
             log_etl.info("Load: Communicating with FalkorDB")
-            #  split params into admin_user and code_user
             graph = GraphPool.get_graph()
 
             result = graph.query("MATCH (st: State) RETURN count(st) AS count")
-            is_empty = result.result_set[0][0] == 0  # 33 for is_empty = False
+            is_empty = result.result_set[0][0] == 0
 
             if is_empty:
                 log_etl.info("Load: Starting initial Knowledge Graph setup")
@@ -103,8 +104,8 @@ class Loader:
             log_etl.info("Load: Creating initial nodes")
             graph = create_nodes(graph, node_data)
 
-            log_etl.info("Load: Creating initial relationships")
-            graph = create_relationships(graph, rlsp_data)
+            log_etl.info("Load: Creating initial links")
+            graph = create_links(graph, rlsp_data)
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -112,18 +113,20 @@ class Loader:
 
         return graph
 
-    def upsert(self, graph: Graph) -> Graph:
+    def upsert(self, graph: Graph):
         try:
             instances = ETLCyphersConstants.NUMBER_OF_MT_WORKERS
             log_etl.info(f"Load: Preparing a KG pool of {instances}")
             self.graph_pool = GraphPool(instances)
 
             log_etl.info("Load: Starting batch upsertion with multi-threading")
+            strt_time_main = time()
             with ThreadPoolExecutor(max_workers=instances) as pool:
-                for batch in fetch_batches(batch_size=10):
+                for batch in fetch_batches(batch_size=1024):
                     log_etl.info(
                         "Load: Preparing batch data for node and link creation"
                     )
+                    strt_time_btch = time()
                     prepared = []
                     for i in range(instances):
                         slc = Loader.slice_batch(batch, i, instances)
@@ -152,7 +155,13 @@ class Loader:
 
                     wait(rlsp_futures)  # HARD BARRIER
 
-            log_etl.info("Load: Completed full upsertion!")
+                    log_etl.info(
+                        f"Load: Completed batch in {format_time(time() - strt_time_btch)}"
+                    )
+
+            log_etl.info(
+                f"Load: Completed full upsertion in {format_time(time() - strt_time_main)}!"
+            )
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -204,7 +213,7 @@ class Loader:
             node_data (Dict[RelationshipLabels, List[Any]]): Sliced data for link creation.
         """
         try:
-            create_relationships(graph, rlsp_data)
+            create_links(graph, rlsp_data)
         finally:
             self.graph_pool.release(graph)
 
@@ -228,9 +237,6 @@ class Loader:
                     # "unq_ids_city.json" -> "City"
                     key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
                     for data in read_json(path).values():
-                        # the '-' in 'ISO3166-2-lvl4' is causing Cypher to fail
-                        # data.pop("address", None)
-                        data["address"].pop("ISO3166-2-lvl4", None)
                         node_data[NodeLabels(key)].append(data)
 
                 log_etl.info("Load: Appending relationship data")
@@ -267,10 +273,11 @@ class Loader:
                 for item in chain.from_iterable(
                     chain(rlsp_data.values(), node_data.values())
                 ):
+                    # the '-' in 'ISO3166-2-lvl4' is causing Cypher to fail
+                    # also, UNWIND is failing for nested data
                     item.pop("address", None)
 
             elif purpose == "upsert":
-                log_etl.info("Load: Extracting from scraped json data")
                 node_data = {
                     NodeLabels.AREA: [],
                     NodeLabels.LOCALITY: [],
@@ -290,7 +297,7 @@ class Loader:
                 }
 
                 city_path = "src/ETL/Data/unq_ids_city.json"
-                city_data = read_json(city_path)  # change the keys to reflect
+                city_data = read_json(city_path)
                 city_keys = {key: val["ids"] for key, val in city_data.items()}
                 del city_data  # clear memory
 
@@ -298,10 +305,8 @@ class Loader:
                     try:
                         rstn = Restaurant(**json_data["data"])
                         menu = Menu(**json_data["data"])
-                        key = rstn.city.lower()  # Bangalore, Bengaluru
-                        # You need to update the keys of the dict. replace '_','-' with ' '
-                        # using rstn.city_id with the city id from url with '-'
-                        city_id = city_keys.get(key, "").get("ids", "")
+                        key = rstn.city_id  # <- cleaned string
+                        city_id = city_keys.get(key, "")
                         # see if you can generate uuid for city_id incase of failure
 
                         area_dict_node = Area.from_data((city_id, rstn))
@@ -377,6 +382,10 @@ class Loader:
 
                     except Exception as e:
                         LogException(e, logger=log_etl)
+                        # data that fails, upsert it to a different collection in MDB
+                        # use same {"rstn_id": rstn.ids, 'config': json_data} format
+                        # or create a new parameter 'processed':bool and select based on that
+                        log_etl.info(f"{rstn.ids = }")
                         continue
 
                 del data_list  # clear memory

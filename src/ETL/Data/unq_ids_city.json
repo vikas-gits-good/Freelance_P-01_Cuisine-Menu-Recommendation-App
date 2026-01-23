@@ -266,7 +266,7 @@
             "country_code": "in"
         }
     },
-    "amalner": {
+    "amalner perm closed 8june22": {
         "ids": "node:6177946164",
         "name": "Amalner",
         "coords": "21.0493189,75.0573385",
@@ -583,7 +583,7 @@
             "country_code": "in"
         }
     },
-    "ashoknagar": {
+    "ashoknagar perm closed 8june22": {
         "ids": "relation:9530970",
         "name": "Ashoknagar",
         "coords": "24.6186095,77.8786983",
@@ -875,7 +875,7 @@
             "country_code": "in"
         }
     },
-    "banarhat": {
+    "banarhat dominos only": {
         "ids": "node:11831934615",
         "name": "Banarhat",
         "coords": "26.7989760,89.0257573",
@@ -906,7 +906,7 @@
             "country_code": "in"
         }
     },
-    "bengaluru": {
+    "bangalore": {
         "ids": "relation:7902476",
         "name": "Bengaluru",
         "coords": "12.9767936,77.5900820",
@@ -921,7 +921,7 @@
             "country_code": "in"
         }
     },
-    "banka": {
+    "bankabihar": {
         "ids": "relation:1972075",
         "name": "Banka",
         "coords": "24.8328273,86.8161114",
@@ -960,7 +960,7 @@
             "country_code": "in"
         }
     },
-    "bapatla": {
+    "bapatla and chirala": {
         "ids": "relation:13998258",
         "name": "Bapatla",
         "coords": "15.9346161,80.3869706",
@@ -1134,7 +1134,7 @@
             "country_code": "in"
         }
     },
-    "barpeta": {
+    "barpeta road": {
         "ids": "relation:1791158",
         "name": "Barpeta",
         "coords": "26.3459410,91.0397080",
@@ -1163,7 +1163,7 @@
             "country_code": "in"
         }
     },
-    "barwani": {
+    "barwani perm closed 26sep2022": {
         "ids": "relation:1976212",
         "name": "Barwani",
         "coords": "21.7514248,74.8915957",
@@ -1504,7 +1504,7 @@
             "country_code": "in"
         }
     },
-    "barabanki": {
+    "bharabanki": {
         "ids": "relation:1959692",
         "name": "Barabanki",
         "coords": "26.9421406,81.3856087",
@@ -1950,7 +1950,7 @@
             "country_code": "in"
         }
     },
-    "bodhan": {
+    "bodhan rural": {
         "ids": "node:245650192",
         "name": "Bodhan",
         "coords": "18.6536941,77.8936802",
@@ -2616,7 +2616,7 @@
             "country_code": "in"
         }
     },
-    "dabhoi": {
+    "dabhoi perm closed 8june22": {
         "ids": "node:910330201",
         "name": "Dabhoi",
         "coords": "22.1336175,73.4201004",
@@ -3704,7 +3704,7 @@
             "country_code": "in"
         }
     },
-    "ghaziabad": {
+    "ghaziabad please use city noida city id 24 ": {
         "ids": "relation:1958054",
         "name": "Ghaziabad",
         "coords": "28.7749966,77.4586967",
@@ -4262,7 +4262,7 @@
             "country_code": "in"
         }
     },
-    "hindaun": {
+    "hindaun perm closed 26sep2022": {
         "ids": "node:1782033976",
         "name": "Hindaun",
         "coords": "26.7325006,77.0363121",
@@ -4294,7 +4294,7 @@
             "country_code": "in"
         }
     },
-    "hinganghat": {
+    "hinganghat perm closed 26sep2022": {
         "ids": "node:774645274",
         "name": "Hinganghat",
         "coords": "20.5426110,78.8331636",
@@ -4712,7 +4712,7 @@
             "country_code": "in"
         }
     },
-    "khambhalia": {
+    "jamkhambhaliya": {
         "ids": "relation:9656808",
         "name": "Khambhalia Taluka",
         "coords": "22.2289794,69.5708940",
@@ -4848,7 +4848,7 @@
             "country_code": "in"
         }
     },
-    "jhajjar": {
+    "jjajjar": {
         "ids": "relation:1942946",
         "name": "Jhajjar",
         "coords": "28.5964461,76.6505366",
@@ -5222,7 +5222,7 @@
             "country_code": "in"
         }
     },
-    "kanker": {
+    "kanker perm closed 8june22": {
         "ids": "node:2270316597",
         "name": "Kanker",
         "coords": "20.2692747,81.4932111",
@@ -5578,7 +5578,7 @@
             "country_code": "in"
         }
     },
-    "kendrapara": {
+    "kendrapada": {
         "ids": "relation:9588868",
         "name": "Kendrapara",
         "coords": "20.5475164,86.5296168",
@@ -5710,7 +5710,7 @@
             "country_code": "in"
         }
     },
-    "khargone": {
+    "khargone perm closed 8june22": {
         "ids": "relation:1976215",
         "name": "Khargone",
         "coords": "21.9544729,75.7521248",
@@ -5934,7 +5934,7 @@
             "country_code": "in"
         }
     },
-    "kopargaon": {
+    "kopargaon perm closed 26sep2022": {
         "ids": "relation:10347878",
         "name": "Kopargaon",
         "coords": "19.8370037,74.4829123",
@@ -6110,7 +6110,7 @@
             "country_code": "in"
         }
     },
-    "kuchaman": {
+    "kuchaman do not use": {
         "ids": "way:22826561",
         "name": "Kuchaman",
         "coords": "27.1519000,74.8621000",
@@ -6157,7 +6157,7 @@
             "country_code": "in"
         }
     },
-    "kumta": {
+    "kumta perm closed 26sep2022": {
         "ids": "node:1384237103",
         "name": "Kumta",
         "coords": "14.4372403,74.4212440",
@@ -6655,7 +6655,7 @@
             "country_code": "in"
         }
     },
-    "mallur": {
+    "mallur dominos only": {
         "ids": "node:6022434015",
         "name": "Mallur",
         "coords": "11.5541222,78.1348392",
@@ -7073,7 +7073,7 @@
             "country_code": "in"
         }
     },
-    "mokameh": {
+    "mokameh khas": {
         "ids": "relation:10266135",
         "name": "Mokameh",
         "coords": "25.4043541,85.8916644",
@@ -7141,7 +7141,7 @@
             "country_code": "in"
         }
     },
-    "mount abu": {
+    "mount abu only dominos": {
         "ids": "node:2846237707",
         "name": "Mount Abu",
         "coords": "24.5924330,72.7081876",
@@ -7250,7 +7250,7 @@
             "country_code": "in"
         }
     },
-    "murshidabad": {
+    "murshidabad perm closed 26sep2022": {
         "ids": "node:245720417",
         "name": "Murshidabad",
         "coords": "24.1745993,88.2721335",
@@ -7458,7 +7458,7 @@
             "country_code": "in"
         }
     },
-    "nagur": {
+    "nagur perm closed 26sep2022": {
         "ids": "node:10095859842",
         "name": "Nagur",
         "coords": "18.0326479,76.3704729",
@@ -7578,7 +7578,7 @@
             "country_code": "in"
         }
     },
-    "namchi": {
+    "namchi dominos only": {
         "ids": "relation:1790816",
         "name": "Namchi",
         "coords": "27.3031019,88.3785961",
@@ -7759,7 +7759,7 @@
             "country_code": "in"
         }
     },
-    "narwana": {
+    "narwana perm closed 8june22": {
         "ids": "relation:10394834",
         "name": "Narwana",
         "coords": "29.5830598,76.0754066",
@@ -7790,7 +7790,7 @@
             "country_code": "in"
         }
     },
-    "nathdwara": {
+    "nathdwara perm closed 8june22": {
         "ids": "node:1857538548",
         "name": "Nathdwara",
         "coords": "24.9121863,73.9137489",
@@ -7948,7 +7948,7 @@
             "country_code": "in"
         }
     },
-    "niranjanpur": {
+    "niranjanpura": {
         "ids": "node:9585386161",
         "name": "Niranjanpur",
         "coords": "24.6705956,80.8760368",
@@ -7998,6 +7998,23 @@
         "coords": "28.5706333,77.3272147",
         "boundingbox": "28.4006672,28.6354703,77.2928863,77.5065172",
         "address": {
+            "city": "Noida",
+            "town": "Dadri",
+            "state_district": "Gautam Buddha Nagar",
+            "state": "Uttar Pradesh",
+            "ISO3166-2-lvl4": "IN-UP",
+            "country": "India",
+            "country_code": "in"
+        }
+    },
+    "noida 1": {
+        "ids": "way:1162538015",
+        "name": "Noida One",
+        "coords": "28.6229070,77.3662607",
+        "boundingbox": "28.6220150,28.6238166,77.3657569,77.3667645",
+        "address": {
+            "commercial": "Noida One",
+            "suburb": "Sector 62",
             "city": "Noida",
             "town": "Dadri",
             "state_district": "Gautam Buddha Nagar",
@@ -8484,7 +8501,7 @@
             "country_code": "in"
         }
     },
-    "phaltan": {
+    "phaltan perm closed 8june22": {
         "ids": "relation:10354585",
         "name": "Phaltan",
         "coords": "17.9579342,74.4142354",
@@ -8498,7 +8515,7 @@
             "country_code": "in"
         }
     },
-    "phusro": {
+    "phusro perm closed 26sep2022": {
         "ids": "node:6232914995",
         "name": "Phusro",
         "coords": "23.7601823,85.9755003",
@@ -8561,7 +8578,7 @@
             "country_code": "in"
         }
     },
-    "pinjore": {
+    "pinjore city": {
         "ids": "node:567278081",
         "name": "Pinjore",
         "coords": "30.8042411,76.9149498",
@@ -9548,7 +9565,7 @@
             "country_code": "in"
         }
     },
-    "sardarshahar": {
+    "sardarshahar perm closed 8june22": {
         "ids": "node:245765390",
         "name": "Sardarshahar",
         "coords": "28.4403000,74.4895000",
@@ -9764,7 +9781,7 @@
             "country_code": "in"
         }
     },
-    "shirdi": {
+    "shirdi test 1": {
         "ids": "node:4861569311",
         "name": "Shirdi",
         "coords": "19.7668121,74.4754386",
@@ -10324,7 +10341,7 @@
             "country_code": "in"
         }
     },
-    "surendranagar": {
+    "surendranagar dudhrej": {
         "ids": "relation:1953043",
         "name": "Surendranagar",
         "coords": "22.8251395,71.6209736",
@@ -10742,7 +10759,7 @@
             "country_code": "in"
         }
     },
-    "tonk": {
+    "tonk per closed 8june22": {
         "ids": "relation:1950076",
         "name": "Tonk",
         "coords": "26.1223198,75.6632235",
