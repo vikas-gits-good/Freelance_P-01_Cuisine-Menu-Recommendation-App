@@ -30,11 +30,15 @@ from src.Exception.exception import LogException, CustomException
 class GraphPool:
     """Quick method to create Graph instances for concurrent purposes."""
 
-    def __init__(self, size: int = 4):
+    def __init__(
+        self,
+        size: int = 4,
+        graph_name: Literal["production", "development", "test"] = "production",
+    ):
         self._pool = Queue(maxsize=size)
 
         for _ in range(size):
-            self._pool.put(GraphPool.get_graph())
+            self._pool.put(GraphPool.get_graph(graph_name))
 
     def acquire(self) -> Graph:
         """
@@ -51,19 +55,25 @@ class GraphPool:
         self._pool.put(graph)
 
     @staticmethod
-    def get_graph(graph_name: Optional[str] = None) -> Graph:
+    def get_graph(
+        graph_name: Literal["production", "development", "test"] = "production",
+    ) -> Graph:
         """
         Static Method that returns a single `Graph` instance.
 
         Returns:
             graph (Graph): Single `Graph` object
         """
-        graph_name = (
-            ETLCyphersConstants.KNOWLEDGE_GRAPH_NAME if not graph_name else graph_name
-        )
+        ecc = ETLCyphersConstants
+        name = {
+            "production": ecc.PRODUCTION_KG_NAME,
+            "development": ecc.DEVELOPEMENT_KG_NAME,
+            "test": ecc.TEST_KG_NAME,
+        }.get(graph_name, ecc.PRODUCTION_KG_NAME)
+
         #  split params into admin_user and code_user
         fdb = FalkorDB()  # (**self.cyp_config.auth_params)
-        return fdb.select_graph(graph_name)
+        return fdb.select_graph(name)
 
 
 class Loader:
@@ -73,7 +83,7 @@ class Loader:
     def run(self):
         try:
             log_etl.info("Load: Communicating with FalkorDB")
-            graph = GraphPool.get_graph()
+            graph = GraphPool.get_graph("development")
 
             result = graph.query("MATCH (st: State) RETURN count(st) AS count")
             is_empty = result.result_set[0][0] == 0
@@ -117,7 +127,7 @@ class Loader:
         try:
             instances = ETLCyphersConstants.NUMBER_OF_MT_WORKERS
             log_etl.info(f"Load: Preparing a KG pool of {instances}")
-            self.graph_pool = GraphPool(instances)
+            self.graph_pool = GraphPool(instances, "development")
 
             log_etl.info("Load: Starting batch upsertion with multi-threading")
             strt_time_main = time()
@@ -132,6 +142,8 @@ class Loader:
                         slc = Loader.slice_batch(batch, i, instances)
                         node_data, rlsp_data = self._get_data("upsert", slc)
                         prepared.append((node_data, rlsp_data))
+
+                    del batch
 
                     log_etl.info("Load: Started node creation for batch")
                     node_futures = []
@@ -154,6 +166,7 @@ class Loader:
                         )
 
                     wait(rlsp_futures)  # HARD BARRIER
+                    del prepared
 
                     log_etl.info(
                         f"Load: Completed batch in {format_time(time() - strt_time_btch)}"
