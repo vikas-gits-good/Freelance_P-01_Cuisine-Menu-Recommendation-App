@@ -158,7 +158,7 @@ class Transformer:
 
                     area_dict_node = Area.from_data((city_id, rstn))
                     lclt_dict_node = Locality.from_data((city_id, rstn))
-                    rstn_dict_node = rstn.model_dump()
+                    rstn_dict_node = rstn.to_node_dict()
                     menu_dict_node = menu.model_dump()["food_items"]
                     mcui_dict_node = MainCuisine.from_data(rstn)
                     # scui_dict_node = SubCuisine.from_data(rstn)

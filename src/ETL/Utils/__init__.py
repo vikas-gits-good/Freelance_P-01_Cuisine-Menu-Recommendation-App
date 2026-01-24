@@ -22,13 +22,12 @@ from src.Utils.main_utils import (
     upsert_to_mongodb,
     get_from_mongodb,
 )
+from src.ETL.Config.models import Restaurant
 from src.ETL.Config import (
     LinksConfig,
     CoordsConfig,
     RestaurantConfig,
     ScrapeConfig,
-    Restaurant,
-    Menu,
 )
 from src.Config import MongoDBConfig
 

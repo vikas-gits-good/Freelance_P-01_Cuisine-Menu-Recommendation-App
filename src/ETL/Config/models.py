@@ -71,6 +71,24 @@ class Restaurant(BaseModel):
         }
         return clean_data
 
+    def to_node_dict(self):
+        clean_data = {
+            "ids": self.ids,
+            "params": {
+                "name": self.name,
+                "city": self.city,
+                "area": self.area,
+                "locality": self.locality,
+                "cuisines": self.cuisines,
+                "rating": self.rating,
+                "address": self.address,
+                "coords": self.coords,
+                "chain": self.chain,
+                "city_id": self.city_id,
+            },
+        }
+        return clean_data
+
 
 # Menu has multiple categories called cards
 class MenuCards(BaseModel):
