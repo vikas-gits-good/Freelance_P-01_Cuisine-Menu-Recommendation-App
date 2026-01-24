@@ -1,3 +1,4 @@
+import os
 from glob import glob
 from enum import Enum
 from dataclasses import dataclass
@@ -6,10 +7,11 @@ from dataclasses import dataclass
 @dataclass
 class ETLCyphersConstants:
     ALL_CYPHER_FILE_PATHS = glob("src/ETL/Cyphers/*.cyp")
-    PRODUCTION_KG_NAME = "PROD_KG"
-    DEVELOPEMENT_KG_NAME = "DEVL_KG"
-    TEST_KG_NAME = "TEST_KG"
-    NUMBER_OF_MT_WORKERS = 4
+    KG_NAME_PROD = "PROD_KG"
+    KG_NAME_DEVL = "DEVL_KG"
+    KG_NAME_TEST = "TEST_KG"
+    __cpu_cnt = 0 if os.cpu_count() is None else os.cpu_count()
+    NUMBER_OF_MT_WORKERS = min(__cpu_cnt, 4)
 
 
 @dataclass

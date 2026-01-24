@@ -203,6 +203,7 @@ def upsert_to_mongodb(
 def get_from_mongodb(
     database: str,
     collection: str,
+    item: Literal["city", "rstn_id", "config"] = "rstn_id",
     prefix: Literal["Extraction", "Transformation", "Load"] = "Extraction",
     db_config: MongoDBConfig = MongoDBConfig(),
     log: Logger = log_etl,
@@ -233,16 +234,22 @@ def get_from_mongodb(
         clean_data = {}
 
         if collection == db_config.swiggy.coll_rstn_cnfg:
+            colls.create_index("city", background=True)
+            # clean_data= [{item["city"]: item["config"]} for item in data]
             for item in data:
                 clean_data.update({item["city"]: item["config"]})
 
         elif collection == db_config.swiggy.coll_scrp_data:
             colls.create_index("rstn_id", background=True)
-            cursor = colls.find(
-                {}, {"rstn_id": 0, "config": 1, "_id": 0}, batch_size=1000
-            )
-            clean_data = [doc["config"] for doc in cursor]
-            log_etl.info(f"Extraction: Acquired {len(clean_data):,} rstn_ids")
+            cursor = colls.find({}, {item: 1, "_id": 0}, batch_size=1000)
+            clean_data = [doc[item] for doc in cursor]
+            log_etl.info(f"Extraction: Acquired {len(clean_data):,} {item}")
+
+        elif collection == db_config.swiggy.coll_upst_fail:
+            colls.create_index("rstn_id", background=True)
+            cursor = colls.find({}, {item: 1, "_id": 0}, batch_size=1000)
+            clean_data = [doc[item] for doc in cursor]
+            log_etl.info(f"Extraction: Acquired {len(clean_data):,} {item}")
 
         return clean_data
 
@@ -307,6 +314,8 @@ def fetch_batches(
             if batch:
                 log.info(f"{prefix}: Sending final {batch_size:,} rows of data")
                 yield batch
+
+            mgcl.close()
 
     except Exception as e:
         LogException(e, logger=log)

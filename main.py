@@ -13,5 +13,5 @@ if __name__ == "__main__":
     # asyncio.run(GenerateBrowsers().start())
     # RestaurantData().get()
 
-    Loader().run()
+    Loader(purpose="development").run()
     pass
