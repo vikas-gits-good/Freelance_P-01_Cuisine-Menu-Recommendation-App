@@ -42,7 +42,7 @@ class Restaurant(BaseModel):
     cuisines: List[str] = [""]
     rating: float | None = None
     address: str = ""
-    coords: str = ""
+    coords: List[float] | None = None
     chain: bool = False
     city_id: str = ""
 
@@ -170,7 +170,7 @@ class FoodItem(BaseModel):
             "name": main_part.get("name", "").strip(),
             "category": main_part.get("category", "").strip(),
             "description": main_part.get("description", "").strip(),
-            "price": round(int(price))
+            "price": round(int(price) / 100)
             if (price := main_part.get("price")) is not None
             else None,
             "rating": float(rating)

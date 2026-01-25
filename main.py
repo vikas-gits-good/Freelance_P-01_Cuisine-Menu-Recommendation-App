@@ -15,6 +15,5 @@ if __name__ == "__main__":
 
     Loader(purpose="test").run()
     pass
-
-# some rstns are still failing despite the update
 # look into Areas and Localities and see if you can merge extra nodes.
+# will have to make UDF to clean data

@@ -22,7 +22,20 @@ class Transformer:
     """
 
     def __init__(self):
-        pass
+        self.lctn_files = {
+            "Country": [],
+            "State": [],
+            "City": [],
+        }
+        path_list = LocationConstants.LOCATION_DATA_FILE_PATHS
+        for path in path_list:
+            # "unq_ids_city.json" -> "City"
+            key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
+            if key == "City":
+                self.city_data = read_json(path)
+
+            for data in read_json(path).values():
+                self.lctn_files[key].append(data)
 
     def get_data(
         self,
@@ -65,12 +78,8 @@ class Transformer:
                 NodeLabels.STATE: [],
                 NodeLabels.CITY: [],
             }
-            path_list = LocationConstants.LOCATION_DATA_FILE_PATHS
-            for path in path_list:
-                # "unq_ids_city.json" -> "City"
-                key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
-                for data in read_json(path).values():
-                    node_data[NodeLabels(key)].append(data)
+            for key, val in self.lctn_files.items():
+                node_data[NodeLabels(key)] = val
 
             log_etl.info("Load: Appending relationship data")
             srch_data = {
@@ -142,13 +151,7 @@ class Transformer:
                 # include in production
             }
 
-            all_paths = LocationConstants.LOCATION_DATA_FILE_PATHS
-            city_path = [
-                path for path in all_paths if path.endswith("unq_ids_city.json")
-            ][0]
-            city_data = read_json(city_path)
-            city_keys = {key: val["ids"] for key, val in city_data.items()}
-            del city_data  # clear memory
+            city_keys = {key: val["ids"] for key, val in self.city_data.items()}
 
             for json_data in data_list:
                 try:
