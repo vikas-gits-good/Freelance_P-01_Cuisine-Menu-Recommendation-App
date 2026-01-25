@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Tuple, Dict, List, Any, Literal
+from typing import Optional, Dict, List, Any, Literal
 from pydantic import BaseModel, model_validator
 
 from src.ETL.Constants.cyphers import NodeLabels, RelationshipLabels
@@ -60,13 +60,15 @@ class Restaurant(BaseModel):
             .strip(),
             "cuisines": main_part["info"].get("cuisines", [""]),
             "rating": float(rating)
-            if (rating := main_part["info"].get("avgRating")) is not None
+            if (rating := main_part["info"].get("avgRating", ""))
             else None,
             "address": main_part["info"]["labels"][1].get("message", "").strip(),
-            "coords": main_part["info"].get("latLong", "").strip(),
+            "coords": [float(x) for x in latlong.split(",")]
+            if (latlong := main_part["info"].get("latLong", "").strip())
+            else None,
             "chain": main_part["info"].get("multiOutlet", False),
             "city_id": re.sub(
-                r"[-_]", " ", main_part["info"]["slugs"].get("city", "")
+                r"[,-_]+", " ", main_part["info"]["slugs"].get("city", "")
             ).strip(),
         }
         return clean_data
@@ -250,6 +252,22 @@ class BaseLocation(BaseModel):
     coords: Optional[str] = None
     boundingbox: Optional[str] = None
 
+    @classmethod
+    def substitute(cls, strn, subs):
+        return re.sub(r"[ _,]+", subs, strn).strip()
+
+    def to_node_dict(self):
+        clean_data = {
+            "ids": self.ids,
+            "params": {
+                "name": self.name,
+                "iso_code": self.iso_code,
+                "coords": self.coords,
+                "boundingbox": self.boundingbox,
+            },
+        }
+        return clean_data
+
 
 class Country(BaseLocation):
     """Model for `Country` node.
@@ -340,14 +358,18 @@ class Area(BaseLocation):
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
+    @model_validator(mode="before")
     @classmethod
-    def from_data(cls, data: Tuple[str, Restaurant]):
-        area_name = data[-1].area.replace(" ", "-")
-        city_name = data[-1].city.replace(" ", "-")
-        city_id = data[0]
+    def ent(cls, data: Dict[str, Any]):
+        area_name = cls.substitute(data["rstn"].area, "-")
+        city_name = cls.substitute(data["rstn"].city, "-")
+        city_id = data["city_id"]
         clean_data = {
             "ids": f"area_{area_name}__city_{city_name}-{city_id}",
-            "name": data[-1].area,
+            "name": cls.substitute(data["rstn"].area, " "),
+            "iso_code": None,
+            "coords": None,
+            "boundingbox": None,
         }
         return clean_data
 
@@ -384,15 +406,19 @@ class Locality(BaseLocation):
             `Ex: "15.6063596,22.0302694,72.6526112,80.8977842"`
     """
 
+    @model_validator(mode="before")
     @classmethod
-    def from_data(cls, data: Tuple[str, Restaurant]):
-        area_name = data[-1].area.replace(" ", "-")
-        lclt_name = data[-1].locality.replace(" ", "-")
-        city_name = data[-1].city.replace(" ", "-")
-        city_id = data[0]
+    def ent(cls, data: Dict[str, Any]):
+        area_name = cls.substitute(data["rstn"].area, "-")
+        lclt_name = cls.substitute(data["rstn"].locality, "-")
+        city_name = cls.substitute(data["rstn"].city, "-")
+        city_id = data["city_id"]
         clean_data = {
             "ids": f"locality_{lclt_name}__area_{area_name}__city_{city_name}-{city_id}",
-            "name": data[-1].locality,
+            "name": cls.substitute(data["rstn"].locality, " "),
+            "iso_code": None,
+            "coords": None,
+            "boundingbox": None,
         }
         return clean_data
 
@@ -401,21 +427,22 @@ class Cuisine(BaseModel):
     name: str
 
 
-class MainCuisine:
-    main_cuisines: List[Cuisine]
+class MainCuisine(BaseModel):
+    cuis: list[str]
+    # main_cuisines: List[Cuisine]
+    # create these cuisines manually later from Wikipedia
 
-    @classmethod  # create these cuisines manually later from Wikipedia
-    def from_data(cls, data: Restaurant):
-        return [{"name": cuis} for cuis in data.cuisines]
+    def to_node_dict(self) -> List[Dict[str, Any]]:
+        return [{"name": item, "params": {}} for item in self.cuis]
 
 
-class SubCuisine:
-    sub_cuisines: List[Cuisine]
+class SubCuisine(BaseModel):
+    cuis: list[str]
+    # main_cuisines: List[Cuisine]
+    # create these cuisines manually later from Wikipedia
 
-    @model_validator(mode="before")
-    @classmethod  # This is placeholder func
-    def extract_and_transform(cls, data):
-        return [Cuisine(name=_) for _ in data]
+    def to_node_dict(self) -> List[Dict[str, Any]]:
+        return [{"name": item, "params": {}} for item in self.cuis]
 
 
 class RelationshipParams(BaseModel):

@@ -1,13 +1,8 @@
-// upsert_menu
+// upsert_menu_cuisine
 UNWIND $rows AS row
-UNWIND row as food_items
-MERGE (food:{label} {{name: food_items.name}})
-SET food += food_items.params
-
-// upsert_cuisine
-UNWIND $rows AS row
-UNWIND row as cuisine
-MERGE (cuis:{label} {{name: cuisine.name}})
+UNWIND row as item
+MERGE (food:{label} {{name: item.name}})
+SET food += item.params
 
 // upsert_relationship_with_params
 UNWIND $rows AS row

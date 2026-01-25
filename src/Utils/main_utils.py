@@ -312,7 +312,7 @@ def fetch_batches(
                     batch = []
 
             if batch:
-                log.info(f"{prefix}: Sending final {batch_size:,} rows of data")
+                log.info(f"{prefix}: Sending final {len(batch):,} rows of data")
                 yield batch
 
             mgcl.close()

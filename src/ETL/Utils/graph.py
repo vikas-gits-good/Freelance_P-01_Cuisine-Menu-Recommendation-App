@@ -58,14 +58,8 @@ def create_nodes(
             if node_name in [loc for loc in NodeLabels][:6]:
                 query = ecc.cp_code.create["create_location_nodes"]
 
-            elif node_name == NodeLabels.MENU:
-                query = ecc.cp_code.upsert["upsert_menu"]
-
-            elif node_name == NodeLabels.MAINCUISINE:
-                query = ecc.cp_code.upsert["upsert_cuisine"]
-
-            # elif node_name == NodeLabels.SUBCUISINE:
-            #     query = ecc.cp_code.upsert["upsert_cuisine"]
+            elif node_name in [loc for loc in NodeLabels][6:]:
+                query = ecc.cp_code.upsert["upsert_menu_cuisine"]
 
             else:
                 query = ""
@@ -75,6 +69,7 @@ def create_nodes(
 
         except Exception as e:
             LogException(e, logger=log_etl)
+            log_etl.info(f"{node_params = }")
             continue
 
     return graph
@@ -118,7 +113,6 @@ def create_links(
                 target_label=first_item["target_label"],
                 relationship=first_item["relationship"],
             )
-
             graph.query(query, {"rows": rlsp_params})
 
         except Exception as e:

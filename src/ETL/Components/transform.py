@@ -75,11 +75,11 @@ class Transformer:
             log_etl.info("Load: Appending relationship data")
             srch_data = {
                 "country_lookup": {
-                    item["name"]: {"ids": item["ids"]}
+                    item["params"]["name"]: {"ids": item["ids"]}
                     for item in node_data[NodeLabels.COUNTRY]
                 },
                 "state_lookup": {
-                    item["name"]: {"ids": item["ids"]}
+                    item["params"]["name"]: {"ids": item["ids"]}
                     for item in node_data[NodeLabels.STATE]
                 },
             }
@@ -154,15 +154,22 @@ class Transformer:
                 try:
                     rstn = Restaurant(**json_data["data"])
                     menu = Menu(**json_data["data"])
-                    key = rstn.city_id  # <- cleaned string. dont touch
-                    city_id = city_keys.get(key, "")
+                    city_id = city_keys.get(rstn.city_id, "")
+                    loca = {
+                        "city_id": city_id,
+                        "rstn": rstn,
+                    }
+                    area = Area(**loca)
+                    lclt = Locality(**loca)
+                    macs = MainCuisine(cuis=rstn.cuisines)
+                    # sucs = SubCuisine(cuis=rstn.cuisines)
 
-                    area_dict_node = Area.from_data((city_id, rstn))
-                    lclt_dict_node = Locality.from_data((city_id, rstn))
+                    area_dict_node = area.to_node_dict()
+                    lclt_dict_node = lclt.to_node_dict()
                     rstn_dict_node = rstn.to_node_dict()
                     menu_dict_node = menu.to_node_dict()
-                    mcui_dict_node = MainCuisine.from_data(rstn)
-                    # scui_dict_node = SubCuisine.from_data(rstn)
+                    mcui_dict_node = macs.to_node_dict()
+                    # scui_dict_node = sucs.to_node_dict()
 
                     node_data[NodeLabels.AREA].append(area_dict_node)
                     node_data[NodeLabels.LOCALITY].append(lclt_dict_node)
