@@ -1,16 +1,14 @@
-// create_country_state_city_area_locality
+// create_location_nodes
 UNWIND $rows AS row
 MERGE (loc:{label} {{ids: row.ids}})
-SET loc.name = row.name,
-    loc.iso_code = row.iso_code,
-    loc.coords = row.coords,
-    loc.boundingbox = row.boundingbox
+SET loc += row.params
 
-// create_location_relationship
+// create_location_links
 UNWIND $rows AS row
 MATCH (src:{source_label} {{ids: row.source_ids}})
 MATCH (tgt:{target_label} {{ids: row.target_ids}})
-MERGE (src)-[:{relationship}]->(tgt)
+MERGE (src)-[rlsp:{relationship}]->(tgt)
+SET rlsp += row.params
 
-// create_index
+// create_location_indexes
 CREATE INDEX FOR (c:{index_label}) ON (c.{index_id})

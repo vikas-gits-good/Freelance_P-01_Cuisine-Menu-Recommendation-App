@@ -1,7 +1,6 @@
 from falkordb.graph import Graph
 from typing import Dict, Any, List
 from src.ETL.Config.cyphers import ETLCypherConfig
-from src.ETL.Config.models import RelationshipParams
 from src.ETL.Constants.cyphers import NodeLabels, IndexName, RelationshipLabels
 
 from src.Logging.logger import log_etl
@@ -26,8 +25,7 @@ def create_indexes(graph: Graph) -> Graph:
             label_key = parts[0]  # "country", "subcuisine"
             id_type = parts[1]  # "ids", "name"
 
-            query = ecc.cp_code.create.get("create_index", "").format(
-                # index_name=index_name.value,
+            query = ecc.cp_code.create.get("create_location_indexes", "").format(
                 index_label=label_lookup[label_key],
                 index_id=id_type,
             )
@@ -57,11 +55,8 @@ def create_nodes(
     """
     for node_name, node_params in data.items():
         try:
-            if node_name in [loc for loc in NodeLabels][:5]:
-                query = ecc.cp_code.create["create_country_state_city_area_locality"]
-
-            elif node_name == NodeLabels.RESTAURANT:
-                query = ecc.cp_code.upsert["upsert_restaurant"]
+            if node_name in [loc for loc in NodeLabels][:6]:
+                query = ecc.cp_code.create["create_location_nodes"]
 
             elif node_name == NodeLabels.MENU:
                 query = ecc.cp_code.upsert["upsert_menu"]
@@ -104,7 +99,7 @@ def create_links(
     for rlsp_name, rlsp_params in data_dict.items():
         try:
             if rlsp_name in rlsp_label_list[:5]:
-                query = ecc.cp_code.create["create_location_relationship"]
+                query = ecc.cp_code.create["create_location_links"]
 
             elif rlsp_name in rlsp_label_list[5:]:
                 query = ecc.cp_code.upsert["upsert_relationship_with_params"]

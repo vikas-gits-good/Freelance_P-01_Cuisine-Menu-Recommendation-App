@@ -215,6 +215,18 @@ class Menu(BaseModel):
 
         return {"food_items": food_list}
 
+    def to_node_dict(self) -> List[Dict[str, Any]]:
+        part_food = []
+        for food in self.food_items:
+            data = {
+                "name": food.name,
+                "params": {
+                    "types": food.types,
+                },
+            }
+            part_food.append(data)
+        return part_food
+
 
 class BaseLocation(BaseModel):
     """Base model with common attributes for all location nodes.
@@ -433,7 +445,7 @@ class RelationshipParams(BaseModel):
             if types == RelationshipLabels.HAS_STATE:
                 clean_data = {
                     "source_ids": data["country_lookup"]
-                    .get(item["address"]["country"], {})
+                    .get(item["country"], {})
                     .get("ids", ""),
                     "target_ids": item["ids"],
                     "source_label": NodeLabels.COUNTRY.value,
@@ -444,7 +456,7 @@ class RelationshipParams(BaseModel):
             elif types == RelationshipLabels.HAS_CITY:
                 clean_data = {
                     "source_ids": data["state_lookup"]
-                    .get(item["address"]["state"], "")
+                    .get(item["state"], {})
                     .get("ids", ""),
                     "target_ids": item["ids"],
                     "source_label": NodeLabels.STATE.value,

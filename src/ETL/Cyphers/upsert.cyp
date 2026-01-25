@@ -1,13 +1,8 @@
-// upsert_restaurant
-UNWIND $rows AS row
-MERGE (rstn:{label} {{ids: row.ids}})
-SET rstn += row.params
-
 // upsert_menu
 UNWIND $rows AS row
 UNWIND row as food_items
 MERGE (food:{label} {{name: food_items.name}})
-SET food.types = food_items.types
+SET food += food_items.params
 
 // upsert_cuisine
 UNWIND $rows AS row

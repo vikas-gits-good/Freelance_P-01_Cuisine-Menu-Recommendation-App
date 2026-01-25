@@ -103,12 +103,13 @@ class Transformer:
             rlsp_data[RelationshipLabels.HAS_CITY] = city_dict_rlsp
 
             del srch_data
-            for item in chain.from_iterable(
-                chain(rlsp_data.values(), node_data.values())
-            ):
-                # the '-' in 'ISO3166-2-lvl4' is causing Cypher to fail
-                # also, UNWIND is failing for nested data
-                item.pop("address", None)
+            # for item in chain.from_iterable(
+            #     chain(rlsp_data.values(), node_data.values())
+            # ):
+            #     # the '-' in 'ISO3166-2-lvl4' is causing Cypher to fail
+            #     # also, UNWIND is failing for nested data
+            #     # dont remove this comment incase of rollback
+            #     item.pop("address", None)
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -159,7 +160,7 @@ class Transformer:
                     area_dict_node = Area.from_data((city_id, rstn))
                     lclt_dict_node = Locality.from_data((city_id, rstn))
                     rstn_dict_node = rstn.to_node_dict()
-                    menu_dict_node = menu.model_dump()["food_items"]
+                    menu_dict_node = menu.to_node_dict()
                     mcui_dict_node = MainCuisine.from_data(rstn)
                     # scui_dict_node = SubCuisine.from_data(rstn)
 
