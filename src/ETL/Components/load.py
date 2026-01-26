@@ -85,9 +85,7 @@ class Loader:
             strt_time_main = time()
             with ThreadPoolExecutor(max_workers=instances) as pool:
                 for batch in fetch_batches(batch_size=1024):
-                    log_etl.info(
-                        "Load: Transforming batch data for node and link creation"
-                    )
+                    log_etl.info("Load: Transforming batch data")
                     strt_time_btch = time()
                     prepared = []
                     for i in range(instances):
