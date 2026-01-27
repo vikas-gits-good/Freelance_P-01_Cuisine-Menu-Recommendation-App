@@ -7,11 +7,9 @@ pytest
 pydantic
 python-dotenv
 ipykernel
-graphiti-core[falkordb]
 
 # scrape
 # rnet
-# redis
 # tenacity
 # camoufox[geoip]
 # curl-cffi
@@ -29,13 +27,16 @@ sentence-transformers
 
 
 # database
+redis
 pymongo
 FalkorDB
 
-# practise
+# RAG
 groq
-llama-index-embeddings-huggingface
-langchain-core
+# mem0
 langgraph
-langchain-experimental
+langchain
+langchain-core
 langchain-groq
+langchain-community
+langchain-experimental
