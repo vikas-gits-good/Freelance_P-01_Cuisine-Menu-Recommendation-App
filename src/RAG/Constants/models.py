@@ -1,12 +1,12 @@
 class GroqModelList:
-    class NCAI:
+    class ncai:
         allam_2_7b: str = "allam-2-7b"
 
-    class Groq:
+    class groq:
         compound: str = "groq/compound"
         compound_mini: str = "groq/compound-mini"
 
-    class Meta:
+    class meta:
         llama_31_8b_instant: str = "llama-3.1-8b-instant"
         llama_33_70b_versatile: str = "llama-3.3-70b-versatile"
         llama_4_maverick_17b_128e_instruct: str = (
@@ -19,14 +19,14 @@ class GroqModelList:
         llama_prompt_guard_2_22m: str = "meta-llama/llama-prompt-guard-2-22m"
         llama_prompt_guard_2_86m: str = "meta-llama/llama-prompt-guard-2-86m"
 
-    class Qwen:
+    class qwen:
         qwen3_32b: str = "qwen/qwen3-32b"
 
-    class Moonshot:
+    class moonshot:
         kimi_k2_instruct: str = "moonshotai/kimi-k2-instruct"
         kimi_k2_instruct_0905: str = "moonshotai/kimi-k2-instruct-0905"
 
-    class OpenAI:
+    class openai:
         gpt_oss_20b: str = "openai/gpt-oss-20b"
         gpt_oss_safeguard_20b: str = "openai/gpt-oss-safeguard-20b"
         gpt_oss_120b: str = "openai/gpt-oss-120b"
