@@ -45,6 +45,7 @@ class Restaurant(BaseModel):
     coords: List[float] | None = None
     chain: bool = False
     city_id: str = ""
+    # include number of ratings as well
 
     @model_validator(mode="before")
     @classmethod
@@ -171,11 +172,10 @@ class FoodItem(BaseModel):
             "category": main_part.get("category", "").strip(),
             "description": main_part.get("description", "").strip(),
             "price": round(int(price) / 100)
-            if (price := main_part.get("price")) is not None
+            if (price := main_part.get("price", ""))
             else None,
             "rating": float(rating)
-            if (rating := main_part["ratings"]["aggregatedRating"].get("rating"))
-            is not None
+            if (rating := main_part["ratings"]["aggregatedRating"].get("rating", ""))
             else None,
             "types": _types,
         }
