@@ -1,4 +1,4 @@
-from typing import Literal, List
+from typing import Literal, List, Set
 from pydantic import BaseModel, Field
 
 
@@ -12,7 +12,7 @@ class GetCompetitorDataModels:
     class FunctionParams(BaseModel):
         q_params: "GetCompetitorDataModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
-        exclude: List[
+        exclude: Set[
             Literal[
                 "ids",
                 "name",
@@ -26,7 +26,7 @@ class GetCompetitorDataModels:
                 "chain",
                 "city_id",
             ]
-        ] = Field(default=["ids", "city_id"], description="")
+        ] = Field(default={"ids", "city_id"}, description="")
 
 
 class GetCompetitorMenuModels:
@@ -39,7 +39,7 @@ class GetCompetitorMenuModels:
     class FunctionParams(BaseModel):
         q_params: "GetCompetitorMenuModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
-        exclude: List[
+        exclude: Set[
             Literal[
                 "rstn_ids",
                 "rstn_name",
@@ -57,4 +57,15 @@ class GetCompetitorMenuModels:
                 "food_price",
                 "food_rating",
             ]
-        ] = Field(default=["rstn_ids", "rstn_city_id"], description="")
+        ] = Field(
+            default={
+                "rstn_ids",
+                "rstn_city",
+                "rstn_area",
+                "rstn_locality",
+                "rstn_address",
+                "rstn_coords",
+                "rstn_city_id",
+            },
+            description="",
+        )
