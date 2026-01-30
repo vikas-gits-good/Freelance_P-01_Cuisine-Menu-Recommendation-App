@@ -16,7 +16,7 @@ ORDER BY r.rating DESC, r.name ASC
 LIMIT $limit
 
 // cypher_get_competitors_menu
-MATCH (:Area {name: $area})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(rstn:Restaurant)
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(rstn:Restaurant)
 MATCH (rstn)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
 MATCH (rstn)-[link:HAS_MENU]->(menu:Menu)
 WHERE link.rating IS NOT NULL AND link.rating >= $min_menu_rating
@@ -29,4 +29,19 @@ WITH rstn, collect({
 })[0..20] AS top_menus
 UNWIND top_menus AS merged
 RETURN merged
+LIMIT $limit
+
+// cypher_get_menu_benchmark
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
+MATCH (r)-[link:HAS_MENU]->(m:Menu)
+WHERE toLower(m.name) CONTAINS toLower($menu_name)
+    AND link.price IS NOT NULL
+RETURN
+    m.name,
+    link.price,
+    link.rating,
+    r.name,
+    r.rating
+ORDER BY r.name ASC, link.price DESC
 LIMIT $limit

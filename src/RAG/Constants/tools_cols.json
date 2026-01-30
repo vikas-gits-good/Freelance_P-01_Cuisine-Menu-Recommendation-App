@@ -21,5 +21,12 @@
         "rstn_address",
         "rstn_coords",
         "rstn_city_id"
+    ],
+    "cypher_get_menu_benchmark": [
+        "food_name",
+        "food_price",
+        "food_rating",
+        "rstn_name",
+        "rstn_rating"
     ]
 }
