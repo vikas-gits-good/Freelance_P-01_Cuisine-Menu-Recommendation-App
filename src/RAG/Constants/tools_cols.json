@@ -68,5 +68,11 @@
         "food_types",
         "food_price",
         "food_rating"
+    ],
+    "cypher_recommend_menu": [
+        "food_name",
+        "food_types",
+        "avg_food_price",
+        "avg_food_rating"
     ]
 }

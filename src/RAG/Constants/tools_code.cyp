@@ -124,3 +124,17 @@ RETURN
     link.rating
 ORDER BY link.rating DESC, m.name ASC
 LIMIT $limit
+
+// cypher_recommend_menu
+MATCH (:Area {name:$area})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name:$cuisine})
+MATCH (r)-[link:HAS_MENU]->(m:Menu)
+WHERE link.rating IS NOT NULL AND link.rating >= $min_menu_rating
+WITH
+    m.name AS menu_name,
+    m.types AS types,
+    avg(link.price) AS avg_price,
+    avg(link.rating) AS avg_rating
+RETURN menu_name, types, avg_price, avg_rating
+ORDER BY avg_rating DESC
+LIMIT $limit
