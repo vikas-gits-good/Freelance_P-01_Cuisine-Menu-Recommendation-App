@@ -69,3 +69,15 @@ class GetCompetitorMenuModels:
             },
             description="",
         )
+
+
+class GetMenuBenchmarkModels:
+    class QueryParams(BaseModel):
+        area: str = Field(default="Koramangala", description="")
+        cuisine: str = Field(default="South Indian", description="")
+        menu_name: str = Field(default="Masala Dosa", description="")
+        limit: int = Field(default=200, ge=1, le=2000, description="")
+
+    class FunctionParams(BaseModel):
+        q_params: "GetMenuBenchmarkModels.QueryParams" = Field(description="")
+        output: Literal["dict", "dataframe"] = Field(default="dict", description="")
