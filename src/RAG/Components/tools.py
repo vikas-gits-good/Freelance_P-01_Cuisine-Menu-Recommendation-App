@@ -46,7 +46,7 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' `basic` data.
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
         """
         full_data = {}
         try:
@@ -95,7 +95,7 @@ class CypherFunctionTool:
             Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' `menu` data.
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
         """
         full_data = {}
         try:
@@ -146,7 +146,7 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' `menu` data.
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
         """
         full_data = {}
         try:
@@ -189,7 +189,7 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' `menu` data.
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
         """
         full_data = {}
         try:
@@ -233,7 +233,7 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' `menu` data.
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
         """
         full_data = {}
         try:
@@ -248,5 +248,48 @@ class CypherFunctionTool:
             LogException(e, logger=log_flk)
             log_flk.info(f"Error:\n{q_code = }\n{e = }")
             # raise CustomException(e)
+
+        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+
+    def get_premium_menu(
+        self,
+        q_params: dict,
+        output: Literal["dict", "dataframe"] = "dict",
+    ) -> Dict[str, Any] | pd.DataFrame:
+        """Tool that queries FalkorDB and returns data where a given food item's price is high
+        but there is proven demand in a given area and cuisine.
+        ## Usage:
+        ```python
+            func_params = {
+                "q_params": {
+                    "area_ids": "area_Koramangala__city_Bangalore-relation:7902476",
+                    "cuisine": "South Indian",
+                    "min_listings": 1,
+                    "min_avg_rating": 4.5,
+                    "limit": 500
+                },
+                "output": "dict"
+            }
+        data = get_premium_menu(**func_params)
+        ```
+        Args:
+            q_params (dict): Parameters to pass into graph query.
+            output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
+
+        Returns:
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
+        """
+        full_data = {}
+        try:
+            q_code = self.cp_config.cp_code.tools["cypher_get_overpriced_menu"]
+            columns = self.cp_config.cp_cols.cols["cypher_get_overpriced_menu"]
+            result = self.graph.query(q_code, q_params).result_set
+            full_data = {
+                key: [item[columns.index(key)] for item in result] for key in columns
+            }
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            log_flk.info(f"Error:\n{q_code = }\n{e = }")
 
         return pd.DataFrame(full_data) if output == "dataframe" else full_data

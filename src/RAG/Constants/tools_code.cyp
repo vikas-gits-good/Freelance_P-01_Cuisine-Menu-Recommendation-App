@@ -91,3 +91,25 @@ RETURN food_name, min_food_price, avg_food_price, max_food_price, sd_food_price,
 min_food_rating, avg_food_rating, max_food_rating, listings
 ORDER BY food_name ASC, avg_food_rating DESC
 LIMIT $limit
+
+// cypher_get_premium_menu
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name:$cuisine})
+MATCH (r)-[link:HAS_MENU]->(m:Menu)
+WHERE link.price IS NOT NULL AND link.rating IS NOT NULL
+WITH
+    m.name AS food_name,
+    min(link.price) AS min_food_price,
+    avg(link.price) AS avg_food_price,
+    max(link.price) AS max_food_price,
+    stDev(link.price) AS sd_food_price,
+    min(link.rating) AS min_food_rating,
+    avg(link.rating) AS avg_food_rating,
+    max(link.rating) AS max_food_rating,
+    count(*) AS listings
+WHERE listings >= $min_listings AND avg_food_rating >= $min_avg_rating
+RETURN food_name, min_food_price, avg_food_price, max_food_price, sd_food_price, 
+min_food_rating, avg_food_rating, max_food_rating, listings
+ORDER BY food_name ASC, avg_food_rating DESC, avg_food_price DESC
+LIMIT $limit
+

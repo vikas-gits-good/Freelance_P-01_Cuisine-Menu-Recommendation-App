@@ -49,5 +49,16 @@
         "avg_food_rating",
         "max_food_rating",
         "listings"
+    ],
+    "cypher_get_premium_menu": [
+        "food_name",
+        "min_food_price",
+        "avg_food_price",
+        "max_food_price",
+        "sd_food_price",
+        "min_food_rating",
+        "avg_food_rating",
+        "max_food_rating",
+        "listings"
     ]
 }
