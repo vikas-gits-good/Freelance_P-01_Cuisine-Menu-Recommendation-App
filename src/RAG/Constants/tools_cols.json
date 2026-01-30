@@ -60,5 +60,13 @@
         "avg_food_rating",
         "max_food_rating",
         "listings"
+    ],
+    "cypher_get_specific_competitor_menu": [
+        "rstn_name",
+        "rstn_area",
+        "food_name",
+        "food_types",
+        "food_price",
+        "food_rating"
     ]
 }

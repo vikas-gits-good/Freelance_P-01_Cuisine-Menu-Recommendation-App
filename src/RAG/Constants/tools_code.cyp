@@ -113,3 +113,14 @@ min_food_rating, avg_food_rating, max_food_rating, listings
 ORDER BY food_name ASC, avg_food_rating DESC, avg_food_price DESC
 LIMIT $limit
 
+// cypher_get_specific_competitor_menu
+MATCH (rstn:Restaurant {ids: $rstn_id})-[link:HAS_MENU]->(m:Menu)
+RETURN
+    rstn.name,
+    rstn.area,
+    m.name,
+    m.types,
+    link.price,
+    link.rating
+ORDER BY link.rating DESC, m.name ASC
+LIMIT $limit

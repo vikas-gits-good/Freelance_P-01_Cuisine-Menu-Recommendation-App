@@ -226,7 +226,7 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_menu_opportunities(**func_params)
+        data = get_overpriced_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
@@ -281,8 +281,48 @@ class CypherFunctionTool:
         """
         full_data = {}
         try:
-            q_code = self.cp_config.cp_code.tools["cypher_get_overpriced_menu"]
-            columns = self.cp_config.cp_cols.cols["cypher_get_overpriced_menu"]
+            q_code = self.cp_config.cp_code.tools["cypher_get_premium_menu"]
+            columns = self.cp_config.cp_cols.cols["cypher_get_premium_menu"]
+            result = self.graph.query(q_code, q_params).result_set
+            full_data = {
+                key: [item[columns.index(key)] for item in result] for key in columns
+            }
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            log_flk.info(f"Error:\n{q_code = }\n{e = }")
+
+        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+
+    def get_specific_competitor_menu(
+        self,
+        q_params: dict,
+        output: Literal["dict", "dataframe"] = "dict",
+    ) -> Dict[str, Any] | pd.DataFrame:
+        """Tool that queries FalkorDB and returns all menu items from a competitors restaurant
+        in a given area.
+        ## Usage:
+        ```python
+            func_params = {
+                "q_params": {
+                    "rstn_id": 418,
+                    "limit": 200
+                },
+                "output": "dict"
+            }
+        data = get_specific_competitor_menu(**func_params)
+        ```
+        Args:
+            q_params (dict): Parameters to pass into graph query.
+            output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
+
+        Returns:
+            Dict[str, Any] | pd.DataFrame: Competitors' data.
+        """
+        full_data = {}
+        try:
+            q_code = self.cp_config.cp_code.tools["cypher_get_specific_competitor_menu"]
+            columns = self.cp_config.cp_cols.cols["cypher_get_specific_competitor_menu"]
             result = self.graph.query(q_code, q_params).result_set
             full_data = {
                 key: [item[columns.index(key)] for item in result] for key in columns
