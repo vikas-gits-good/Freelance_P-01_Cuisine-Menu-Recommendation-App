@@ -1,0 +1,19 @@
+{
+    "cypher_get_competitors_data": [
+        "name",
+        "area",
+        "cuisines",
+        "rating",
+        "chain",
+        "min_menu_rating",
+        "avg_menu_rating",
+        "max_menu_rating",
+        "min_menu_price",
+        "avg_menu_price",
+        "max_menu_price",
+        "sd_menu_price"
+    ],
+    "": [
+
+    ]
+}

@@ -1,38 +1,15 @@
 import re
 from typing import Literal
-from src.Utils.main_utils import read_cypher
-from src.RAG.Constants import FalkorDBConstants, RAGCypherConstants
-
-
-class SwiggyFKDBConfig:
-    def __init__(self):
-        self.cnct_url = FalkorDBConstants.FALKORDB_CONNECTION_URI
-
-        username, password, host, port = re.search(
-            r"redis://([^:]+):([^@]+)@([^:]+):(\d+)", self.cnct_url
-        ).groups()
-
-        self.cnct_dict = {
-            "username": username,
-            "password": password,
-            "host": host,
-            "port": int(port),
-        }
-
-
-class FalkorDBConfig:
-    def __init__(self):
-        self.swiggy = SwiggyFKDBConfig()
+from src.Utils.main_utils import read_cypher, read_json
+from src.RAG.Constants import RAGCypherConstants
 
 
 class get_cypher_code:
     def __init__(self):
-        self.all_cyp_paths = RAGCypherConstants.ALL_CYPHER_FILE_PATHS
-        self.create = self.get_code(code="create")
-        self.load = self.get_code(code="load")
-        self.validate = self.get_code(code="validate")
+        self.all_cyp_paths = RAGCypherConstants.ALL_CYPHER_CODE_PATH
+        self.tools = self.get_code(code="tools")
 
-    def get_code(self, code: Literal["create", "load", "validate"] = "create"):
+    def get_code(self, code: Literal["tools"] = "tools"):
         path = [
             file_item
             for file_item in self.all_cyp_paths
@@ -47,6 +24,12 @@ class get_cypher_code:
         return cypher_dict
 
 
+class get_cypher_cols:
+    def __init__(self):
+        self.cols: dict = read_json(RAGCypherConstants.ALL_CYPHER_COLS_PATH)
+
+
 class CypherCodeConfig:
     def __init__(self):
         self.cp_code = get_cypher_code()
+        self.cp_cols = get_cypher_cols()
