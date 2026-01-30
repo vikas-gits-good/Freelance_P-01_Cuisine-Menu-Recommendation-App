@@ -38,5 +38,16 @@
         "avg_menu_price",
         "max_menu_price",
         "sd_menu_price"
+    ],
+    "cypher_get_overpriced_menu": [
+        "food_name",
+        "min_food_price",
+        "avg_food_price",
+        "max_food_price",
+        "sd_food_price",
+        "min_food_rating",
+        "avg_food_rating",
+        "max_food_rating",
+        "listings"
     ]
 }
