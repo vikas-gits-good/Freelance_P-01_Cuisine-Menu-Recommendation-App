@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Literal, Dict, Any
+from typing import Literal, Dict, Any, Set
 
 from src.ETL.Config.graph_pool import GraphPool
 from src.RAG.Config import CypherCodeConfig
@@ -12,11 +12,11 @@ class CypherFunctionTool:
     def __init__(self, cp_config: CypherCodeConfig = CypherCodeConfig()):
         try:
             self.graph = GraphPool.get_graph(graph_name="test")
+            self.cp_config = cp_config
             self.tools_list = [
                 self.get_competitors_data,
                 # is there a class iterable method to get function names as callables?
             ]
-            self.cp_config = cp_config
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -27,16 +27,16 @@ class CypherFunctionTool:
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
     ) -> Dict[str, Any] | pd.DataFrame:
-        """Tool that queries FalkorDB and returns competitors' basic data in a given area and cuisine.
+        """Tool that queries FalkorDB and returns competitors' `basic` data in a given area and cuisine.
         ## Usage:
         ```python
             func_params = {
-                'q_params': {
+                "q_params": {
                     "area": "Indiranagar",
                     "cuisine": "Thai",
-                    "limit": 200,
+                    "limit": 200
                 },
-                "output": "dict",
+                "output": "dict"
             }
         data = get_competitors_data(**func_params)
         ```
@@ -45,14 +45,14 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' basic data.
+            Dict[str, Any] | pd.DataFrame: Competitors' `basic` data.
         """
-        rqrd_data = {}
+        full_data = {}
         try:
-            graph_query = self.cp_config.cp_code.tools["cypher_get_competitors_data"]
+            q_code = self.cp_config.cp_code.tools["cypher_get_competitors_data"]
             columns = self.cp_config.cp_cols.cols["cypher_get_competitors_data"]
-            result = self.graph.query(graph_query, q_params).result_set
-            rqrd_data = {
+            result = self.graph.query(q_code, q_params).result_set
+            full_data = {
                 key: [
                     ", ".join(str(item) for item in data[columns.index(key)])
                     if isinstance(data[columns.index(key)], list)
@@ -65,4 +65,53 @@ class CypherFunctionTool:
             LogException(e, logger=log_flk)
             # raise CustomException(e)
 
-        return pd.DataFrame(rqrd_data) if output == "dataframe" else rqrd_data
+        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+
+    def get_competitors_menu(
+        self,
+        q_params: dict,
+        output: Literal["dict", "dataframe"] = "dict",
+    ) -> Dict[str, Any] | pd.DataFrame:
+        """Tool that queries FalkorDB and returns competitors' `menu` data in a given area and cuisine.
+        ## Usage:
+        ```python
+            func_params = {
+                "q_params": {
+                    "area": "Indiranagar",
+                    "cuisine": "Thai",
+                    "min_menu_rating": 4.0,
+                    "limit": 200
+                },
+                "output": "dict"
+            }
+        data = get_competitors_menu(**func_params)
+        ```
+        Args:
+            q_params (dict): Parameters to pass into graph query.
+            output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
+
+        Returns:
+            Dict[str, Any] | pd.DataFrame: Competitors' `menu` data.
+        """
+        full_data = {}
+        try:
+            q_code = self.cp_config.cp_code.tools["cypher_get_competitors_menu"]
+            columns = self.cp_config.cp_cols.cols["cypher_get_competitors_menu"]
+            result = self.graph.query(q_code, q_params).result_set
+            full_data = {
+                f"{key1}_{key2}".replace("menu_", "food_", 1): [
+                    (", ".join(str(item) for item in x) if isinstance(x, list) else x)
+                    if (x := items[0][key1].get(key2, ""))
+                    else False
+                    for items in result
+                ]
+                for key1 in result[0][0].keys()
+                for key2 in result[0][0][key1].keys()
+                if f"{key1}_{key2}" not in columns
+            }
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            # raise CustomException(e)
+
+        return pd.DataFrame(full_data) if output == "dataframe" else full_data

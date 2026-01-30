@@ -1,5 +1,5 @@
 // cypher_get_competitors_data
-MATCH (:Area {name: $area})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
 MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
 MATCH (r)-[link:HAS_MENU]->(menu:Menu)
 WHERE r.rating IS NOT NULL AND r.rating >= $min_rating
@@ -15,3 +15,18 @@ RETURN
 ORDER BY r.rating DESC, r.name ASC
 LIMIT $limit
 
+// cypher_get_competitors_menu
+MATCH (:Area {name: $area})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(rstn:Restaurant)
+MATCH (rstn)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
+MATCH (rstn)-[link:HAS_MENU]->(menu:Menu)
+WHERE link.rating IS NOT NULL AND link.rating >= $min_menu_rating
+WITH rstn, menu, link
+ORDER BY rstn.name ASC, link.rating DESC, menu.name ASC
+WITH rstn, collect({
+    rstn: properties(rstn),
+    menu: properties(menu),
+    food: properties(link)
+})[0..20] AS top_menus
+UNWIND top_menus AS merged
+RETURN merged
+LIMIT $limit

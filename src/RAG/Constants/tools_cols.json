@@ -13,7 +13,13 @@
         "max_menu_price",
         "sd_menu_price"
     ],
-    "": [
-
+    "cypher_get_competitors_menu": [
+        "rstn_ids",
+        "rstn_city",
+        "rstn_area",
+        "rstn_locality",
+        "rstn_address",
+        "rstn_coords",
+        "rstn_city_id"
     ]
 }

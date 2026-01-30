@@ -24,36 +24,6 @@ class GetCompetitorMenuModels:
     class FunctionParams(BaseModel):
         q_params: "GetCompetitorMenuModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
-        exclude: Set[
-            Literal[
-                "rstn_ids",
-                "rstn_name",
-                "rstn_city",
-                "rstn_area",
-                "rstn_locality",
-                "rstn_cuisines",
-                "rstn_rating",
-                "rstn_address",
-                "rstn_coords",
-                "rstn_chain",
-                "rstn_city_id",
-                "food_name",
-                "food_types",
-                "food_price",
-                "food_rating",
-            ]
-        ] = Field(
-            default={
-                "rstn_ids",
-                "rstn_city",
-                "rstn_area",
-                "rstn_locality",
-                "rstn_address",
-                "rstn_coords",
-                "rstn_city_id",
-            },
-            description="",
-        )
 
 
 class GetMenuBenchmarkModels:
