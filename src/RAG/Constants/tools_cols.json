@@ -28,5 +28,15 @@
         "food_rating",
         "rstn_name",
         "rstn_rating"
+    ],
+    "cypher_get_menu_opportunities": [
+        "food_name",
+        "food_types",
+        "no_of_competitors",
+        "avg_menu_rating",
+        "min_menu_price",
+        "avg_menu_price",
+        "max_menu_price",
+        "sd_menu_price"
     ]
 }

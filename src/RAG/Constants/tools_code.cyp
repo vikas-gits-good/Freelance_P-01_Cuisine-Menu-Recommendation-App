@@ -45,3 +45,28 @@ RETURN
     r.rating
 ORDER BY r.name ASC, link.price DESC
 LIMIT $limit
+
+// cypher_get_menu_opportunities
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
+MATCH (r)-[link:HAS_MENU]->(m:Menu)
+WHERE link.rating IS NOT NULL AND link.rating >= $min_menu_rating
+WITH
+    m.name AS menu_name,
+    m.types AS types,
+    count(DISTINCT r.ids) AS competitor_count,
+    avg(link.rating) AS avg_menu_rating,
+    min(link.price) AS min_menu_price,
+    avg(link.price) AS avg_menu_price,
+    max(link.price) AS max_menu_price,
+    stDev(link.price) AS sd_menu_price
+RETURN
+    menu_name, types,
+    competitor_count,
+    avg_menu_rating,
+    min_menu_price,
+    avg_menu_price,
+    max_menu_price,
+    sd_menu_price
+ORDER BY competitor_count ASC, avg_menu_rating DESC
+LIMIT $limit
