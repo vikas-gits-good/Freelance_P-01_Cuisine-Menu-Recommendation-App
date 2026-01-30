@@ -119,3 +119,22 @@ class GetPremiumMenuModels:
     class FunctionParams(BaseModel):
         q_params: "GetPremiumMenuModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
+
+
+f_params = {
+    "q_params": {
+        "rstn_id": 418,
+        "limit": 500,
+    },
+    "output": "dataframe",
+}
+
+
+class GetSpecificCompetitorMenuModels:
+    class QueryParams(BaseModel):
+        rstn_id: int = Field(default=418, description="")
+        limit: int = Field(default=200, ge=1, le=2000, description="")
+
+    class FunctionParams(BaseModel):
+        q_params: "GetSpecificCompetitorMenuModels.QueryParams" = Field(description="")
+        output: Literal["dict", "dataframe"] = Field(default="dict", description="")
