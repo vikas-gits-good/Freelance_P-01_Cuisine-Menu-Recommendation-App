@@ -1,4 +1,4 @@
-from typing import Literal, List, Set
+from typing import Literal, Set
 from pydantic import BaseModel, Field
 
 
@@ -121,15 +121,6 @@ class GetPremiumMenuModels:
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
 
 
-f_params = {
-    "q_params": {
-        "rstn_id": 418,
-        "limit": 500,
-    },
-    "output": "dataframe",
-}
-
-
 class GetSpecificCompetitorMenuModels:
     class QueryParams(BaseModel):
         rstn_id: int = Field(default=418, description="")
@@ -137,4 +128,16 @@ class GetSpecificCompetitorMenuModels:
 
     class FunctionParams(BaseModel):
         q_params: "GetSpecificCompetitorMenuModels.QueryParams" = Field(description="")
+        output: Literal["dict", "dataframe"] = Field(default="dict", description="")
+
+
+class RecommendMenuModels:
+    class QueryParams(BaseModel):
+        area: str = Field(default="Koramangala", description="")
+        cuisine: str = Field(default="South Indian", description="")
+        min_menu_rating: float = Field(default=4.0, ge=1.0, le=5.0, description="")
+        limit: int = Field(default=200, ge=1, le=2000, description="")
+
+    class FunctionParams(BaseModel):
+        q_params: "RecommendMenuModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
