@@ -81,3 +81,15 @@ class GetMenuBenchmarkModels:
     class FunctionParams(BaseModel):
         q_params: "GetMenuBenchmarkModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
+
+
+class GetMenuOpportunitiesModels:
+    class QueryParams(BaseModel):
+        area: str = Field(default="Koramangala", description="")
+        cuisine: str = Field(default="South Indian", description="")
+        min_menu_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
+        limit: int = Field(default=200, ge=1, le=2000, description="")
+
+    class FunctionParams(BaseModel):
+        q_params: "GetMenuOpportunitiesModels.QueryParams" = Field(description="")
+        output: Literal["dict", "dataframe"] = Field(default="dict", description="")
