@@ -126,7 +126,7 @@ ORDER BY link.rating DESC, m.name ASC
 LIMIT $limit
 
 // cypher_recommend_menu
-MATCH (:Area {name:$area})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
+MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
 MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name:$cuisine})
 MATCH (r)-[link:HAS_MENU]->(m:Menu)
 WHERE link.rating IS NOT NULL AND link.rating >= $min_menu_rating

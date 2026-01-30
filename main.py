@@ -2,6 +2,7 @@ import asyncio
 from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
 from src.ETL.Components.load import Loader
 
+
 if __name__ == "__main__":
     # # Get full sitemap of Swiggy
     # _ = AllLinks().get()
@@ -15,5 +16,3 @@ if __name__ == "__main__":
 
     Loader(purpose="test").run()
     pass
-# look into Areas and Localities and see if you can merge extra nodes.
-# will have to make UDF to clean data

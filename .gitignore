@@ -15,6 +15,7 @@ src/ETL/Data/sitemap/
 docker/falkordb/data/
 docker/mongodb/data/
 src/RAG/References/
+/src/RAG/Notebook/
 catboost_info/
 src/Research/
 src/Secrets/

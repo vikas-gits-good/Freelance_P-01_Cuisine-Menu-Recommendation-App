@@ -26,7 +26,7 @@ class get_cypher_code:
 
 class get_cypher_cols:
     def __init__(self):
-        self.cols: dict = read_json(RAGCypherConstants.ALL_CYPHER_COLS_PATH)
+        self.cols: dict = read_json(RAGCypherConstants.ALL_CYPHER_COLS_PATH[0])
 
 
 class CypherCodeConfig:

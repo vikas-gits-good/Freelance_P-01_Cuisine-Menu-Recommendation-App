@@ -14,8 +14,10 @@ class CypherFunctionTool:
             self.graph = GraphPool.get_graph(graph_name="test")
             self.cp_config = cp_config
             self.tools_list = [
-                self.get_competitors_data,
-                # is there a class iterable method to get function names as callables?
+                getattr(self, method_name)
+                for method_name in dir(self)
+                if not method_name.startswith("_")
+                and callable(getattr(self, method_name))
             ]
 
         except Exception as e:
@@ -35,6 +37,7 @@ class CypherFunctionTool:
                 "q_params": {
                     "area_ids": "area_Indiranagar__city_Bangalore-relation:7902476",
                     "cuisine": "Thai",
+                    'min_rating': 4.0,
                     "limit": 200
                 },
                 "output": "dict"
@@ -287,7 +290,7 @@ class CypherFunctionTool:
         ```python
             func_params = {
                 "q_params": {
-                    "area": 'area_Indiranagar__city_Bangalore-relation:7902476',
+                    "area_ids": 'area_Indiranagar__city_Bangalore-relation:7902476',
                     "cuisine": 'Continental',
                     "min_menu_rating": 4.0,
                     "limit": 300
