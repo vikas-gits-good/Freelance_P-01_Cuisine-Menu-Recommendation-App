@@ -93,3 +93,15 @@ class GetMenuOpportunitiesModels:
     class FunctionParams(BaseModel):
         q_params: "GetMenuOpportunitiesModels.QueryParams" = Field(description="")
         output: Literal["dict", "dataframe"] = Field(default="dict", description="")
+
+
+class GetOverpricedMenuModels:
+    class QueryParams(BaseModel):
+        area: str = Field(default="Koramangala", description="")
+        cuisine: str = Field(default="South Indian", description="")
+        min_listings: int = Field(default=2, ge=1, le=20, description="")
+        limit: int = Field(default=200, ge=1, le=2000, description="")
+
+    class FunctionParams(BaseModel):
+        q_params: "GetOverpricedMenuModels.QueryParams" = Field(description="")
+        output: Literal["dict", "dataframe"] = Field(default="dict", description="")
