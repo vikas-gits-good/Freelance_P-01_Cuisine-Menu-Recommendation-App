@@ -33,13 +33,13 @@ class GroqModelList:
 
 
 class OpenAIModelList:
-    class GPT_3:
+    class gpt_3:
         gpt_3_5_turbo: str = "gpt-3.5-turbo"
         gpt_3_5_turbo_16k: str = "gpt-3.5-turbo-16k"
         gpt_3_5_turbo_0613: str = "gpt-3.5-turbo-0613"
         gpt_3_5_turbo_1106: str = "gpt-3.5-turbo-1106"
 
-    class GPT_4:
+    class gpt_4:
         gpt_4: str = "gpt-4"
         gpt_4_32k: str = "gpt-4-32k"
         gpt_4_0613: str = "gpt-4-0613"
@@ -51,7 +51,7 @@ class OpenAIModelList:
         gpt_4_1_mini: str = "gpt-4.1-mini"
         gpt_4_1_nano: str = "gpt-4.1-nano"
 
-    class GPT_5:
+    class gpt_5:
         gpt_5: str = "gpt-5"
         gpt_5_mini: str = "gpt-5-mini"
         gpt_5_nano: str = "gpt-5-nano"

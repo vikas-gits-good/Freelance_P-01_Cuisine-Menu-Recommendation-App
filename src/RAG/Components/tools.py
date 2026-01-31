@@ -49,15 +49,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_competitors_data")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_competitors_data")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_competitors_menu(
@@ -86,15 +80,9 @@ class CypherFunctionTool:
             Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_competitors_menu")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_competitors_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_menu_benchmark(
@@ -122,15 +110,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_menu_benchmark")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_menu_benchmark")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_menu_opportunities(
@@ -158,15 +140,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_menu_opportunities")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_menu_opportunities")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_overpriced_menu(
@@ -195,15 +171,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_overpriced_menu")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_overpriced_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_premium_menu(
@@ -232,15 +202,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_get_premium_menu")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_premium_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def get_specific_competitor_menu(
@@ -266,17 +230,9 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(
-                q_params, "cypher_get_specific_competitor_menu"
-            )
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_get_specific_competitor_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
     def recommend_menu(
@@ -304,18 +260,16 @@ class CypherFunctionTool:
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            Dict[str, Any] | pd.DataFrame: Competitors' data.
+            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = {}
-        try:
-            full_data = self._process_data(q_params, "cypher_recommend_menu")
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-
+        full_data = self._process_data(q_params, "cypher_recommend_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
 
-    def _process_data(self, q_params: dict, key: str):
+    def _process_data(
+        self,
+        q_params: dict,
+        key: str,
+    ) -> Dict[str, Any]:
         """Quick method to get make the database query and post process the data into required format
 
         Args:
@@ -323,7 +277,7 @@ class CypherFunctionTool:
             key (str): A dictionary key string to get the cypher and column names.
 
         Returns:
-            full_data (dict): The cleaned data from the FalkorDB.
+            full_data (Dict[str, Any]): The cleaned data from the FalkorDB.
         """
         full_data = {}
         try:
@@ -368,5 +322,7 @@ class CypherFunctionTool:
         except Exception as e:
             LogException(e, logger=log_flk)
             log_flk.info(f"Error:\n{q_code = }\n{e = }")
+            # This might be routed directly to user
+            # full_data = {"message": f"Cypher Query:\n{q_code = }\n\nError:\n{e = }"}
 
         return full_data
