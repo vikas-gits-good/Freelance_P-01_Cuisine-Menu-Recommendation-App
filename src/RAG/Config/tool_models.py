@@ -1,10 +1,12 @@
-from typing import Literal, Set
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
 class GetCompetitorDataModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="Thai", description="")
         min_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
         limit: int = Field(default=200, ge=1, le=2000, description="")
@@ -16,7 +18,9 @@ class GetCompetitorDataModels:
 
 class GetCompetitorMenuModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="Thai", description="")
         min_menu_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
         limit: int = Field(default=200, ge=1, le=2000, description="")
@@ -28,7 +32,9 @@ class GetCompetitorMenuModels:
 
 class GetMenuBenchmarkModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="South Indian", description="")
         menu_name: str = Field(default="Masala Dosa", description="")
         limit: int = Field(default=200, ge=1, le=2000, description="")
@@ -40,7 +46,9 @@ class GetMenuBenchmarkModels:
 
 class GetMenuOpportunitiesModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="South Indian", description="")
         min_menu_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
         limit: int = Field(default=200, ge=1, le=2000, description="")
@@ -52,7 +60,9 @@ class GetMenuOpportunitiesModels:
 
 class GetOverpricedMenuModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="South Indian", description="")
         min_listings: int = Field(default=2, ge=1, le=20, description="")
         max_avg_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
@@ -65,7 +75,9 @@ class GetOverpricedMenuModels:
 
 class GetPremiumMenuModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="South Indian", description="")
         min_listings: int = Field(default=2, ge=1, le=20, description="")
         min_avg_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
@@ -88,7 +100,9 @@ class GetSpecificCompetitorMenuModels:
 
 class RecommendMenuModels:
     class QueryParams(BaseModel):
-        area: str = Field(default="Koramangala", description="")
+        area_ids: str = Field(
+            default="area_Indiranagar__city_Bangalore-relation:7902476", description=""
+        )
         cuisine: str = Field(default="South Indian", description="")
         min_menu_rating: float = Field(default=4.0, ge=1.0, le=5.0, description="")
         limit: int = Field(default=200, ge=1, le=2000, description="")

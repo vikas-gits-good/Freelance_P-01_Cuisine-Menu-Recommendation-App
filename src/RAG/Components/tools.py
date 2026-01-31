@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Literal, Dict, Any
+from typing import Literal, Dict, Any, Hashable
 
 from src.ETL.Config.graph_pool import GraphPool
 from src.RAG.Config import CypherCodeConfig
@@ -28,12 +28,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns competitors' basic data in a
         given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Indiranagar__city_Bangalore-relation:7902476",
                     "cuisine": "Thai",
@@ -42,14 +44,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_competitors_data(**func_params)
+        >>> data = cft.get_competitors_data(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_competitors_data")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -58,12 +60,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns competitors' menu data in a
         given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Indiranagar__city_Bangalore-relation:7902476",
                     "cuisine": "Thai",
@@ -72,7 +76,7 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_competitors_menu(**func_params)
+        >>> data = cft.get_competitors_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
@@ -80,7 +84,7 @@ class CypherFunctionTool:
             Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_competitors_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -89,12 +93,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns competitors' data for a given dish
         in a given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Indiranagar__city_Bangalore-relation:7902476",
                     "cuisine": "South Indian",
@@ -103,14 +109,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_menu_benchmark(**func_params)
+        >>> data = cft.get_menu_benchmark(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_menu_benchmark")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -119,12 +125,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns data where food item is rated highly
         and few competitors serve it in a given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Koramangala__city_Bangalore-relation:7902476",
                     "cuisine": "Thai",
@@ -133,14 +141,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_menu_opportunities(**func_params)
+        >>> data = cft.get_menu_opportunities(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_menu_opportunities")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -149,12 +157,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns data where a given food item is overpriced
         in a given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Koramangala__city_Bangalore-relation:7902476",
                     "cuisine": "North Indian",
@@ -164,14 +174,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_overpriced_menu(**func_params)
+        >>> data = cft.get_overpriced_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_overpriced_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -180,12 +190,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns data where a given food item's price is high
         but there is proven demand in a given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": "area_Koramangala__city_Bangalore-relation:7902476",
                     "cuisine": "South Indian",
@@ -195,14 +207,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = get_premium_menu(**func_params)
+        >>> data = cft.get_premium_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_premium_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -211,26 +223,28 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns all menu items from a competitors restaurant
         in a given area.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "rstn_id": 418,
                     "limit": 200
                 },
                 "output": "dict"
             }
-        data = get_specific_competitor_menu(**func_params)
+        >>> data = cft.get_specific_competitor_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_get_specific_competitor_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -239,12 +253,14 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         output: Literal["dict", "dataframe"] = "dict",
-    ) -> Dict[str, Any] | pd.DataFrame:
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Tool that queries FalkorDB and returns all menu items above a certain rating from
         all competitors restaurant in a given area and cuisine.
         ## Usage:
         ```python
-            func_params = {
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> func_params = {
                 "q_params": {
                     "area_ids": 'area_Indiranagar__city_Bangalore-relation:7902476',
                     "cuisine": 'Continental',
@@ -253,14 +269,14 @@ class CypherFunctionTool:
                 },
                 "output": "dict"
             }
-        data = recommend_menu(**func_params)
+        >>> data = cft.recommend_menu(**func_params)
         ```
         Args:
             q_params (dict): Parameters to pass into graph query.
             output (Literal["dict", "dataframe"], optional): Data output format. Defaults to "dict".
 
         Returns:
-            full_data (Dict[str, Any] | pd.DataFrame): Competitors' data.
+            full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
         full_data = self._process_data(q_params, "cypher_recommend_menu")
         return pd.DataFrame(full_data) if output == "dataframe" else full_data
@@ -269,8 +285,12 @@ class CypherFunctionTool:
         self,
         q_params: dict,
         key: str,
-    ) -> Dict[str, Any]:
+    ) -> Dict[Hashable, Any]:
         """Quick method to get make the database query and post process the data into required format
+        ## Usage:
+        ```python
+        >>> full_data = self._process_data(q_params, "cypher_recommend_menu")
+        ```
 
         Args:
             q_params (dict): The parameter dict of each function tool.
@@ -282,42 +302,18 @@ class CypherFunctionTool:
         full_data = {}
         try:
             q_code = self.cp_config.cp_code.tools[key]
-            columns = self.cp_config.cp_cols.cols[key]
-            result = self.graph.query(q_code, q_params).result_set
+            result = self.graph.query(q_code, q_params)
 
-            if key == "cypher_get_competitors_data":
-                full_data = {
-                    key: [
-                        ", ".join(str(item) for item in data[columns.index(key)])
-                        if isinstance(data[columns.index(key)], list)
-                        else data[columns.index(key)]
-                        for data in result
-                    ]
-                    for key in columns
-                }
-
-            elif key == "cypher_get_competitors_menu":
-                full_data = {
-                    f"{key1}_{key2}".replace("menu_", "food_", 1): [
-                        (
-                            ", ".join(str(item) for item in x)
-                            if isinstance(x, list)
-                            else x
-                        )
-                        if (x := items[0][key1].get(key2)) is not None
-                        else None
-                        for items in result
-                    ]
-                    for key1 in result[0][0].keys()
-                    for key2 in result[0][0][key1].keys()
-                    if f"{key1}_{key2}" not in columns
-                }
-
-            else:
-                full_data = {
-                    key: [item[columns.index(key)] for item in result]
-                    for key in columns
-                }
+            df = pd.DataFrame(
+                data=result.result_set, columns=[item[-1] for item in result.header]
+            )
+            cols = [col for col in df.columns if isinstance(df[col][0], list)]
+            df[cols] = df[cols].map(
+                lambda row: ", ".join(str(item) for item in row)
+                if isinstance(row, list)
+                else row
+            )
+            full_data = df.to_dict(orient="list")
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -326,3 +322,32 @@ class CypherFunctionTool:
             # full_data = {"message": f"Cypher Query:\n{q_code = }\n\nError:\n{e = }"}
 
         return full_data
+
+    def _get_area_cuisine_from_db(
+        self,
+        city_name: str | None,
+        area_name: str | None,
+        cuis_name: str | None,
+        purpose: Literal["get_area_ids", "get_cuisine_name"] = "get_area_ids",
+    ):
+        try:
+            q_code = self.cp_config.cp_code.gdb[purpose]
+
+            if purpose == "get_area_ids":
+                q_params = {
+                    "city_name": city_name,
+                    "area_name": area_name,
+                }
+            elif purpose == "get_cuisine_name":
+                q_params = {"cuis_name": cuis_name}
+
+            result = self.graph.query(q_code, q_params).result_set[0][0]
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
+            result = {
+                "message": f"Query:\n{q_code = }\nParams:\n{q_params = }\nError:\n{e = }"
+            }
+
+        return result

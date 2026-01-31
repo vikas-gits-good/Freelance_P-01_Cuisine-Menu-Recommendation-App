@@ -2,7 +2,6 @@ import asyncio
 from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
 from src.ETL.Components.load import Loader
 
-
 if __name__ == "__main__":
     # # Get full sitemap of Swiggy
     # _ = AllLinks().get()

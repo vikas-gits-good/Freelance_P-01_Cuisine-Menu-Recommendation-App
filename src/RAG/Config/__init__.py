@@ -1,5 +1,5 @@
 import re
-from typing import Literal
+from typing import Literal, Dict, Any
 from src.Utils.main_utils import read_cypher, read_json
 from src.RAG.Constants import RAGCypherConstants
 
@@ -7,9 +7,10 @@ from src.RAG.Constants import RAGCypherConstants
 class get_cypher_code:
     def __init__(self):
         self.all_cyp_paths = RAGCypherConstants.ALL_CYPHER_CODE_PATH
-        self.tools = self.get_code(code="tools")
+        self.tools: Dict[str, Any] = self.get_code(code="tools")
+        self.gdb: Dict[str, Any] = self.get_code(code="gdb")
 
-    def get_code(self, code: Literal["tools"] = "tools"):
+    def get_code(self, code: Literal["tools", "gdb"] = "tools"):
         path = [
             file_item
             for file_item in self.all_cyp_paths
@@ -26,7 +27,7 @@ class get_cypher_code:
 
 class get_cypher_cols:
     def __init__(self):
-        self.cols: dict = read_json(RAGCypherConstants.ALL_CYPHER_COLS_PATH[0])
+        self.cols: dict = read_json(RAGCypherConstants.ALL_CYPHER_COLS_PATH)
 
 
 class CypherCodeConfig:

@@ -1,5 +1,5 @@
 from typing import Annotated, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
