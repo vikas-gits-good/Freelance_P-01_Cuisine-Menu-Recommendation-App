@@ -23,7 +23,8 @@ class GetCompetitorMenuModels:
         )
         cuisine: str = Field(default="Thai", description="")
         min_menu_rating: float = Field(default=4.0, ge=0.0, le=5.0, description="")
-        limit: int = Field(default=200, ge=1, le=2000, description="")
+        num_per_rstn: int = Field(default=50, ge=20, le=100, description="")
+        limit: int = Field(default=500, ge=100, le=2000, description="")
 
     class FunctionParams(BaseModel):
         q_params: "GetCompetitorMenuModels.QueryParams" = Field(description="")

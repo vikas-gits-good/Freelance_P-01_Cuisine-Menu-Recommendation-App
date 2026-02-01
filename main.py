@@ -15,3 +15,16 @@ if __name__ == "__main__":
 
     # Loader(purpose="test").run()
     pass
+
+
+class wtf:
+    def __init__(self):
+        pass
+
+    def check_func_name(self):
+        print(self.check_func_name.__name__)
+
+
+x = wtf()
+
+x.check_func_name()

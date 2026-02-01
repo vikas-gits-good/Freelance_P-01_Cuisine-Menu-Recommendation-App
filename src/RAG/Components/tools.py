@@ -53,8 +53,7 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_competitors_data")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.get_competitors_data.__name__)
 
     def get_competitors_menu(
         self,
@@ -86,8 +85,7 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_competitors_menu")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.get_competitors_menu.__name__)
 
     def get_menu_benchmark(
         self,
@@ -118,8 +116,7 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_menu_benchmark")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.get_menu_benchmark.__name__)
 
     def get_menu_opportunities(
         self,
@@ -150,8 +147,9 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_menu_opportunities")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(
+            q_params, output, self.get_menu_opportunities.__name__
+        )
 
     def get_overpriced_menu(
         self,
@@ -183,8 +181,7 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_overpriced_menu")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.get_overpriced_menu.__name__)
 
     def get_premium_menu(
         self,
@@ -216,8 +213,7 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_premium_menu")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.get_premium_menu.__name__)
 
     def get_specific_competitor_menu(
         self,
@@ -246,8 +242,9 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_get_specific_competitor_menu")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(
+            q_params, output, self.get_specific_competitor_menu.__name__
+        )
 
     def recommend_menu(
         self,
@@ -278,18 +275,18 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[Hashable, Any] | pd.DataFrame): Competitors' data.
         """
-        full_data = self._process_data(q_params, "cypher_recommend_menu")
-        return pd.DataFrame(full_data) if output == "dataframe" else full_data
+        return self._process_data(q_params, output, self.recommend_menu.__name__)
 
     def _process_data(
         self,
         q_params: dict,
-        key: str,
-    ) -> Dict[Hashable, Any]:
+        output: Literal["dict", "dataframe"] = "dict",
+        key: str = "",
+    ) -> Dict[Hashable, Any] | pd.DataFrame:
         """Quick method to get make the database query and post process the data into required format
         ## Usage:
         ```python
-        >>> full_data = self._process_data(q_params, "cypher_recommend_menu")
+        >>> full_data = self._process_data(q_params, output, self.recommend_menu.__name__)
         ```
 
         Args:
@@ -299,29 +296,25 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[str, Any]): The cleaned data from the FalkorDB.
         """
-        full_data = {}
+        df = pd.DataFrame()
         try:
             q_code = self.cp_config.cp_code.tools[key]
-            result = self.graph.query(q_code, q_params)
-
+            result = self.graph.query(q_code, q_params, timeout=1000)
             df = pd.DataFrame(
-                data=result.result_set, columns=[item[-1] for item in result.header]
+                data=result.result_set,
+                columns=[item[-1] for item in result.header],
             )
-            cols = [col for col in df.columns if isinstance(df[col][0], list)]
-            df[cols] = df[cols].map(
+            df = df.map(
                 lambda row: ", ".join(str(item) for item in row)
                 if isinstance(row, list)
                 else row
             )
-            full_data = df.to_dict(orient="list")
 
         except Exception as e:
             LogException(e, logger=log_flk)
-            log_flk.info(f"Error:\n{q_code = }\n{e = }")
-            # This might be routed directly to user
-            # full_data = {"message": f"Cypher Query:\n{q_code = }\n\nError:\n{e = }"}
+            log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
 
-        return full_data
+        return df if output == "dataframe" else df.to_dict(orient="list")
 
     def _get_area_cuisine_from_db(
         self,
@@ -330,6 +323,17 @@ class CypherFunctionTool:
         cuis_name: str | None,
         purpose: Literal["get_area_ids", "get_cuisine_name"] = "get_area_ids",
     ):
+        """Method that returns area_id for a given city name-area name or cuisine name for a given name.
+
+        Args:
+            city_name (str | None): User requested city name.
+            area_name (str | None): User requested area name.
+            cuis_name (str | None): User requested cuisine name.
+            purpose (Literal["get_area_ids", "get_cuisine_name"], optional): Which function to call. Defaults to "get_area_ids".
+
+        Returns:
+            parameter (str): area_ids or cuisine name to enter as parameter for toolbox functions.
+        """
         try:
             q_code = self.cp_config.cp_code.gdb[purpose]
 
