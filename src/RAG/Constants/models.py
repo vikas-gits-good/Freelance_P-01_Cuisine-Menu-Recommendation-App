@@ -46,7 +46,7 @@ class OpenAIModelList:
         gpt_4_32k_0613: str = "gpt-4-32k-0613"
         gpt_4_turbo: str = "gpt-4-turbo"
         gpt_4o: str = "gpt-4o"
-        gpt_4o_mini: str = "gpt-4o-mini-2024-07-18"
+        gpt_4o_mini: str = "gpt-4o-mini"
         gpt_4_1: str = "gpt-4.1"
         gpt_4_1_mini: str = "gpt-4.1-mini"
         gpt_4_1_nano: str = "gpt-4.1-nano"

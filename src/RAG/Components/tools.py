@@ -296,7 +296,6 @@ class CypherFunctionTool:
         Returns:
             full_data (Dict[str, Any]): The cleaned data from the FalkorDB.
         """
-        df = pd.DataFrame()
         try:
             q_code = self.cp_config.cp_code.tools[key]
             result = self.graph.query(q_code, q_params, timeout=1000)
@@ -313,6 +312,8 @@ class CypherFunctionTool:
         except Exception as e:
             LogException(e, logger=log_flk)
             log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
+            # This line goes directly to user. Dont include errors.
+            df = pd.DataFrame()
 
         return df if output == "dataframe" else df.to_dict(orient="list")
 

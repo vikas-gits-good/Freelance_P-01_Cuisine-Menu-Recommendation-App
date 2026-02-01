@@ -38,5 +38,6 @@ langgraph
 langchain
 langchain-core
 langchain-groq
+langchain_openai
 langchain-community
 langchain-experimental
