@@ -355,3 +355,47 @@ class CypherFunctionTool:
             }
 
         return result
+
+    def _query_falkordb(
+        self,
+        query: str,
+    ) -> Dict[Hashable, Any]:
+        """Method to query FalkorDB and get data as a flattened dict.
+        ## Usage:
+        ```python
+        >>> from src.RAG.Components.tools import CypherFunctionTool
+        >>> cft = CypherFunctionTool()
+        >>> query = "\nMATCH (cu:MainCuisine)\nWHERE toLower(cu.name) CONTAINS toLower('South Indian')\nRETURN cu.name AS cuisine_name\nLIMIT 1\n"
+        >>> data = cft._query_falkordb(query)
+        ```
+
+        Args:
+            query (dict): The query as a string to the database.
+
+        Returns:
+            data (Dict[Hashable, Any]): The flattened data from the FalkorDB.
+        """
+        try:
+            result = self.graph.query(query, timeout=1000)
+            df = pd.DataFrame(
+                data=result.result_set,
+                columns=[item[-1] for item in result.header],
+            )
+            df = df.map(
+                lambda row: ", ".join(str(item) for item in row)
+                if isinstance(row, list)
+                else row
+            )
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
+            df = pd.DataFrame(
+                {
+                    "q_code": q_code,
+                    "q_params": q_params,
+                    "error": str(e),
+                }
+            )
+
+        return df.to_dict(orient="list")

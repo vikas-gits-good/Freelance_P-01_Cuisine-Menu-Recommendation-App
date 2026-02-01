@@ -1,8 +1,7 @@
 // get_area_ids
-MATCH (cy:City)
+MATCH (cy:City)-[:HAS_AREA]->(ar:Area)
 WHERE toLower(cy.name) CONTAINS toLower($city_name)
-MATCH (ar:Area)
-WHERE toLower(ar.name) CONTAINS toLower($area_name)
+    AND toLower(ar.name) CONTAINS toLower($area_name)
 RETURN ar.ids
 LIMIT 1
 
