@@ -13,12 +13,11 @@ class CypherFunctionTool:
         try:
             self.graph = GraphPool.get_graph(graph_name="test")
             self.cp_config = cp_config
-            self.tools_list = [
-                getattr(self, method_name)
-                for method_name in dir(self)
-                if not method_name.startswith("_")
-                and callable(getattr(self, method_name))
-            ]
+            self.tools_dict = {
+                meth_name: getattr(self, meth_name)
+                for meth_name in dir(self)
+                if not meth_name.startswith("_") and callable(getattr(self, meth_name))
+            }
 
         except Exception as e:
             LogException(e, logger=log_flk)

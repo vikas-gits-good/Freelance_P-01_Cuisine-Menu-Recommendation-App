@@ -6,6 +6,7 @@ from langchain_groq import ChatGroq
 
 from src.RAG.Components.state import GRState
 from src.RAG.Components.tools import CypherFunctionTool
+from src.RAG.Prompts.system_prompts import SysMsgSet
 from src.RAG.Config.tool_models import (
     PlannerOutput,
     IntentClassification,
@@ -20,60 +21,60 @@ from src.Logging.logger import log_flk
 from src.Exception.exception import LogException
 
 
-# =============================================================================
-# System Prompts
-# =============================================================================
+# # =============================================================================
+# # System Prompts
+# # =============================================================================
 
-GUARDRAIL_PROMPT = """You are a guardrail for a restaurant menu analysis chatbot.
-Analyze the user message and determine if it is:
-1. Safe and relevant to restaurant/menu/cuisine analysis
-2. Contains harmful, inappropriate, or completely off-topic content
+# GUARDRAIL_PROMPT = """You are a guardrail for a restaurant menu analysis chatbot.
+# Analyze the user message and determine if it is:
+# 1. Safe and relevant to restaurant/menu/cuisine analysis
+# 2. Contains harmful, inappropriate, or completely off-topic content
 
-Respond with JSON: {"is_safe": true/false, "reason": "brief explanation"}
-"""
+# Respond with JSON: {"is_safe": true/false, "reason": "brief explanation"}
+# """
 
-PLANNER_PROMPT = """You are the Planner Agent for a restaurant menu recommendation system.
-Your job is to:
-1. Classify the user's intent
-2. Decide which tool to use (if any)
-3. Extract relevant parameters from the query
+# PLANNER_PROMPT = """You are the Planner Agent for a restaurant menu recommendation system.
+# Your job is to:
+# 1. Classify the user's intent
+# 2. Decide which tool to use (if any)
+# 3. Extract relevant parameters from the query
 
-Available tools and their purposes:
-- get_competitors_data: Get basic data about competitor restaurants in an area/cuisine
-- get_competitors_menu: Get menu items from competitors in an area/cuisine
-- get_menu_benchmark: Compare a specific dish across competitors
-- get_menu_opportunities: Find high-rated items with few competitors serving them
-- get_overpriced_menu: Find overpriced menu items in an area
-- get_premium_menu: Find high-priced items with proven demand
-- get_specific_competitor_menu: Get full menu of a specific restaurant
-- recommend_menu: Get recommended menu items above a rating threshold
+# Available tools and their purposes:
+# - get_competitors_data: Get basic data about competitor restaurants in an area/cuisine
+# - get_competitors_menu: Get menu items from competitors in an area/cuisine
+# - get_menu_benchmark: Compare a specific dish across competitors
+# - get_menu_opportunities: Find high-rated items with few competitors serving them
+# - get_overpriced_menu: Find overpriced menu items in an area
+# - get_premium_menu: Find high-priced items with proven demand
+# - get_specific_competitor_menu: Get full menu of a specific restaurant
+# - recommend_menu: Get recommended menu items above a rating threshold
 
-Intent types:
-- tool_call: User wants data that requires calling a specific tool
-- direct_db_query: User wants graph schema info or simple lookups
-- follow_up: User is asking a follow-up question about previous results
-- general_chat: General conversation not requiring data retrieval
+# Intent types:
+# - tool_call: User wants data that requires calling a specific tool
+# - direct_db_query: User wants graph schema info or simple lookups
+# - follow_up: User is asking a follow-up question about previous results
+# - general_chat: General conversation not requiring data retrieval
 
-User preferences from memory: {preferences}
-Conversation summary: {summary}
-"""
+# User preferences from memory: {preferences}
+# Conversation summary: {summary}
+# """
 
-EXECUTOR_PROMPT = """You are the Executor Agent for a restaurant menu recommendation system.
-Your job is to:
-1. Understand the user's query in context
-2. Resolve parameter values by querying the database for exact matches
-3. Prepare the final parameters for tool execution
+# EXECUTOR_PROMPT = """You are the Executor Agent for a restaurant menu recommendation system.
+# Your job is to:
+# 1. Understand the user's query in context
+# 2. Resolve parameter values by querying the database for exact matches
+# 3. Prepare the final parameters for tool execution
 
-The Planner has selected tool: {selected_tool}
-Extracted parameters: {extracted_params}
+# The Planner has selected tool: {selected_tool}
+# Extracted parameters: {extracted_params}
 
-Available areas in database (sample): {available_areas}
-Available cuisines in database (sample): {available_cuisines}
+# Available areas in database (sample): {available_areas}
+# Available cuisines in database (sample): {available_cuisines}
 
-You must resolve:
-- city_name + area_name → area_ids (using _get_area_cuisine_from_db)
-- cuisine_name → exact cuisine name from DB (using _get_area_cuisine_from_db)
-"""
+# You must resolve:
+# - city_name + area_name → area_ids (using _get_area_cuisine_from_db)
+# - cuisine_name → exact cuisine name from DB (using _get_area_cuisine_from_db)
+# """
 
 
 # =============================================================================
@@ -87,32 +88,24 @@ class GraphNodes:
     def __init__(
         self,
         model_name: str = GroqModelList.meta.llama_33_70b_versatile,
-        guardrail_model: str = GroqModelList.meta.llama_guard_4_12b,
+        guardrail_model: str = GroqModelList.meta.llama_prompt_guard_2_86m,
     ):
         self.llm = ChatGroq(model=model_name, temperature=0)
         self.guardrail_llm = ChatGroq(model=guardrail_model, temperature=0)
         self.cypher_tool = CypherFunctionTool()
+        self.sms = SysMsgSet().sys_pmt
 
         # Map tool names to methods
-        self.tool_map = {
-            "get_competitors_data": self.cypher_tool.get_competitors_data,
-            "get_competitors_menu": self.cypher_tool.get_competitors_menu,
-            "get_menu_benchmark": self.cypher_tool.get_menu_benchmark,
-            "get_menu_opportunities": self.cypher_tool.get_menu_opportunities,
-            "get_overpriced_menu": self.cypher_tool.get_overpriced_menu,
-            "get_premium_menu": self.cypher_tool.get_premium_menu,
-            "get_specific_competitor_menu": self.cypher_tool.get_specific_competitor_menu,
-            "recommend_menu": self.cypher_tool.recommend_menu,
-        }
+        self.tool_map = self.cypher_tool.tools_dict
 
     # -------------------------------------------------------------------------
-    # Guardrails Node
+    # Guardrail Node
     # -------------------------------------------------------------------------
     def guardrail_node(self, state: GRState) -> Dict[str, Any]:
         """Check if user query is safe and on-topic."""
         try:
             messages = [
-                SystemMessage(content=GUARDRAIL_PROMPT),
+                self.sms.guardrail,
                 HumanMessage(
                     content=state.user_query.content if state.user_query else ""
                 ),

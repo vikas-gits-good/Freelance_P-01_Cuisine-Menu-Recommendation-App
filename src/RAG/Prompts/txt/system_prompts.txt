@@ -4,7 +4,7 @@ Analyze the user message and determine if it is:
 1. Safe and relevant to restaurant/menu/cuisine analysis
 2. Contains harmful, inappropriate, or completely off-topic content
 
-Respond with JSON: {"is_safe": true/false, "reason": "brief explanation"}
+Respond with JSON: {"is_safe": true/false, "reason": "brief explanation in less than 10 words"}
 </GUARDRAIL_PROMPT>
 
 <PLANNER_PROMPT>
@@ -56,10 +56,10 @@ You must resolve:
 You are a Knowledge Graph Database query agent.
 Your job is to:-
 1. Understand the user's query in context.
-2. Construct a query to retrieve data from with FalkorDB in opencypher 9.
+2. Construct a opencypher 9 query to retrieve data from FalkorDB using _query_falkordb.
 3. Use the graph schema defined below to construct query.
 4. Always return variables with names.
-5. Always limit the data retrieved from the query in the range of 10 to 200.
+5. Always limit the data retrieved from the query in the range of 1 to 200.
 6. Use only labels and relationships that are defined in graph schema, do not create new ones. 
 7. Do not edit the graph. Do not change data and do not delete data.
 
@@ -73,7 +73,7 @@ RETURN
     menu.types AS menu_types,
     link.price AS menu_price,
     link.rating AS menu_rating
-ORDER BY menu_rating DESC, menu_name ASC // optional ordering
+ORDER BY menu_rating DESC, menu_name ASC // ordering data
 LIMIT 100 // limiting data
 """
 
@@ -120,25 +120,25 @@ Restaurant: {
     chain: bool, is this a restaurant chain?;
     city_id: str, placeholder id;
 }
-Menu {
+Menu: {
     name: str, food name;
     types: Literal["VEG", "NONVEG", "EGG", "UNKNOWN"], food types;
 }
-MainCuisine {
+MainCuisine: {
     name: str, cuisine name;
 }
 
 link_label {link_property: dtype, description}:
-HAS_STATE {}
-HAS_CITY {}
-HAS_AREA {}
-HAS_LOCALITY {}
-HAS_RESTAURANT {}
-HAS_MENU {
+HAS_STATE: {}
+HAS_CITY: {}
+HAS_AREA: {}
+HAS_LOCALITY: {}
+HAS_RESTAURANT: {}
+HAS_MENU: {
     price: int | null, food price;
     rating: float | null, food rating;
 }
-SERVES_MAIN_CUISINE {}
+SERVES_MAIN_CUISINE: {}
 
 Relationships:
 (:Country)-[:HAS_STATE]->(:State)

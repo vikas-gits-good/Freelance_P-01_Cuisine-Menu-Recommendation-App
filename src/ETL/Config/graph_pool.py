@@ -3,6 +3,7 @@ from typing import Literal
 from falkordb import FalkorDB
 from falkordb.graph import Graph
 
+from src.ETL.Config.cyphers import ETLCypherConfig
 from src.ETL.Constants.cyphers import ETLCyphersConstants
 
 
@@ -53,5 +54,6 @@ class GraphPool:
         }.get(graph_name, ecc.KG_NAME_PROD)
 
         #  split params into admin_user and code_user
-        fdb = FalkorDB()  # (**self.cyp_config.auth_params)
+        etc = ETLCypherConfig()
+        fdb = FalkorDB(**etc.auth_params)
         return fdb.select_graph(name)

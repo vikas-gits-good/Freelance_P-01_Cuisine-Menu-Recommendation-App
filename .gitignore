@@ -12,15 +12,15 @@ mlruns/
 Artifacts/
 Final_Artifacts/
 src/ETL/Data/sitemap/
-docker/falkordb/data/
-docker/mongodb/data/
 src/RAG/References/
 /src/RAG/Notebook/
 catboost_info/
 src/Research/
 src/Secrets/
 __pycache__/
-*.acl
+docker/*/*.acl
+docker/*/*.env
+docker/*/*.js
 
 # Distribution / packaging
 .Python
