@@ -113,7 +113,9 @@ class GraphNodes:
         try:
             messages = [
                 SystemMessage(content=GUARDRAIL_PROMPT),
-                HumanMessage(content=state.user_query.content if state.user_query else ""),
+                HumanMessage(
+                    content=state.user_query.content if state.user_query else ""
+                ),
             ]
             response = self.guardrail_llm.invoke(messages)
 
@@ -165,7 +167,9 @@ class GraphNodes:
             messages = [
                 SystemMessage(content=prompt),
                 *state.messages[-5:],  # Last 5 messages for context
-                HumanMessage(content=state.user_query.content if state.user_query else ""),
+                HumanMessage(
+                    content=state.user_query.content if state.user_query else ""
+                ),
             ]
 
             result: PlannerOutput = structured_llm.invoke(messages)
@@ -182,7 +186,8 @@ class GraphNodes:
             if result.intent.requires_clarification:
                 output["status"] = "needs_clarification"
                 output["agent_answer"] = AIMessage(
-                    content=result.intent.clarification_question or "Could you please provide more details?"
+                    content=result.intent.clarification_question
+                    or "Could you please provide more details?"
                 )
 
             return output
@@ -389,7 +394,7 @@ class GraphNodes:
             if state.flattened_data:
                 response_prompt = f"""Based on the following data, provide a helpful response to the user's question.
 
-User question: {state.user_query.content if state.user_query else ''}
+User question: {state.user_query.content if state.user_query else ""}
 
 Data:
 {state.flattened_data}
@@ -408,14 +413,18 @@ Provide a concise, informative response summarizing the key insights from this d
                 }
 
             return {
-                "agent_answer": AIMessage(content="I couldn't retrieve the requested data."),
+                "agent_answer": AIMessage(
+                    content="I couldn't retrieve the requested data."
+                ),
                 "status": "error",
             }
 
         except Exception as e:
             LogException(e, logger=log_flk)
             return {
-                "agent_answer": AIMessage(content="An error occurred generating the response."),
+                "agent_answer": AIMessage(
+                    content="An error occurred generating the response."
+                ),
                 "status": "error",
             }
 

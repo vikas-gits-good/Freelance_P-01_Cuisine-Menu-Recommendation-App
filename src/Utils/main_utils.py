@@ -7,7 +7,7 @@ from pymongo import MongoClient, UpdateOne, AsyncMongoClient
 from typing import Any, Dict, List, Literal, Iterator, AsyncIterator
 
 from src.Config import MongoDBConfig
-from src.Logging.logger import log_etl
+from src.Logging.logger import log_etl, log_flk
 from src.Exception.exception import LogException, CustomException
 
 
@@ -273,6 +273,29 @@ def read_cypher(
             else data
         )
         log.info("Successfully read Cypher code from file")
+
+    except Exception as e:
+        LogException(e, logger=log)
+        # raise CustomException(e)
+
+    return data
+
+
+def read_text(
+    save_path: str,
+    chunk: bool = False,
+    log: Logger = log_flk,
+) -> str | List[str]:
+    data = ""
+    try:
+        with open(save_path, mode="rt", encoding="utf-8", newline="\r\n") as f:
+            data = f.read()
+        data = (
+            [part.strip() for part in data.split("\n\n") if part.strip()]
+            if chunk
+            else data
+        )
+        log.info("Successfully read prompts from file")
 
     except Exception as e:
         LogException(e, logger=log)
