@@ -1,4 +1,2 @@
 user default off
 user __admin_username__ on >__admin_password__ ~* &* +@all
-user __code_username__ on >__agent_password__ ~* +@read +@write
-user __agent_username__ on >__agent_password__ ~* +@read

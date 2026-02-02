@@ -6,6 +6,7 @@ services:
       - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - mongodb_configdb:/data/configdb
       - ./docker/mongodb:/docker-entrypoint-initdb.d:ro
     env_file:
       - ./docker/mongodb/password.env
@@ -24,6 +25,7 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - falkordb_data:/var/lib/falkordb/data
+      - falkordb_redis_data:/data
       - ./docker/falkordb/fkdb_users.acl:/etc/redis/fkdb_users.acl:ro
     environment:
       REDIS_ARGS: "--aclfile /etc/redis/fkdb_users.acl"
@@ -35,10 +37,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 0s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   redis:
     image: redis:8.4.0-alpine3.22
@@ -59,8 +61,13 @@ services:
 
 volumes:
   mongodb_data:
-    external: true
+    name: mongodb_data
+  mongodb_configdb:
+    name: mongodb_configdb
   falkordb_data:
-    external: true
+    name: falkordb_data
+  falkordb_redis_data:
+    name: falkordb_redis_data
   redis_data:
-    external: true
+    name: redis_data
+
