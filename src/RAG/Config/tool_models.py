@@ -1,5 +1,5 @@
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # =============================================================================
 # Guardrail Agent Models (for structured output)
@@ -84,27 +84,6 @@ class PlannerOutput(BaseModel):
 # =============================================================================
 # Executor Agent Models
 # =============================================================================
-
-
-class ResolvedToolParams(BaseModel):
-    """Final resolved parameters ready for tool execution."""
-
-    area_ids: Optional[str] = Field(
-        default=None, description="Resolved area_ids from DB"
-    )
-    cuisine: Optional[str] = Field(
-        default=None, description="Resolved cuisine name from DB"
-    )
-    menu_name: Optional[str] = Field(default=None, description="Menu item name")
-    rstn_id: Optional[int] = Field(default=None, description="Restaurant ID")
-    min_rating: float = Field(default=4.0, ge=0.0, le=5.0)
-    min_menu_rating: float = Field(default=4.0, ge=0.0, le=5.0)
-    min_listings: int = Field(default=2, ge=1, le=20)
-    min_avg_rating: float = Field(default=4.0, ge=0.0, le=5.0)
-    max_avg_rating: float = Field(default=4.0, ge=0.0, le=5.0)
-    limit: int = Field(default=200, ge=1, le=2000)
-
-
 class CypherQueryPlan(BaseModel):
     """Model for direct DB query planning."""
 
@@ -116,11 +95,8 @@ class CypherQueryPlan(BaseModel):
 # Tool Function Parameter Models
 # =============================================================================
 class _QP_get_comp_data(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(default="Thai", description="cuisine name from database")
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_cmpt_rating: float = Field(
         default=4.0,
         ge=0.0,
@@ -133,11 +109,8 @@ class _QP_get_comp_data(BaseModel):
 
 
 class _QP_get_comp_menu(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(default="Thai", description="cuisine name from database")
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_menu_rating: float = Field(
         default=4.0, ge=0.0, le=5.0, description=" minimum menu rating"
     )
@@ -150,13 +123,8 @@ class _QP_get_comp_menu(BaseModel):
 
 
 class _QP_get_menu_bnch_mark(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(
-        default="South Indian", description="cuisine name from database"
-    )
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     menu_name: str = Field(
         default="Masala Dosa", description="name of the menu item from user"
     )
@@ -166,13 +134,8 @@ class _QP_get_menu_bnch_mark(BaseModel):
 
 
 class _QP_get_menu_oppr(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(
-        default="South Indian", description="cuisine name from database"
-    )
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_menu_rating: float = Field(
         default=4.0, ge=0.0, le=5.0, description="minimum menu rating"
     )
@@ -182,13 +145,8 @@ class _QP_get_menu_oppr(BaseModel):
 
 
 class _QP_get_ovpr_menu(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(
-        default="South Indian", description="cuisine name from database"
-    )
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_listings: int = Field(
         default=2,
         ge=1,
@@ -207,13 +165,8 @@ class _QP_get_ovpr_menu(BaseModel):
 
 
 class _QP_get_prem_menu(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(
-        default="South Indian", description="cuisine name from database"
-    )
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_listings: int = Field(
         default=2,
         ge=1,
@@ -232,20 +185,15 @@ class _QP_get_prem_menu(BaseModel):
 
 
 class _QP_get_spec_cmpt_menu(BaseModel):
-    rstn_id: int = Field(default=418, description="unique restaurant id from database")
+    rstn_id: int = Field(default=418, description="always return 418")
     limit: int = Field(
         default=200, ge=100, le=2000, description="number of records to retrieve"
     )
 
 
 class _QP_get_rcmd_menu(BaseModel):
-    area_ids: str = Field(
-        default="area_Indiranagar__city_Bangalore-relation:7902476",
-        description="unique area ids from database",
-    )
-    cuisine: str = Field(
-        default="South Indian", description="cuisine name from database"
-    )
+    area_ids: str = Field(default="", description="always return ''")
+    cuisine: str = Field(default="", description="always return ''")
     min_menu_rating: float = Field(
         default=4.0, ge=1.0, le=5.0, description="minimum rating for each dish"
     )
@@ -254,41 +202,42 @@ class _QP_get_rcmd_menu(BaseModel):
     )
 
 
-class GetCompetitorDataModels(BaseModel):
+class _ToolFuncModel(BaseModel):
+    output: Literal["dict", "dataframe"] = "dict"
+
+    @model_validator(mode="before")
+    @classmethod
+    def trfm(cls, data: dict):
+        return {"q_params": data, "output": "dict"}
+
+
+class GetCompetitorDataModels(_ToolFuncModel):
     q_params: _QP_get_comp_data
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetCompetitorMenuModels(BaseModel):
+class GetCompetitorMenuModels(_ToolFuncModel):
     q_params: _QP_get_comp_menu
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetMenuBenchmarkModels(BaseModel):
+class GetMenuBenchmarkModels(_ToolFuncModel):
     q_params: _QP_get_menu_bnch_mark
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetMenuOpportunitiesModels(BaseModel):
+class GetMenuOpportunitiesModels(_ToolFuncModel):
     q_params: _QP_get_menu_oppr
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetOverpricedMenuModels(BaseModel):
+class GetOverpricedMenuModels(_ToolFuncModel):
     q_params: _QP_get_ovpr_menu
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetPremiumMenuModels(BaseModel):
+class GetPremiumMenuModels(_ToolFuncModel):
     q_params: _QP_get_prem_menu
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetSpecificCompetitorMenuModels(BaseModel):
+class GetSpecificCompetitorMenuModels(_ToolFuncModel):
     q_params: _QP_get_spec_cmpt_menu
-    output: Literal["dict", "dataframe"] = "dict"
 
 
-class GetRecommendMenuModels(BaseModel):
+class GetRecommendMenuModels(_ToolFuncModel):
     q_params: _QP_get_rcmd_menu
-    output: Literal["dict", "dataframe"] = "dict"

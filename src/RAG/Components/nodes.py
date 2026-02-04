@@ -5,16 +5,11 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_groq import ChatGroq
 
 from src.RAG.Components.state import GRState
-from src.RAG.Components.tools import CypherFunctionTool
+from src.RAG.Config.tool_funcs import CypherFunctionTool
 from src.RAG.Prompts.system_prompts import SysMsgSet
 from src.RAG.Config.tool_models import (
     GuardrailSchema,
     PlannerOutput,
-    IntentClassification,
-    ToolSelection,
-    ExtractedParams,
-    ResolvedToolParams,
-    CypherQueryPlan,
 )
 from src.RAG.Config.models import ModelConfig
 from src.RAG.Constants.models import GroqModelList
@@ -44,9 +39,10 @@ class GraphNodes:
             temperature=0,
         ).with_structured_output(schema=GuardrailSchema)
 
-        self.cypher_tool = CypherFunctionTool()
+        self.cft = CypherFunctionTool()
         self.sms = SysMsgSet().sys_pmt
-        self.tool_map = self.cypher_tool.tools_dict
+        self.tool_func_map = self.cft.tools_dict
+        self.tool_schm_map = self.cft.schma_dict
 
     # -------------------------------------------------------------------------
     # Guardrail Node -> No suspicious queries goes through
@@ -117,28 +113,31 @@ class GraphNodes:
     def executor_node(self, state: GRState) -> Dict[str, Any]:
         """Resolve parameters from DB and prepare for tool execution."""
         try:
-            raw_params = state.tool_params_raw
-            resolved = {}
+            # look at planner agent intent "tool_call", "direct_db_query", "follow_up", "general_chat"
+            if state.intent == "tool_call":
+                messages = [
+                    self.sms.executor,
+                    state.user_query,
+                ]
+                tool_schm = self.tool_schm_map[state.selected_tool]
+                llm_strc = self.llm_chat.with_structured_output(tool_schm)
 
-            # Resolve area_ids if city/area provided
-            if raw_params.get("city_name") or raw_params.get("area_name"):
-                area_ids = self.cypher_tool._get_area_cuisine_from_db(
-                    city_name=raw_params.get("city_name"),
-                    area_name=raw_params.get("area_name"),
-                    cuis_name=None,
-                    purpose="get_area_ids",
-                )
-                resolved["area_ids"] = area_ids
+                func_params = llm_strc.invoke(messages)
 
-            # Resolve cuisine name if provided
-            if raw_params.get("cuisine_name"):
-                cuisine = self.cypher_tool._get_area_cuisine_from_db(
-                    city_name=None,
-                    area_name=None,
-                    cuis_name=raw_params.get("cuisine_name"),
-                    purpose="get_cuisine_name",
-                )
-                resolved["cuisine"] = cuisine
+                params = {
+                    "city_name": state.tool_params_raw["city_name"],
+                    "area_name": state.tool_params_raw["area_name"],
+                    "cuisine_name": state.tool_params_raw["cuisine_name"],
+                }
+                if params["cuisine_name"]:
+                    params["purpose"] = "get_cuisine_name"
+                    resolved["cuisine"] = self.cft._get_area_cuisine_from_db(**params)
+
+                if params["area_name"]:
+                    params["purpose"] = "get_area_ids"
+                    resolved["area_ids"] = self.cft._get_area_cuisine_from_db(**params)
+
+                # what about rstn_id
 
             # Copy other params
             if raw_params.get("menu_name"):
@@ -224,7 +223,7 @@ class GraphNodes:
             if not state.db_query:
                 return {"db_result": {}}
 
-            result = self.cypher_tool._query_falkordb(query=state.db_query)
+            result = self.cft._query_falkordb(query=state.db_query)
             return {"db_result": result}
 
         except Exception as e:

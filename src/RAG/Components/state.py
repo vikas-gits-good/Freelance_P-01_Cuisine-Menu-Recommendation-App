@@ -34,7 +34,7 @@ class GRState(BaseModel):
     intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (
         Field(default="general_chat")
     )
-    selected_tool: Optional[str] = None  # name of tool to call
+    selected_tool: Optional[str]
     tool_params_raw: Dict[str, Any] = Field(
         default_factory=dict
     )  # extracted params from user query
