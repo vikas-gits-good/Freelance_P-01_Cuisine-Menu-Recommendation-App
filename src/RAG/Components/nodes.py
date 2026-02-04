@@ -8,6 +8,7 @@ from src.RAG.Components.state import GRState
 from src.RAG.Components.tools import CypherFunctionTool
 from src.RAG.Prompts.system_prompts import SysMsgSet
 from src.RAG.Config.tool_models import (
+    GuardrailSchema,
     PlannerOutput,
     IntentClassification,
     ToolSelection,
@@ -15,71 +16,11 @@ from src.RAG.Config.tool_models import (
     ResolvedToolParams,
     CypherQueryPlan,
 )
+from src.RAG.Config.models import ModelConfig
 from src.RAG.Constants.models import GroqModelList
 
 from src.Logging.logger import log_flk
 from src.Exception.exception import LogException
-
-
-# # =============================================================================
-# # System Prompts
-# # =============================================================================
-
-# GUARDRAIL_PROMPT = """You are a guardrail for a restaurant menu analysis chatbot.
-# Analyze the user message and determine if it is:
-# 1. Safe and relevant to restaurant/menu/cuisine analysis
-# 2. Contains harmful, inappropriate, or completely off-topic content
-
-# Respond with JSON: {"is_safe": true/false, "reason": "brief explanation"}
-# """
-
-# PLANNER_PROMPT = """You are the Planner Agent for a restaurant menu recommendation system.
-# Your job is to:
-# 1. Classify the user's intent
-# 2. Decide which tool to use (if any)
-# 3. Extract relevant parameters from the query
-
-# Available tools and their purposes:
-# - get_competitors_data: Get basic data about competitor restaurants in an area/cuisine
-# - get_competitors_menu: Get menu items from competitors in an area/cuisine
-# - get_menu_benchmark: Compare a specific dish across competitors
-# - get_menu_opportunities: Find high-rated items with few competitors serving them
-# - get_overpriced_menu: Find overpriced menu items in an area
-# - get_premium_menu: Find high-priced items with proven demand
-# - get_specific_competitor_menu: Get full menu of a specific restaurant
-# - recommend_menu: Get recommended menu items above a rating threshold
-
-# Intent types:
-# - tool_call: User wants data that requires calling a specific tool
-# - direct_db_query: User wants graph schema info or simple lookups
-# - follow_up: User is asking a follow-up question about previous results
-# - general_chat: General conversation not requiring data retrieval
-
-# User preferences from memory: {preferences}
-# Conversation summary: {summary}
-# """
-
-# EXECUTOR_PROMPT = """You are the Executor Agent for a restaurant menu recommendation system.
-# Your job is to:
-# 1. Understand the user's query in context
-# 2. Resolve parameter values by querying the database for exact matches
-# 3. Prepare the final parameters for tool execution
-
-# The Planner has selected tool: {selected_tool}
-# Extracted parameters: {extracted_params}
-
-# Available areas in database (sample): {available_areas}
-# Available cuisines in database (sample): {available_cuisines}
-
-# You must resolve:
-# - city_name + area_name → area_ids (using _get_area_cuisine_from_db)
-# - cuisine_name → exact cuisine name from DB (using _get_area_cuisine_from_db)
-# """
-
-
-# =============================================================================
-# Node Functions
-# =============================================================================
 
 
 class GraphNodes:
@@ -87,111 +28,88 @@ class GraphNodes:
 
     def __init__(
         self,
-        model_name: str = GroqModelList.meta.llama_33_70b_versatile,
-        guardrail_model: str = GroqModelList.meta.llama_prompt_guard_2_86m,
+        chat_model: str = GroqModelList.meta.llama_33_70b_versatile,
+        gdrl_model: str = GroqModelList.meta.llama_31_8b_instant,
+        mdl_config: ModelConfig = ModelConfig(),
     ):
-        self.llm = ChatGroq(model=model_name, temperature=0)
-        self.guardrail_llm = ChatGroq(model=guardrail_model, temperature=0)
+        # change this to control opai vs groq models
+        self.llm_chat = ChatGroq(
+            model=chat_model,
+            api_key=mdl_config.api_key.groq,
+            temperature=0.7,
+        )
+        self.llm_gdrl = ChatGroq(
+            model=gdrl_model,
+            api_key=mdl_config.api_key.groq,
+            temperature=0,
+        ).with_structured_output(schema=GuardrailSchema)
+
         self.cypher_tool = CypherFunctionTool()
         self.sms = SysMsgSet().sys_pmt
-
-        # Map tool names to methods
         self.tool_map = self.cypher_tool.tools_dict
 
     # -------------------------------------------------------------------------
-    # Guardrail Node
+    # Guardrail Node -> No suspicious queries goes through
     # -------------------------------------------------------------------------
-    def guardrail_node(self, state: GRState) -> Dict[str, Any]:
+    def guardrail_node(self, state: GRState) -> GRState:
         """Check if user query is safe and on-topic."""
-        try:
-            messages = [
-                self.sms.guardrail,
-                HumanMessage(
-                    content=state.user_query.content if state.user_query else ""
-                ),
-            ]
-            response = self.guardrail_llm.invoke(messages)
-
-            # Parse response
-            result = json.loads(response.content)
-            is_safe = result.get("is_safe", True)
-            reason = result.get("reason", "")
-
-            return {
-                "is_safe": is_safe,
-                "guardrail_message": reason if not is_safe else "",
-            }
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-            # Default to safe on parse error
-            return {"is_safe": True, "guardrail_message": ""}
+        messages = [
+            self.sms.guardrail,
+            state.user_query,
+        ]
+        response: GuardrailSchema = self.llm_gdrl.invoke(messages)
+        return state.model_copy(update=response.model_dump())
 
     # -------------------------------------------------------------------------
-    # Get Memory Node (mem0)
+    # User Memory Node -> Get user's data from memory
     # -------------------------------------------------------------------------
-    def get_memory_node(self, state: GRState) -> Dict[str, Any]:
+    def memory_node(self, state: GRState) -> GRState:
         """Retrieve user preferences and conversation summary from mem0."""
-        try:
-            # TODO: Integrate with mem0 client
-            # For now, return existing state values
-            return {
-                "preferences": state.preferences or "No preferences stored yet.",
-                "summary": state.summary or "New conversation.",
-            }
-        except Exception as e:
-            LogException(e, logger=log_flk)
-            return {"preferences": "", "summary": ""}
+        data = {
+            "preferences": "Nothing stored yet.",
+            "summary": "Nothing stored yet.",
+        }
+        return state.model_copy(update=data)
 
     # -------------------------------------------------------------------------
-    # Planner Agent Node
+    # Planner Agent Node -> decide how to best address user query
     # -------------------------------------------------------------------------
-    def planner_node(self, state: GRState) -> Dict[str, Any]:
+    def planner_node(self, state: GRState) -> GRState:
         """Classify intent, select tool, and extract parameters."""
         try:
-            prompt = PLANNER_PROMPT.format(
-                preferences=state.preferences,
-                summary=state.summary,
-            )
-
-            # Use structured output
-            structured_llm = self.llm.with_structured_output(PlannerOutput)
-
             messages = [
-                SystemMessage(content=prompt),
-                *state.messages[-5:],  # Last 5 messages for context
-                HumanMessage(
-                    content=state.user_query.content if state.user_query else ""
-                ),
-            ]
-
-            result: PlannerOutput = structured_llm.invoke(messages)
+                SystemMessage(
+                    content=self.sms.planner.content.format(
+                        preferences=state.user_preferences,
+                        summary=state.user_summary,
+                    ),
+                ),  # planner sys msg with user memory
+                state.msg_summary,  # conversation summary
+                *state.messages[-3:-1],  # conversation history
+                state.user_query,  # current user query
+            ]  # double check this
+            llm_plnr = self.llm_chat.with_structured_output(schema=PlannerOutput)
+            response: PlannerOutput = llm_plnr.invoke(messages)
 
             # Build output dict
             output = {
-                "intent": result.intent.intent,
-                "tool_params_raw": result.extracted_params.model_dump(),
+                "intent": response.intent.intent,
+                "tool_params_raw": response.extracted_params.model_dump(),
             }
 
-            if result.tool_selection:
-                output["selected_tool"] = result.tool_selection.tool_name
+            if response.tool_selection:
+                output["selected_tool"] = response.tool_selection.tool_name
 
-            if result.intent.requires_clarification:
+            if response.intent.requires_clarification:
                 output["status"] = "needs_clarification"
                 output["agent_answer"] = AIMessage(
-                    content=result.intent.clarification_question
-                    or "Could you please provide more details?"
+                    content=response.intent.clarification_question
                 )
-
-            return output
 
         except Exception as e:
             LogException(e, logger=log_flk)
-            return {
-                "intent": "general_chat",
-                "status": "error",
-                "error_message": str(e),
-            }
+
+        return state.model_copy(update=output)
 
     # -------------------------------------------------------------------------
     # Executor Agent Node
@@ -296,44 +214,6 @@ class GraphNodes:
                 "status": "error",
                 "error_message": f"Tool execution failed: {e}",
             }
-
-    # -------------------------------------------------------------------------
-    # Flatten Data Node
-    # -------------------------------------------------------------------------
-    def flatten_node(self, state: GRState) -> Dict[str, Any]:
-        """Convert tool result to token-optimized string format."""
-        try:
-            data = state.tool_result or state.db_result
-
-            if not data:
-                return {"flattened_data": "No data retrieved."}
-
-            # Convert dict to condensed string representation
-            lines = []
-            if isinstance(data, dict):
-                # Get column names
-                columns = list(data.keys())
-                if columns and data[columns[0]]:
-                    num_rows = len(data[columns[0]])
-
-                    # Header
-                    lines.append(" | ".join(columns))
-                    lines.append("-" * 50)
-
-                    # Rows (limit to first 20 for token efficiency)
-                    for i in range(min(num_rows, 20)):
-                        row_values = [str(data[col][i])[:50] for col in columns]
-                        lines.append(" | ".join(row_values))
-
-                    if num_rows > 20:
-                        lines.append(f"... and {num_rows - 20} more rows")
-
-            flattened = "\n".join(lines)
-            return {"flattened_data": flattened}
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-            return {"flattened_data": f"Error flattening data: {e}"}
 
     # -------------------------------------------------------------------------
     # Query FalkorDB Node (for direct queries)

@@ -1,1 +1,1 @@
-FROM astrocrpublic.azurecr.io/runtime:3.1-9
+FROM astral/uv:python3.13-alpine

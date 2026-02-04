@@ -2,7 +2,7 @@
 MATCH (:Area {ids: $area_ids})-[:HAS_LOCALITY]->(:Locality)-[:HAS_RESTAURANT]->(r:Restaurant)
 MATCH (r)-[:SERVES_MAIN_CUISINE]->(:MainCuisine {name: $cuisine})
 MATCH (r)-[link:HAS_MENU]->(menu:Menu)
-WHERE r.rating IS NOT NULL AND r.rating >= $min_rating
+WHERE r.rating IS NOT NULL AND r.rating >= $min_cmpt_rating
 RETURN  
     r.name AS rstn_name,
     r.area AS rstn_area,

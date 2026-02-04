@@ -14,18 +14,21 @@ class GRState(BaseModel):
     messages: Annotated[List[HumanMessage | AIMessage], add_messages] = Field(
         default_factory=list
     )
-
-    # Memory (mem0)
-    preferences: str = Field(default="")  # user preferences from memory
-    summary: str = Field(default="")  # conversation summary
-
-    # Current turn
-    user_query: Optional[HumanMessage] = None
-    agent_answer: Optional[AIMessage] = None
+    msg_summary: str = Field(
+        default="", description="Summary of conversation between user and planner agent"
+    )
 
     # Guardrails
     is_safe: bool = Field(default=True)
     guardrail_message: str = Field(default="")
+
+    # User Memory (mem0)
+    user_preferences: str = Field(default="")  # user preferences from memory
+    user_summary: str = Field(default="")  # conversation summary
+
+    # Current turn
+    user_query: Optional[HumanMessage] = None
+    agent_answer: Optional[AIMessage] = None
 
     # Planner Agent outputs
     intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (

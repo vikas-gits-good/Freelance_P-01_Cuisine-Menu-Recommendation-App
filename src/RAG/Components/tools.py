@@ -5,7 +5,7 @@ from src.ETL.Config.graph_pool import GraphPool
 from src.RAG.Config import CypherCodeConfig
 
 from src.Logging.logger import log_flk
-from src.Exception.exception import LogException
+from src.Exception.exception import LogException, CustomException
 
 
 class CypherFunctionTool:
@@ -38,7 +38,7 @@ class CypherFunctionTool:
                 "q_params": {
                     "area_ids": "area_Indiranagar__city_Bangalore-relation:7902476",
                     "cuisine": "Thai",
-                    'min_rating': 4.0,
+                    'min_cmpt_rating': 4.0,
                     "limit": 200
                 },
                 "output": "dict"
@@ -303,9 +303,11 @@ class CypherFunctionTool:
                 columns=[item[-1] for item in result.header],
             )
             df = df.map(
-                lambda row: ", ".join(str(item) for item in row)
-                if isinstance(row, list)
-                else row
+                lambda row: (
+                    ", ".join(str(item) for item in row)
+                    if isinstance(row, list)
+                    else row
+                )
             )
 
         except Exception as e:
@@ -382,20 +384,16 @@ class CypherFunctionTool:
                 columns=[item[-1] for item in result.header],
             )
             df = df.map(
-                lambda row: ", ".join(str(item) for item in row)
-                if isinstance(row, list)
-                else row
+                lambda row: (
+                    ", ".join(str(item) for item in row)
+                    if isinstance(row, list)
+                    else row
+                )
             )
 
         except Exception as e:
             LogException(e, logger=log_flk)
-            log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
-            df = pd.DataFrame(
-                {
-                    "q_code": q_code,
-                    "q_params": q_params,
-                    "error": str(e),
-                }
-            )
+            log_flk.info(f"Error:\n{query = }\n{e = }")
+            df = pd.DataFrame({"query": query, "error": str(e)})
 
         return df.to_dict(orient="list")
