@@ -14,12 +14,6 @@ class CypherFunctionTool:
         try:
             self.graph = GraphPool.get_graph(graph_name="test")
             self.cp_config = cp_config
-            self.tools_dict = {
-                meth_name: getattr(self, meth_name)
-                for meth_name in dir(self)
-                if not meth_name.startswith("_") and callable(getattr(self, meth_name))
-            }
-            self.schma_dict = {}
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -319,63 +313,6 @@ class CypherFunctionTool:
             df = pd.DataFrame()
 
         return df if output == "dataframe" else df.to_dict(orient="list")
-
-    def _get_params_from_db(
-        self,
-        city_name: str | None = None,
-        area_name: str | None = None,
-        cuis_name: str | None = None,
-        rstn_name: str | None = None,
-        purpose: Literal[
-            "get_area_ids", "get_cuis_name", "get_rstn_ids"
-        ] = "get_area_ids",
-    ):
-        """Method that returns
-        area id -> given city name & area name or
-        cuisine name -> given cuisine name or
-        restaurant id -> given restaurant name, area name, city name.
-
-        Args:
-            city_name (str | None): User requested city name.
-            area_name (str | None): User requested area name.
-            cuis_name (str | None): User requested cuisine name.
-            rstn_name (str | None): User requested cuisine name.
-            purpose (Literal["get_area_ids", "get_cuis_name", "get_rstn_ids"], optional): Which function to call. Defaults to "get_area_ids".
-
-        Returns:
-            parameter (str): area ids, cuisine name or restaurant id to enter as parameter for toolbox functions.
-        """
-        try:
-            q_code = self.cp_config.cp_code.gdb[purpose]
-            q_params = {
-                "city_name": city_name,
-                "area_name": area_name,
-                "cuis_name": cuis_name,
-                "rstn_name": rstn_name,
-            }
-
-            if purpose == "get_area_ids":
-                _ = [q_params.pop(key, None) for key in ["cuis_name", "rstn_name"]]
-
-            elif purpose == "get_cuis_name":
-                _ = [
-                    q_params.pop(key, None)
-                    for key in ["city_name", "area_name", "rstn_name"]
-                ]
-
-            elif purpose == "get_rstn_ids":
-                _ = [q_params.pop(key, None) for key in ["cuis_name"]]
-
-            result = self.graph.query(q_code, q_params).result_set[0][0]
-
-        except Exception as e:
-            LogException(e, logger=log_flk)
-            log_flk.info(f"Error:\n{q_code = }\n{q_params = }\n{e = }")
-            result = {
-                "message": f"Query:\n{q_code = }\nParams:\n{q_params = }\nError:\n{e = }"
-            }
-
-        return result
 
     def _query_falkordb(
         self,

@@ -203,7 +203,7 @@ class _QP_get_rcmd_menu(BaseModel):
 
 
 class _ToolFuncModel(BaseModel):
-    output: Literal["dict", "dataframe"] = "dict"
+    output: Literal["dict", "dataframe"] = "dict"  # LangStudio supports df
 
     @model_validator(mode="before")
     @classmethod

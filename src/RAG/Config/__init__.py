@@ -8,7 +8,6 @@ class get_cypher_code:
     def __init__(self):
         self.all_cyp_paths = RAGCypherConstants.ALL_CYPHER_CODE_PATH
         self.tools: Dict[str, Any] = self.get_code(code="tools")
-        self.gdb: Dict[str, Any] = self.get_code(code="gdb")
 
     def get_code(self, code: Literal["tools", "gdb"] = "tools"):
         path = [
