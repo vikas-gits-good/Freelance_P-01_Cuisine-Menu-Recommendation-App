@@ -185,6 +185,5 @@ class DatabaseQueryTools:
             for name in purpose_params.get(purpose, [])
             if _locals[name] is not None
         }
-
         # always keep o/p format as dict as it will be unpacked by executor node
         return cft._process_data(q_params, output="dict", key=purpose)

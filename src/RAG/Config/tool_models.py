@@ -203,12 +203,12 @@ class _QP_get_rcmd_menu(BaseModel):
 
 
 class _ToolFuncModel(BaseModel):
-    output: Literal["dict", "dataframe"] = "dict"  # LangStudio supports df
+    output: Literal["dict", "dataframe"] = "dataframe"  # LangStudio supports df
 
     @model_validator(mode="before")
     @classmethod
     def trfm(cls, data: dict):
-        return {"q_params": data, "output": "dict"}
+        return {"q_params": data, "output": "dataframe"}
 
 
 class GetCompetitorDataModels(_ToolFuncModel):

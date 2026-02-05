@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_groq import ChatGroq
 
 from src.RAG.Components.state import GRState
-from src.RAG.Config.tool_funcs import CypherFunctionTool
+from src.RAG.Components.tools import DatabaseQueryTools
 from src.RAG.Prompts.system_prompts import SysMsgSet
 from src.RAG.Config.tool_models import (
     GuardrailSchema,
@@ -39,10 +39,10 @@ class GraphNodes:
             temperature=0,
         ).with_structured_output(schema=GuardrailSchema)
 
-        self.cft = CypherFunctionTool()
         self.sms = SysMsgSet().sys_pmt
-        self.tool_func_map = self.cft.tools_dict
-        self.tool_schm_map = self.cft.schma_dict
+        dqt = DatabaseQueryTools()
+        self.tool_func_map = dqt.db_tool_box_func
+        self.tool_schm_map = dqt.db_tool_box_schm
 
     # -------------------------------------------------------------------------
     # Guardrail Node -> No suspicious queries goes through
@@ -53,8 +53,11 @@ class GraphNodes:
             self.sms.guardrail,
             state.user_query,
         ]
-        response: GuardrailSchema = self.llm_gdrl.invoke(messages)
-        return state.model_copy(update=response.model_dump())
+        response = self.llm_gdrl.invoke(messages).model_dump()
+        gdrl_msgs = AIMessage(content=f"{response}")
+        state.conversation.append(gdrl_msgs)
+        # state.messages.append(gdrl_msgs) # dont add
+        return state.model_copy(update=response)
 
     # -------------------------------------------------------------------------
     # User Memory Node -> Get user's data from memory
@@ -90,7 +93,7 @@ class GraphNodes:
             # Build output dict
             output = {
                 "intent": response.intent.intent,
-                "tool_params_raw": response.extracted_params.model_dump(),
+                "tool_params_raw": {},  # response.extracted_params.model_dump(), # remove this
             }
 
             if response.tool_selection:
@@ -104,63 +107,42 @@ class GraphNodes:
 
         except Exception as e:
             LogException(e, logger=log_flk)
+            output = {}
 
         return state.model_copy(update=output)
 
     # -------------------------------------------------------------------------
     # Executor Agent Node
     # -------------------------------------------------------------------------
-    def executor_node(self, state: GRState) -> Dict[str, Any]:
+    def executor_node(self, state: GRState) -> GRState:
         """Resolve parameters from DB and prepare for tool execution."""
         try:
-            # look at planner agent intent "tool_call", "direct_db_query", "follow_up", "general_chat"
+            # look at planner agent intent "tool_call", "direct_db_query"
             if state.intent == "tool_call":
                 messages = [
                     self.sms.executor,
                     state.user_query,
                 ]
-                tool_schm = self.tool_schm_map[state.selected_tool]
-                llm_strc = self.llm_chat.with_structured_output(tool_schm)
+                llm_tool = self.llm_chat.bind_tools(
+                    [self.tool_func_map["_get_params_from_db"]]
+                )
+                response = llm_tool.invoke(messages)
+                args = {}
 
-                func_params = llm_strc.invoke(messages)
+                if response.tool_calls:
+                    for tc in response.tool_calls:
+                        tool_args = tc["args"]
+                        tool_result = self.tool_func_map["_get_params_from_db"].invoke(
+                            tool_args
+                        )
+                        args.update({k: v[0] for k, v in tool_result.items()})
 
-                params = {
-                    "city_name": state.tool_params_raw["city_name"],
-                    "area_name": state.tool_params_raw["area_name"],
-                    "cuisine_name": state.tool_params_raw["cuisine_name"],
-                }
-                if params["cuisine_name"]:
-                    params["purpose"] = "get_cuisine_name"
-                    resolved["cuisine"] = self.cft._get_area_cuisine_from_db(**params)
+                tool_schm = self.tool_schm_map[state.selected_tool](**args)
 
-                if params["area_name"]:
-                    params["purpose"] = "get_area_ids"
-                    resolved["area_ids"] = self.cft._get_area_cuisine_from_db(**params)
-
-                # what about rstn_id
-
-            # Copy other params
-            if raw_params.get("menu_name"):
-                resolved["menu_name"] = raw_params["menu_name"]
-            if raw_params.get("min_rating"):
-                resolved["min_rating"] = raw_params["min_rating"]
-                resolved["min_menu_rating"] = raw_params["min_rating"]
-                resolved["min_avg_rating"] = raw_params["min_rating"]
-            if raw_params.get("limit"):
-                resolved["limit"] = raw_params["limit"]
-
-            return {
-                "area_ids": resolved.get("area_ids"),
-                "cuisine_name": resolved.get("cuisine"),
-                "resolved_params": resolved,
-            }
+                state = state  # put this filled up func schema into a GRState var and return
 
         except Exception as e:
             LogException(e, logger=log_flk)
-            return {
-                "status": "error",
-                "error_message": f"Failed to resolve parameters: {e}",
-            }
 
     # -------------------------------------------------------------------------
     # ToolBox Node
