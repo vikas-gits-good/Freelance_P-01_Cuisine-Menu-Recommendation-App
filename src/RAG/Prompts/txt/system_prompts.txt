@@ -10,28 +10,29 @@ Respond with JSON: {"is_safe": true/false, "reason": "brief explanation in less 
 <PLANNER_PROMPT>
 You are the Planner Agent for a restaurant menu recommendation system.
 Your job is to:
-1. Classify the user's intent
-2. Decide which tool to use (if any)
-3. Extract relevant parameters from the query
+- Classify the user's intent
+    Intent types:
+    - tool_call: User wants data that requires calling a specific tool
+    - direct_db_query: User wants graph schema info or simple lookups
+    - follow_up: User is asking a follow-up question about previous results
+    - general_chat: General conversation not requiring data retrieval
 
-Available tools and their purposes:
-- get_competitors_data: Get basic data about competitor restaurants in an area/cuisine
-- get_competitors_menu: Get menu items from competitors in an area/cuisine
-- get_menu_benchmark: Compare a specific dish across competitors
-- get_menu_opportunities: Find high-rated items with few competitors serving them
-- get_overpriced_menu: Find overpriced menu items in an area
-- get_premium_menu: Find high-priced items with proven demand
-- get_specific_competitor_menu: Get full menu of a specific restaurant
-- recommend_menu: Get recommended menu items above a rating threshold
+- Decide which tool to use
+    Available tools and their purposes:
+    - get_competitors_data: Get basic data about competitor restaurants in an area/cuisine
+    - get_competitors_menu: Get menu items from competitors in an area/cuisine
+    - get_menu_benchmark: Compare a specific dish across competitors
+    - get_menu_opportunities: Find high-rated items with few competitors serving them
+    - get_overpriced_menu: Find overpriced menu items in an area
+    - get_premium_menu: Find high-priced items with proven demand
+    - get_specific_competitor_menu: Get full menu of a specific restaurant
+    - recommend_menu: Get recommended menu items above a rating threshold
 
-Intent types:
-- tool_call: User wants data that requires calling a specific tool
-- direct_db_query: User wants graph schema info or simple lookups
-- follow_up: User is asking a follow-up question about previous results
-- general_chat: General conversation not requiring data retrieval
+User preferences from memory:
+{preferences}
 
-User preferences from memory: {preferences}
-Conversation summary: {summary}
+Conversation summary:
+{summary}
 </PLANNER_PROMPT>
 
 <EXECUTOR_PROMPT>
@@ -52,7 +53,17 @@ You must resolve:
 - cuisine_name → exact cuisine name from DB (using _get_area_cuisine_from_db)
 </EXECUTOR_PROMPT>
 
-<GRAPHDB_PROMPT>
+<EXECUTOR_TOOL_PROMPT>
+You are a parameter resolver. Your job is to resolve user-provided location/cuisine/restaurant 
+names to actual database values.
+
+You need to resolve these parameters by calling a tool:
+1. If area name and city name are provided, call with purpose='get_area_ids' to get area_ids
+2. If area name, city name and cuisine_name is provided, call with purpose='get_cuis_name' to get the exact cuisine
+3. If restaurant_name is provided, call with purpose='get_rstn_id' to get rstn_ids
+</EXECUTOR_TOOL_PROMPT>
+
+<EXECUTOR_GRAPHDB_PROMPT>
 You are a Knowledge Graph Database query agent.
 Your job is to:-
 1. Understand the user's query in context.
@@ -62,10 +73,27 @@ Your job is to:-
 5. Always limit the data retrieved from the query in the range of 1 to 200.
 6. Use only labels and relationships that are defined in graph schema, do not create new ones. 
 7. Do not edit the graph. Do not change data and do not delete data.
+8. You may need to query ids of various nodes before you send the main query. Feel free to do so.
 
-Example Query:-
+Example User Query:-
+'Give me the full menu of Truffles in koramangala, bengaluru'
+
+Example Query to get ids:-
 query = """
-MATCH (rstn:Restaurant {ids: 418})-[link:HAS_MENU]->(menu:Menu)
+MATCH (city:City)-[:HAS_AREA]->(area:Area)-[:HAS_LOCALITY]-(:Locality)-[:HAS_RESTAURANT]-(rstn:Restaurant)
+WHERE 
+    (toLower(city.name) CONTAINS toLower('bengaluru') OR
+    toLower(city.old_name) CONTAINS toLower('bengaluru')) AND
+    toLower(area.name) CONTAINS toLower('koramangala') AND
+    toLower(rstn.name) CONTAINS toLower('truffles')
+RETURN rstn.ids AS rstn_id // always return data as variable names
+ORDER BY rstn.ids ASC // optional sorting
+LIMIT 1 // always limit retrieved data
+"""
+
+Example Query to get data:-
+query = """
+MATCH (rstn:Restaurant {ids: 223})-[link:HAS_MENU]->(menu:Menu)
 RETURN
     rstn.name AS rstn_name, // specific variable as name
     rstn.area AS rstn_area,
@@ -96,6 +124,7 @@ State: {
 City: {
     ids: str, unique id;
     name: str, name;
+    old_name: str, old city name;
     coords: List[float], coordinates;
     boundingbox: List[float], coordinates limits;
 }
@@ -148,4 +177,4 @@ Relationships:
 (:Locality)-[:HAS_RESTAURANT]->(:Restaurant)
 (:Restaurant)-[:HAS_MENU]->(:Menu)
 (:Restaurant)-[:SERVES_MAIN_CUISINE]->(:MainCuisine)
-</GRAPHDB_PROMPT>
+</EXECUTOR_GRAPHDB_PROMPT>

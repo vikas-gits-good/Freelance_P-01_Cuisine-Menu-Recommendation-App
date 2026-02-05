@@ -238,6 +238,8 @@ class BaseLocation(BaseModel):
             `Ex: "osm_type:osm_id"`
         name (str): Location name in human readable form.
             `Example: "India", "Assam", 'Davangere'`
+        old_name (str): Location name in human readable form.
+            `Example: "India", "Assam", 'Davangere'`
         iso_code (Optional[str]): ISO Code for the location.
             `Ex: "IN"`
         coords (Optional[str]): Latitude, Longitude with `,` delimiter.
@@ -248,6 +250,7 @@ class BaseLocation(BaseModel):
 
     ids: str
     name: str
+    old_name: Optional[str] = None
     iso_code: Optional[str] = None
     coords: Optional[str] = None
     boundingbox: Optional[str] = None
@@ -261,6 +264,7 @@ class BaseLocation(BaseModel):
             "ids": self.ids,
             "params": {
                 "name": self.name,
+                "old_name": self.old_name,
                 "iso_code": self.iso_code,
                 "coords": self.coords,
                 "boundingbox": self.boundingbox,
@@ -367,6 +371,7 @@ class Area(BaseLocation):
         clean_data = {
             "ids": f"area_{area_name}__city_{city_name}-{city_id}",
             "name": cls.substitute(data["rstn"].area, " "),
+            "old_name": None,
             "iso_code": None,
             "coords": None,
             "boundingbox": None,
@@ -416,6 +421,7 @@ class Locality(BaseLocation):
         clean_data = {
             "ids": f"locality_{lclt_name}__area_{area_name}__city_{city_name}-{city_id}",
             "name": cls.substitute(data["rstn"].locality, " "),
+            "old_name": None,
             "iso_code": None,
             "coords": None,
             "boundingbox": None,

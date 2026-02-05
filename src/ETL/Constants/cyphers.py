@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ETLCyphersConstants:
-    ALL_CYPHER_FILE_PATHS = glob("../../../src/ETL/Cyphers/*.cyp")
+    ALL_CYPHER_FILE_PATHS = glob("../../../src/ETL/Cyphers/*.cyp")  # ../../../
     KG_NAME_PROD = "PROD_KG"
     KG_NAME_DEVL = "DEVL_KG"
     KG_NAME_TEST = "TEST_KG"
@@ -16,7 +16,7 @@ class ETLCyphersConstants:
 
 @dataclass
 class LocationConstants:
-    LOCATION_DATA_FILE_PATHS = glob("../../../src/ETL/Data/unq_ids_*.json")
+    LOCATION_DATA_FILE_PATHS = glob("../../../src/ETL/Data/unq_ids_*.json")  # ../../../
 
 
 class NodeLabels(str, Enum):  # do not reorder Enums

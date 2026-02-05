@@ -154,7 +154,8 @@ LIMIT $limit
 // get_area_ids
 MATCH (city:City)-[:HAS_AREA]->(area:Area)
 WHERE 
-    toLower(city.name) CONTAINS toLower($city_name) AND 
+    (toLower(city.name) CONTAINS toLower($city_name) OR
+    toLower(city.old_name) CONTAINS toLower($city_name)) AND 
     toLower(area.name) CONTAINS toLower($area_name)
 RETURN area.ids AS area_ids
 LIMIT 1
@@ -168,8 +169,9 @@ LIMIT 1
 // get_rstn_ids
 MATCH (city:City)-[:HAS_AREA]->(area:Area)-[:HAS_LOCALITY]-(:Locality)-[:HAS_RESTAURANT]-(rstn:Restaurant)
 WHERE 
-    toLower(city.name) CONTAINS toLower($city_name) AND 
-    toLower(area.name) CONTAINS toLower($area_name) AND 
+    (toLower(city.name) CONTAINS toLower($city_name) OR
+    toLower(city.old_name) CONTAINS toLower($city_name)) AND
+    toLower(area.name) CONTAINS toLower($area_name) AND
     toLower(rstn.name) CONTAINS toLower($rstn_name)
 RETURN rstn.ids AS rstn_id
 ORDER BY rstn.ids ASC 
