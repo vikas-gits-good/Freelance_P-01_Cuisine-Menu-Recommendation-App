@@ -1,24 +1,23 @@
 import pandas as pd
-from typing import Annotated, List, Literal, Dict, Any, Optional
+from typing import List, Literal, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
-from langgraph.graph.message import add_messages
+from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
 
 
 class GRState(BaseModel):
     """Main state for the GraphRAG workflow."""
 
     # Conversation tracking
-    conversation: Annotated[List[AnyMessage], add_messages] = Field(
+    conversation: List[AnyMessage] = Field(
         default_factory=list,
         description="All messages for state tracking",
     )
-    messages: Annotated[List[HumanMessage | AIMessage], add_messages] = Field(
+    messages: List[HumanMessage | AIMessage] = Field(
         default_factory=list,
         description="Recent conversation messages for state tracking",
     )
-    msg_summary: str = Field(
-        default="Unavailable",
+    msg_summary: SystemMessage = Field(
+        default=SystemMessage(content="Unavailable"),
         description="Summary of conversation between user and planner agent",
     )
 
@@ -33,13 +32,17 @@ class GRState(BaseModel):
     )
 
     # User Memory
+    user_id: str = Field(
+        default="Unavailable",
+        description="unique user id",
+    )
     user_preferences: str = Field(
         default="Unavailable",
-        description="user preferences from memory",
+        description="user preferences",
     )
     user_summary: str = Field(
         default="Unavailable",
-        description="user interest/plan summary from meory",
+        description="summary of user profile",
     )
 
     # Current turn
@@ -53,30 +56,27 @@ class GRState(BaseModel):
     )
 
     # Planner Agent
-    intent: Literal[
-        "tool_call",
-        "direct_db_query",
-        "follow_up",
-        "general_chat",
-    ] = Field(
-        default="general_chat",
-        description="Planner decision on how to handle user query",
+    intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (
+        Field(
+            default="general_chat",
+            description="Planner decision on how to handle user query",
+        )
     )
-    selected_tool: Optional[str] = Field(
-        default=None,
+    selected_tool: str = Field(
+        default="",
         description="name of function to be called if decision is tool_call",
     )
 
     # Executor Agent
-    func_parm_schm: Optional[BaseModel] = Field(
-        default=None,
+    func_parm_schm: BaseModel = Field(
+        default=BaseModel(),
         description="Parameters as a schema for tool_call",
     )
     db_query_list: Optional[List[str]] = Field(
         default=None,
         description="list of db queries executed",
     )
-    data_from_fkdb: Optional[Dict[str, Any] | pd.DataFrame] = Field(
+    data_from_fkdb: Optional[str] = Field(
         default=None,
         description="Data queried directly from falkordb",
     )

@@ -7,10 +7,30 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class GuardrailSchema(BaseModel):
-    is_safe: bool = Field(default=True)
+    is_safe: bool = Field(default=True, description="is the user query safe?")
     guardrail_message: str = Field(
-        default="",
-        description="A brief 5 to 20 word reasoning for user query classification",
+        default="Totally not a scam query!",
+        description="A brief 5 to 10 word reasoning for user query classification",
+    )
+
+
+# =============================================================================
+# User Memory Data (for structured output)
+# =============================================================================
+
+
+class UserPreferenceSchema(BaseModel):
+    user_id: str = Field(
+        default="Unavailable",
+        description="unique user id",
+    )
+    user_preferences: str = Field(
+        default="Unavailable",
+        description="user preferences",
+    )
+    user_summary: str = Field(
+        default="Unavailable",
+        description="summary of user profile",
     )
 
 
@@ -23,17 +43,22 @@ class IntentClassification(BaseModel):
     """Model for classifying user intent."""
 
     intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (
-        Field(description="The classified intent of the user query")
+        Field(
+            default="general_chat",
+            description="The classified intent of the user query",
+        )
     )
     reasoning: str = Field(
-        description="Brief explanation of why this intent was chosen"
+        default="",
+        description="Brief explanation of why this intent was chosen",
     )
     requires_clarification: bool = Field(
-        default=False, description="Whether more info is needed from user"
+        default=False,
+        description="Whether more info is needed from user",
     )
     clarification_question: Optional[str] = Field(
         default="Could you please provide more details?",
-        description="Question to ask user if clarification needed",
+        description="Question to ask user if clarification needed in not more than 30 words",
     )
 
 
@@ -49,28 +74,14 @@ class ToolSelection(BaseModel):
         "get_premium_menu",
         "get_specific_competitor_menu",
         "recommend_menu",
-    ] = Field(description="The tool to call based on user intent")
-    reasoning: str = Field(description="Why this tool was selected")
-
-
-class ExtractedParams(BaseModel):
-    """Model for extracting raw parameters from user query."""
-
-    city_name: Optional[str] = Field(default=None, description="City mentioned by user")
-    area_name: Optional[str] = Field(default=None, description="Area mentioned by user")
-    cuisine_name: Optional[str] = Field(
-        default=None, description="Cuisine type mentioned by user"
+    ] = Field(
+        default="get_competitors_data",
+        description="The tool to call based on user intent",
     )
-    menu_name: Optional[str] = Field(
-        default=None, description="Specific dish name if mentioned"
+    reasoning: str = Field(
+        default="",
+        description="Why this tool was selected",
     )
-    restaurant_name: Optional[str] = Field(
-        default=None, description="Specific restaurant if mentioned"
-    )
-    min_rating: Optional[float] = Field(
-        default=None, ge=0.0, le=5.0, description="Minimum rating filter"
-    )
-    limit: Optional[int] = Field(default=200, ge=1, le=2000, description="Result limit")
 
 
 class PlannerOutput(BaseModel):
@@ -78,11 +89,10 @@ class PlannerOutput(BaseModel):
 
     intent: IntentClassification
     tool_selection: Optional[ToolSelection] = None
-    extracted_params: ExtractedParams
 
 
 # =============================================================================
-# Executor Agent Models
+# Executor Agent Models # Do I even tneed this?
 # =============================================================================
 class CypherQueryPlan(BaseModel):
     """Model for direct DB query planning."""
@@ -92,11 +102,17 @@ class CypherQueryPlan(BaseModel):
 
 
 # =============================================================================
-# Tool Function Parameter Models
+# ToolBox Function Parameter Models
 # =============================================================================
 class _QP_get_comp_data(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_cmpt_rating: float = Field(
         default=4.0,
         ge=0.0,
@@ -104,49 +120,95 @@ class _QP_get_comp_data(BaseModel):
         description="minimum restaurant rating",
     )
     limit: int = Field(
-        default=200, ge=20, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=20,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_comp_menu(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_menu_rating: float = Field(
-        default=4.0, ge=0.0, le=5.0, description=" minimum menu rating"
+        default=4.0,
+        ge=0.0,
+        le=5.0,
+        description=" minimum menu rating",
     )
     num_per_rstn: int = Field(
-        default=50, ge=20, le=100, description="number of menu items per restaurant"
+        default=50,
+        ge=20,
+        le=100,
+        description="number of menu items per restaurant",
     )
     limit: int = Field(
-        default=500, ge=100, le=2000, description="number of records to retrieve"
+        default=500,
+        ge=100,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_menu_bnch_mark(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     menu_name: str = Field(
-        default="Masala Dosa", description="name of the menu item from user"
+        default="Masala Dosa",
+        description="name of the menu item from user",
     )
     limit: int = Field(
-        default=200, ge=10, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=10,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_menu_oppr(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_menu_rating: float = Field(
-        default=4.0, ge=0.0, le=5.0, description="minimum menu rating"
+        default=4.0,
+        ge=0.0,
+        le=5.0,
+        description="minimum menu rating",
     )
     limit: int = Field(
-        default=200, ge=1, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=1,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_ovpr_menu(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_listings: int = Field(
         default=2,
         ge=1,
@@ -160,13 +222,22 @@ class _QP_get_ovpr_menu(BaseModel):
         description="maximum average rating of same dish across restaurants",
     )
     limit: int = Field(
-        default=200, ge=1, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=1,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_prem_menu(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_listings: int = Field(
         default=2,
         ge=1,
@@ -180,25 +251,46 @@ class _QP_get_prem_menu(BaseModel):
         description="minimum average rating of same dish across restaurants",
     )
     limit: int = Field(
-        default=200, ge=1, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=1,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_spec_cmpt_menu(BaseModel):
-    rstn_id: int = Field(default=418, description="always return 418")
+    rstn_id: int = Field(
+        default=418,
+        description="always return 418",
+    )
     limit: int = Field(
-        default=200, ge=100, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=100,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 
 class _QP_get_rcmd_menu(BaseModel):
-    area_ids: str = Field(default="", description="always return ''")
-    cuisine: str = Field(default="", description="always return ''")
+    area_ids: str = Field(
+        default="",
+        description="always return ''",
+    )
+    cuisine: str = Field(
+        default="",
+        description="always return ''",
+    )
     min_menu_rating: float = Field(
-        default=4.0, ge=1.0, le=5.0, description="minimum rating for each dish"
+        default=4.0,
+        ge=1.0,
+        le=5.0,
+        description="minimum rating for each dish",
     )
     limit: int = Field(
-        default=200, ge=1, le=2000, description="number of records to retrieve"
+        default=200,
+        ge=1,
+        le=2000,
+        description="number of records to retrieve",
     )
 
 

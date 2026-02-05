@@ -322,7 +322,7 @@ class CypherFunctionTool:
         ```python
         >>> from src.RAG.Components.tools import CypherFunctionTool
         >>> cft = CypherFunctionTool()
-        >>> query = "\nMATCH (cu:MainCuisine)\nWHERE toLower(cu.name) CONTAINS toLower('South Indian')\nRETURN cu.name AS cuisine_name\nLIMIT 1\n"
+        >>> query = "\nMATCH (cu:MainCuisine)\nWHERE toLower(cu.name) CONTAINS toLower('South Indian')\nRETURN cu.name AS cuis_name\nLIMIT 1\n"
         >>> data = cft._query_falkordb(query)
         ```
 

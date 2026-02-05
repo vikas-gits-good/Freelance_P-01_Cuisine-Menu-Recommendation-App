@@ -16,10 +16,19 @@ class get_prompts:
         self.planner = self._get(types="planner")
         self.executor = self._get(types="executor")
         self.graphdb = self._get(types="graphdb")
+        self.summary = self._get(types="summary")
+        self.general = self._get(types="general")
 
     def _get(
         self,
-        types: Literal["guardrail", "planner", "executor", "graphdb"] = "guardrail",
+        types: Literal[
+            "guardrail",
+            "planner",
+            "executor",
+            "graphdb",
+            "summary",
+            "general",
+        ] = "guardrail",
     ):
         try:
             path = self._sys_pmt_path[0]
