@@ -1,7 +1,8 @@
 import json
+import pandas as pd
 
 from langchain_groq import ChatGroq
-from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
+from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
 
 from src.RAG.Components.state import GRState
 from src.RAG.Components.tools import GRTools
@@ -58,19 +59,23 @@ class GRNodes:
     def guardrail_node(self, state: GRState) -> GRState:
         """Check if user query is safe and on-topic."""
         try:
-            messages = [
-                self.sms.guardrail,
-                state.user_query,
+            state.messages = [  # workaround to avoid sending data
+                msg
+                for msg in state.messages  # changed table data to state.conversation
+                if not (
+                    isinstance(msg, AIMessage)
+                    and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
+                )
             ]
+            messages = [self.sms.guardrail, state.messages[-1]]
             response: GuardrailSchema = self.llm_gdrl.invoke(messages)
             gdrl_msgs = AIMessage(content=f"{response.model_dump()}")
 
             # update state
             state.is_safe = response.is_safe
             state.guardrail_message = response.guardrail_message
-            state.conversation.append(state.user_query)
+            state.conversation.append(state.messages[-1])
             state.conversation.append(gdrl_msgs)
-            state.messages.append(state.user_query)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -110,8 +115,7 @@ class GRNodes:
                         convo_summary=state.msg_summary,
                     ),
                 ),
-                *state.messages[:-1],  # conversation history
-                state.user_query,  # current user query
+                *state.messages,
             ]
             llm_plnr = self.llm_chat.with_structured_output(schema=PlannerOutput)
             response: PlannerOutput = llm_plnr.invoke(messages)
@@ -149,7 +153,7 @@ class GRNodes:
             if state.intent == PlannerLabels.TOOL_CALL:
                 messages = [
                     self.sms.executor,
-                    state.user_query,
+                    state.messages[-1],
                 ]
                 # see if you can put another ReAct loop with a smaller model
                 llm_tool = self.llm_chat.bind_tools([self.qry_parm_func])
@@ -170,7 +174,7 @@ class GRNodes:
             elif state.intent == PlannerLabels.DABA_QERY:
                 messages = [
                     self.sms.graphdb,  # dont use .format(max_steps=)
-                    state.user_query,
+                    state.messages[-1],
                 ]
                 llm_tool = self.llm_chat.bind_tools([self.qry_daba_func])
 
@@ -213,9 +217,19 @@ class GRNodes:
     def toolbox_node(self, state: GRState) -> GRState:
         """Execute the selected tool with resolved parameters."""
         try:
-            state.tool_result = self.tool_func_map[state.selected_tool.value].invoke(
-                state.func_parm_schm.model_dump()
+            data = self.tool_func_map[state.selected_tool.value].invoke(
+                {"param_model": state.func_parm_schm}
             )
+            state.tool_result = data
+
+            # convert data into markdown for display in LangStudio
+            data = pd.DataFrame(data) if isinstance(data, dict) else data
+            data_md = data.to_markdown(index=False)
+            data_msg = AIMessage(
+                content=data_md,
+                tool_call_id=f"{PlannerLabels.TOOL_CALL.value}_data",
+            )
+            state.conversation.append(data_msg)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -256,8 +270,7 @@ class GRNodes:
                         data_from_fkdb=state.data_from_fkdb,
                     )
                 ),
-                *state.messages[:-1],
-                state.user_query,
+                *state.messages,
             ]
 
             response = self.llm_chat.invoke(messages)
@@ -278,7 +291,6 @@ class GRNodes:
         try:
             if not state.is_safe:
                 grdm_msg = AIMessage(content=state.guardrail_message)
-                state.conversation.append(grdm_msg)
                 state.agent_answer = grdm_msg
 
             elif state.status == StatusLabels.CLARIFY:

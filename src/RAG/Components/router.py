@@ -56,9 +56,9 @@ class GRRouter:
 
     def route_after_executor(
         self, state: GRState
-    ) -> Literal["general", "unsafe", "summary"]:
+    ) -> Literal["general", "unsafe", "toolbox"]:
         """Route based on executor result."""
-        decision = GRNodeLabel.SUMMARY
+        decision = GRNodeLabel.TOOLBOX
         try:
             if state.data_from_fkdb is not None:  # daba_query
                 decision = GRNodeLabel.GENERAL
@@ -68,7 +68,7 @@ class GRRouter:
                 decision = GRNodeLabel.UNSAFE
 
             else:  # toolbox data. Data can be empty
-                decision = GRNodeLabel.SUMMARY
+                decision = GRNodeLabel.TOOLBOX
 
         except Exception as e:
             LogException(e, logger=log_flk)

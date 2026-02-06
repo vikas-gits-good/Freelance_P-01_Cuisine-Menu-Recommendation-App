@@ -41,3 +41,4 @@ langchain-groq
 langchain_openai
 langchain-community
 langchain-experimental
+langgraph-cli[inmem]

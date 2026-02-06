@@ -1,5 +1,6 @@
-from langgraph.graph.state import StateGraph, CompiledStateGraph, START, END
+from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import StateGraph, CompiledStateGraph, START, END
 
 from src.RAG.Components.state import GRState
 from src.RAG.Components.nodes import GRNodes
@@ -14,8 +15,7 @@ from src.Exception.exception import LogException, CustomException
 class LangGraphState:
     def __init__(self):
         try:
-            ...
-            pass
+            self.graph = None
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -24,15 +24,15 @@ class LangGraphState:
     def build(self) -> CompiledStateGraph:
         """Method that returns the `CompiledStateGraph` object for the chat system"""
         try:
-            # get nodes
+            log_flk.info("GRAG: Starting to build graph rag")
             nodes = GRNodes(  # redesign this part
                 chat_model=GroqModelList.meta.llama_33_70b_versatile,
                 gdrl_model=GroqModelList.meta.llama_31_8b_instant,
             )
-            # get routes
+            log_flk.info("GRAG: Preparing routes for GRAG")
             router = GRRouter()
 
-            # add nodes
+            log_flk.info("GRAG: Preparing nodes for GRAG")
             ln_graph = StateGraph(GRState)
             ln_graph.add_node(GRNodeLabel.GUARDRAIL.value, nodes.guardrail_node)
             ln_graph.add_node(GRNodeLabel.MEMORY.value, nodes.memory_node)
@@ -43,7 +43,7 @@ class LangGraphState:
             ln_graph.add_node(GRNodeLabel.GENERAL.value, nodes.genchat_node)
             ln_graph.add_node(GRNodeLabel.UNSAFE.value, nodes.unsafe_node)
 
-            # add edges
+            log_flk.info("GRAG: Preparing edges for GRAG")
             ln_graph.add_edge(START, GRNodeLabel.GUARDRAIL.value)
             ln_graph.add_conditional_edges(
                 GRNodeLabel.GUARDRAIL.value,
@@ -61,38 +61,30 @@ class LangGraphState:
                 GRNodeLabel.EXECUTOR.value,
                 router.route_after_executor,
             )
+            ln_graph.add_edge(GRNodeLabel.TOOLBOX.value, GRNodeLabel.SUMMARY.value)
 
-            # compile
-            ln_state_graph = ln_graph.compile(checkpointer=InMemorySaver())
+            log_flk.info("GRAG: Compiling graph rag")
+            self.graph = ln_graph.compile()  # checkpointer=InMemorySaver())
 
         except Exception as e:
             LogException(e, logger=log_flk)
             # raise CustomException(e)
 
-        return ln_state_graph
+        return self.graph
 
+    def run(self, question: str, user_id: str) -> dict:
+        try:
+            _ = self.build() if not self.graph else None
 
-# =============================================================================
-# Example Usage
-# =============================================================================
+            log_flk.info("GRAG: Preparing user query")
+            init_state = GRState(user_query=HumanMessage(content=question))
+            config = {"configurable": {"thread_id": user_id}}
 
-if __name__ == "__main__":
-    from langchain_core.messages import HumanMessage
+            log_flk.info("GRAG: Sending query to GRAG system")
+            response = self.graph.invoke(init_state, config)
 
-    # Create the workflow
-    workflow = LangGraphState().build()
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            # raise CustomException(e)
 
-    # Example invocation
-    initial_state = GRState(
-        user_query=HumanMessage(
-            content="Show me Thai restaurants in Indiranagar, Bangalore with good ratings"
-        )
-    )
-
-    # Run with thread_id for conversation persistence
-    config = {"configurable": {"thread_id": "user-123"}}
-
-    result = workflow.invoke(initial_state.model_dump(), config)
-
-    print("Agent Response:", result.get("agent_answer"))
-    print("Status:", result.get("status"))
+        return response

@@ -10,6 +10,7 @@ __pycache__/
 logs/
 mlruns/
 Artifacts/
+.langgraph_api/
 Final_Artifacts/
 src/ETL/Data/sitemap/
 src/RAG/References/

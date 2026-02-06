@@ -9,9 +9,12 @@ from src.RAG.Constants.labels import PlannerLabels, ToolLabels
 
 
 class GuardrailSchema(BaseModel):
-    is_safe: bool = Field(default=False, description="is the user query safe?")
+    is_safe: bool = Field(
+        default_factory=bool,
+        description="is the user query safe?",
+    )
     guardrail_message: str = Field(
-        default="Invalid query. Please limit queries to restaurants, menus and cuisines",
+        default_factory=str,
         description="A brief 10 to 30 word response to user explaining why their query is invalid",
     )
 
@@ -49,7 +52,7 @@ class IntentClassification(BaseModel):
         description="The classified intent of the user query as python Enum",
     )
     reasoning: str = Field(
-        default="",
+        default_factory=str,
         description="Brief explanation of why this intent was chosen",
     )
     requires_clarification: bool = Field(
@@ -57,7 +60,7 @@ class IntentClassification(BaseModel):
         description="Whether more info is needed from user",
     )
     clarification_question: Optional[str] = Field(
-        default="Could you please provide more details?",
+        default=None,
         description="Question to ask user if clarification needed in not more than 30 words",
     )
 
@@ -70,7 +73,7 @@ class ToolSelection(BaseModel):
         description="The tool to call based on user intent as python Enum",
     )
     reasoning: str = Field(
-        default="",
+        default_factory=str,
         description="Why this tool was selected",
     )
 
@@ -278,9 +281,16 @@ class _QP_get_rcmd_menu(BaseModel):
 class _ToolFuncModel(BaseModel):
     output: Literal["dict", "dataframe"] = "dataframe"  # LangStudio supports df
 
+    # @model_validator(mode="before")
+    # @classmethod
+    # def trfm(cls, data: dict):
+    #     return {"q_params": data, "output": "dataframe"}
+
     @model_validator(mode="before")
     @classmethod
-    def trfm(cls, data: dict):
+    def trfm(cls, data: dict):  # for langchain
+        if "q_params" in data:
+            return data
         return {"q_params": data, "output": "dataframe"}
 
 

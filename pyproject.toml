@@ -17,6 +17,7 @@ dependencies = [
     "langchain-groq>=1.1.1",
     "langchain-openai>=1.1.7",
     "langgraph>=1.0.5",
+    "langgraph-cli[inmem]>=0.4.12",
     "lxml>=5.4.0",
     "numpy>=2.4.0",
     "pandas>=2.3.3",

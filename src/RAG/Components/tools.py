@@ -1,7 +1,7 @@
 import pandas as pd
 from typing import Any, Dict, Hashable, Literal, get_type_hints
 
-from langchain_core.tools import tool
+from langchain_core.tools import tool, BaseTool
 
 from src.RAG.Config.tool_funcs import CypherFunctionTool
 from src.RAG.Config.tool_models import (
@@ -20,7 +20,7 @@ cft = CypherFunctionTool()
 
 class GRTools:
     def __init__(self):
-        self.db_tool_box_func = {
+        self.db_tool_box_func: Dict[str, BaseTool] = {
             name: attr
             for name, attr in type(self).__dict__.items()
             if not name.startswith("_") and hasattr(attr, "func")

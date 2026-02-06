@@ -1,14 +1,17 @@
 import pandas as pd
-from pydantic import BaseModel, Field
-from typing import List, Literal, Dict, Any, Optional
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Dict, Any, Optional
 
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
 
 from src.RAG.Constants.labels import PlannerLabels, StatusLabels, ToolLabels
 
 
 class GRState(BaseModel):
     """Main state for the GraphRAG workflow."""
+
+    # some bs pydantic compilation error
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Conversation tracking
     conversation: List[AnyMessage] = Field(
@@ -26,11 +29,11 @@ class GRState(BaseModel):
 
     # Guardrail Agent
     is_safe: bool = Field(
-        default=False,
+        default_factory=bool,
         description="Is the user query safe to proceed?",
     )
     guardrail_message: str = Field(
-        default="Invalid query. Please limit queries to restaurants, menus and cuisines",
+        default_factory=str,
         description="A brief 10 to 30 word response to user explaining why their query is invalid",
     )
 
@@ -49,12 +52,12 @@ class GRState(BaseModel):
     )
 
     # Current turn
-    user_query: HumanMessage = Field(
-        default=HumanMessage(content="Unavailable"),
+    user_query: Optional[HumanMessage] = Field(
+        default=None,
         description="Current user query",
     )
-    agent_answer: AIMessage = Field(
-        default=AIMessage(content="Unavailable"),
+    agent_answer: Optional[AIMessage] = Field(
+        default=None,
         description="Current ai agent response",
     )
 
@@ -69,22 +72,22 @@ class GRState(BaseModel):
     )
 
     # Executor Agent
-    func_parm_schm: BaseModel = Field(
-        default=BaseModel(),
+    func_parm_schm: Optional[BaseModel] = Field(
+        default=None,
         description="Parameters as a schema for tool_call",
     )
     db_query_list: List[str] = Field(
-        default=[],
+        default_factory=list,
         description="list of db queries executed",
     )
-    data_from_fkdb: str = Field(
-        default="Unavailable",
+    data_from_fkdb: Optional[str] = Field(
+        default=None,
         description="Data queried directly from falkordb",
     )
 
     # Toolbox
     tool_result: Dict[str, Any] | pd.DataFrame = Field(
-        default=pd.DataFrame(),
+        default_factory=pd.DataFrame,
         description="Result obtained from toolbox functions",
     )
 
@@ -94,6 +97,6 @@ class GRState(BaseModel):
         description="Current status of the state for given query",
     )
     error_message: str = Field(
-        default="Sorry, there was an internal error. Can you repeat the question?",
+        default_factory=str,
         description="Error message to end user incase of error in graph state",
     )
