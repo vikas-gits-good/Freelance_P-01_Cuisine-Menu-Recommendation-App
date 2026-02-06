@@ -12,12 +12,12 @@ class GRState(BaseModel):
         default_factory=list,
         description="All messages for state tracking",
     )
-    messages: List[HumanMessage | AIMessage] = Field(
+    messages: List[AnyMessage] = Field(
         default_factory=list,
         description="Recent conversation messages for state tracking",
     )
-    msg_summary: SystemMessage = Field(
-        default=SystemMessage(content="Unavailable"),
+    msg_summary: AIMessage = Field(
+        default=AIMessage(content="Unavailable"),
         description="Summary of conversation between user and planner agent",
     )
 
@@ -46,12 +46,12 @@ class GRState(BaseModel):
     )
 
     # Current turn
-    user_query: Optional[HumanMessage] = Field(
-        default=None,
+    user_query: HumanMessage = Field(
+        default=HumanMessage(content="Unavailable"),
         description="Current user query",
     )
-    agent_answer: Optional[AIMessage] = Field(
-        default=None,
+    agent_answer: AIMessage = Field(
+        default=AIMessage(content="Unavailable"),
         description="Current ai agent response",
     )
 

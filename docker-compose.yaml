@@ -11,6 +11,13 @@ services:
     env_file:
       - ./docker/mongodb/password.env
     restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1536M
+        reservations:
+          memory: 768M
     healthcheck:
       test: ["CMD", "mongosh", "mongodb://localhost:27017/admin", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -35,6 +42,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -52,6 +64,11 @@ services:
       - ./docker/redisdb/redis_users.acl:/etc/redis/redis_users.acl:ro
     command: ["redis-server", "--aclfile", "/etc/redis/redis_users.acl"]
     restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -70,4 +87,3 @@ volumes:
     name: falkordb_redis_data
   redis_data:
     name: redis_data
-

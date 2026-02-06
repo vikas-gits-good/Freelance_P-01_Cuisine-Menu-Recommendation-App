@@ -1,22 +1,3 @@
-"""
-LangGraph workflow for the GraphRAG Menu Recommendation System.
-
-Flow:
-    Start → Guardrails → get_mem0 → Planner Agent
-                                        ↓
-                            ┌───────────┴───────────┐
-                            ↓           ↓           ↓
-                       tool_call   direct_db   general_chat
-                            ↓           ↓           ↓
-                       Executor    query_db    chat_node
-                            ↓           ↓           │
-                       ToolBox     flatten        │
-                            ↓           │           │
-                       flatten ─────────┴───────────┘
-                            ↓
-                       put_mem0 → check_status → End
-"""
-
 from typing import Literal
 
 from langgraph.graph import StateGraph, START, END

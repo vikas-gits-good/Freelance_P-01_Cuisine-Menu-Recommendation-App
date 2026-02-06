@@ -30,7 +30,7 @@ class get_cypher_code:
 
 class ETLCypherConfig:
     def __init__(self):
-        load_dotenv("../../../src/Secrets/Database.env")
+        load_dotenv("../../../src/Secrets/Database.env")  # ../../../
         FALKORDB_USERNAME = os.getenv("FALKORDB_USERNAME")
         FALKORDB_PASSWORD = os.getenv("FALKORDB_PASSWORD")
         FALKORDB_HOST = os.getenv("FALKORDB_HOST")

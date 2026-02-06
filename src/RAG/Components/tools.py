@@ -1,8 +1,6 @@
 from typing import Any, Dict, Hashable, Literal, get_type_hints
 
 import pandas as pd
-from pydantic import BaseModel
-from langchain_core.tools import tool, BaseTool
 
 from src.RAG.Config.tool_funcs import CypherFunctionTool
 from src.RAG.Config.tool_models import (
@@ -21,12 +19,12 @@ cft = CypherFunctionTool()
 
 class DatabaseQueryTools:
     def __init__(self):
-        self.db_tool_box_func: Dict[str, BaseTool] = {
+        self.db_tool_box_func = {
             name: attr
             for name, attr in type(self).__dict__.items()
             if not name.startswith("_") and hasattr(attr, "func")
         }
-        self.db_tool_box_schm: Dict[str, BaseModel] = {
+        self.db_tool_box_schm = {
             name: get_type_hints(tool_obj.func).get("param_model")
             for name, tool_obj in self.db_tool_box_func.items()
             if "param_model" in get_type_hints(tool_obj.func)

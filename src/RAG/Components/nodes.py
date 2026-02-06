@@ -139,6 +139,7 @@ class GraphNodes:
                     self.sms.executor,
                     state.user_query,
                 ]
+                # see if you can put another ReAct loop with a smaller model
                 llm_tool = self.llm_chat.bind_tools([self.qry_parm_func])
                 response = llm_tool.invoke(messages)
                 state.conversation.append(response)
@@ -222,7 +223,7 @@ class GraphNodes:
             if len(state.messages) >= 6:
                 messages = [self.sms.summary, state.msg_summary, *state.messages[:-4]]
                 response = self.llm_chat.invoke(messages)
-                state.msg_summary = SystemMessage(content=response.content)
+                state.msg_summary = AIMessage(content=response.content)
                 state.messages = state.messages[:-4]
 
         except Exception as e:
@@ -245,6 +246,7 @@ class GraphNodes:
             response = self.llm_chat.invoke(messages)
             state.conversation.append(response)
             state.messages.append(response)
+            state.agent_answer = response
 
         except Exception as e:
             LogException(e, logger=log_flk)
