@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
 
 from src.RAG.Components.state import GRState
-from src.RAG.Components.tools import DatabaseQueryTools
+from src.RAG.Components.tools import GRTools
 from src.RAG.Prompts.system_prompts import SysMsgSet
 from src.RAG.Config.tool_models import (
     GuardrailSchema,
@@ -13,12 +13,13 @@ from src.RAG.Config.tool_models import (
 )
 from src.RAG.Config.models import ModelConfig
 from src.RAG.Constants.models import GroqModelList
+from src.RAG.Constants.labels import StatusLabels, PlannerLabels
 
 from src.Logging.logger import log_flk
 from src.Exception.exception import LogException
 
 
-class GraphNodes:
+class GRNodes:
     """All node functions for the LangGraph workflow."""
 
     def __init__(
@@ -41,7 +42,7 @@ class GraphNodes:
             ).with_structured_output(schema=GuardrailSchema)
 
             self.sms = SysMsgSet().sys_pmt
-            self.dqt = DatabaseQueryTools()
+            self.dqt = GRTools()
             self.tool_func_map = self.dqt.db_tool_box_func
             self.tool_schm_map = self.dqt.db_tool_box_schm
             self.qry_parm_func = self.dqt._get_params_from_db
@@ -95,11 +96,11 @@ class GraphNodes:
             messages = [
                 SystemMessage(
                     content=self.sms.planner.content.format(
-                        preferences=state.user_preferences,
-                        summary=state.user_summary,
-                    ),  # planner sys msg with user memory
+                        user_preferences=state.user_preferences,
+                        user_summary=state.user_summary,
+                        convo_summary=state.msg_summary,
+                    ),
                 ),
-                state.msg_summary,  # conversation summary
                 *state.messages[:-1],  # conversation history
                 state.user_query,  # current user query
             ]  # double check this
@@ -110,15 +111,15 @@ class GraphNodes:
                 "intent": response.intent.intent,
                 "selected_tool": response.tool_selection.tool_name
                 if response.tool_selection
-                else None,
-                # "status": "needs_clarification"
-                # if response.intent.requires_clarification
-                # else None,
-                # "agent_answer": AIMessage(
-                #     content=response.intent.clarification_question
-                # )
-                # if response.intent.requires_clarification
-                # else None,
+                else state.selected_tool,
+                "status": StatusLabels.CLARIFY
+                if response.intent.requires_clarification
+                else state.status,
+                "agent_answer": AIMessage(
+                    content=response.intent.clarification_question
+                )
+                if response.intent.requires_clarification
+                else state.agent_answer,
             }
 
         except Exception as e:
@@ -132,9 +133,9 @@ class GraphNodes:
     # Executor Agent Node
     # -------------------------------------------------------------------------
     def executor_node(self, state: GRState) -> GRState:
-        """Resolve parameters from DB and prepare for tool execution."""
+        """Execute plan to either call toolbox function or directly query db"""
         try:
-            if state.intent == "tool_call":
+            if state.intent == PlannerLabels.TOOL_CALL:
                 messages = [
                     self.sms.executor,
                     state.user_query,
@@ -155,7 +156,7 @@ class GraphNodes:
                         **args
                     )
 
-            elif state.intent == "direct_db_query":
+            elif state.intent == PlannerLabels.DABA_QERY:
                 messages = [
                     self.sms.graphdb,  # dont use .format(max_steps=)
                     state.user_query,
@@ -213,7 +214,7 @@ class GraphNodes:
     # -------------------------------------------------------------------------
     # Summarisation Node
     # -------------------------------------------------------------------------
-    def summarisation(self, state: GRState) -> GRState:
+    def summarisation_node(self, state: GRState) -> GRState:
         """Save conversation updates to mem0."""
         try:
             # TODO: Integrate with mem0 client
@@ -234,11 +235,16 @@ class GraphNodes:
     # -------------------------------------------------------------------------
     # General Chat Node
     # -------------------------------------------------------------------------
-    def general_chat_node(self, state: GRState) -> GRState:
+    def genchat_node(self, state: GRState) -> GRState:
         """Handle general conversation without tool calls."""
         try:
             messages = [
-                self.sms.general,
+                SystemMessage(
+                    content=self.sms.general.format(
+                        convo_summary=state.msg_summary,
+                        data_from_fkdb=state.data_from_fkdb,
+                    )
+                ),
                 *state.messages[:-1],
                 state.user_query,
             ]
@@ -247,6 +253,26 @@ class GraphNodes:
             state.conversation.append(response)
             state.messages.append(response)
             state.agent_answer = response
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+
+        return state
+
+    # -------------------------------------------------------------------------
+    # Unsafe Node - Handle unsafe query, clarification and errors
+    # -------------------------------------------------------------------------
+    def unsafe_node(self, state: GRState) -> GRState:
+        """Return unsafe queries."""
+        try:
+            if not state.is_safe:
+                grdm_msg = AIMessage(content=state.guardrail_message)
+                state.conversation.append(grdm_msg)
+                state.agent_answer = grdm_msg
+
+            elif state.status == StatusLabels.CLARIFY:
+                # clarification msg is already set to state.agent_answer
+                state.conversation.append(state.agent_answer)
 
         except Exception as e:
             LogException(e, logger=log_flk)

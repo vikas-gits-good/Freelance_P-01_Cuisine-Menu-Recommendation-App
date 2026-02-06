@@ -1,7 +1,10 @@
 import pandas as pd
-from typing import List, Literal, Dict, Any, Optional
 from pydantic import BaseModel, Field
+from typing import List, Literal, Dict, Any, Optional
+
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
+
+from src.RAG.Constants.labels import PlannerLabels, StatusLabels, ToolLabels
 
 
 class GRState(BaseModel):
@@ -23,12 +26,12 @@ class GRState(BaseModel):
 
     # Guardrail Agent
     is_safe: bool = Field(
-        default=True,
+        default=False,
         description="Is the user query safe to proceed?",
     )
     guardrail_message: str = Field(
-        default="Safe to proceed",
-        description="Guardrail agent safety decision justification",
+        default="Invalid query. Please limit queries to restaurants, menus and cuisines",
+        description="A brief 10 to 30 word response to user explaining why their query is invalid",
     )
 
     # User Memory
@@ -56,14 +59,12 @@ class GRState(BaseModel):
     )
 
     # Planner Agent
-    intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (
-        Field(
-            default="general_chat",
-            description="Planner decision on how to handle user query",
-        )
+    intent: PlannerLabels = Field(
+        default=PlannerLabels.GNRL_CHAT,
+        description="Planner decision on how to handle user query",
     )
-    selected_tool: str = Field(
-        default="",
+    selected_tool: Optional[ToolLabels] = Field(
+        default=None,
         description="name of function to be called if decision is tool_call",
     )
 
@@ -77,7 +78,7 @@ class GRState(BaseModel):
         description="list of db queries executed",
     )
     data_from_fkdb: Optional[str] = Field(
-        default=None,
+        default="Unavailable",
         description="Data queried directly from falkordb",
     )
 
@@ -88,10 +89,11 @@ class GRState(BaseModel):
     )
 
     # Flow control
-    status: Literal[
-        "success",
-        "error",
-        "needs_clarification",
-        "in_progress",
-    ] = Field(default="in_progress")
-    error_message: str = Field(default="")
+    status: StatusLabels = Field(
+        default=StatusLabels.PROGRESS,
+        description="Current status of the state for given query",
+    )
+    error_message: str = Field(
+        default="Sorry, there was an internal error. Can you repeat the question?",
+        description="Error message to end user incase of error in graph state",
+    )

@@ -1,204 +1,75 @@
-from typing import Literal
-
-from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph.state import StateGraph, CompiledStateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
 
 from src.RAG.Components.state import GRState
-from src.RAG.Components.nodes import GraphNodes
+from src.RAG.Components.nodes import GRNodes
+from src.RAG.Components.router import GRRouter
+from src.RAG.Constants.labels import GRNodeLabel
+from src.RAG.Constants.models import GroqModelList, OpenAIModelList
+
+from src.Logging.logger import log_flk
+from src.Exception.exception import LogException, CustomException
 
 
-# =============================================================================
-# Routing Functions
-# =============================================================================
+class LangGraphState:
+    def __init__(self):
+        try:
+            ...
+            pass
 
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            # raise CustomException(e)
 
-def route_after_guardrail(state: GRState) -> Literal["get_memory", "end_unsafe"]:
-    """Route based on guardrail check result."""
-    if state.is_safe:
-        return "get_memory"
-    return "end_unsafe"
+    def build(self) -> CompiledStateGraph:
+        """Method that returns the `CompiledStateGraph` object for the chat system"""
+        try:
+            # get nodes
+            nodes = GRNodes(  # redesign this part
+                chat_model=GroqModelList.meta.llama_33_70b_versatile,
+                gdrl_model=GroqModelList.meta.llama_31_8b_instant,
+            )
+            # get routes
+            router = GRRouter()
 
+            # add nodes
+            ln_graph = StateGraph(GRState)
+            ln_graph.add_node(GRNodeLabel.GUARDRAIL.value, nodes.guardrail_node)
+            ln_graph.add_node(GRNodeLabel.MEMORY.value, nodes.memory_node)
+            ln_graph.add_node(GRNodeLabel.PLANNER.value, nodes.planner_node)
+            ln_graph.add_node(GRNodeLabel.EXECUTOR.value, nodes.executor_node)
+            ln_graph.add_node(GRNodeLabel.TOOLBOX.value, nodes.toolbox_node)
+            ln_graph.add_node(GRNodeLabel.SUMMARY.value, nodes.summarisation_node)
+            ln_graph.add_node(GRNodeLabel.GENERAL.value, nodes.genchat_node)
+            ln_graph.add_node(GRNodeLabel.UNSAFE.value, nodes.unsafe_node)
 
-def route_after_planner(
-    state: GRState,
-) -> Literal["executor", "query_db", "general_chat", "end_clarification"]:
-    """Route based on planner's intent classification."""
-    if state.status == "needs_clarification":
-        return "end_clarification"
+            # add edges
+            ln_graph.add_edge(START, GRNodeLabel.GUARDRAIL.value)
+            ln_graph.add_conditional_edges(
+                GRNodeLabel.GUARDRAIL.value,
+                router.route_after_guardrail,
+            )
+            ln_graph.add_edge(GRNodeLabel.UNSAFE.value, END)
+            ln_graph.add_edge(GRNodeLabel.MEMORY.value, GRNodeLabel.PLANNER.value)
+            ln_graph.add_conditional_edges(
+                GRNodeLabel.PLANNER.value,
+                router.route_after_planner,
+            )
+            ln_graph.add_edge(GRNodeLabel.GENERAL.value, GRNodeLabel.SUMMARY.value)
+            ln_graph.add_edge(GRNodeLabel.SUMMARY.value, END)
+            ln_graph.add_conditional_edges(
+                GRNodeLabel.EXECUTOR.value,
+                router.route_after_executor,
+            )
 
-    intent = state.intent
+            # compile
+            ln_state_graph = ln_graph.compile(checkpointer=InMemorySaver())
 
-    if intent == "tool_call":
-        return "executor"
-    elif intent == "direct_db_query":
-        return "query_db"
-    else:  # general_chat or follow_up
-        return "general_chat"
+        except Exception as e:
+            LogException(e, logger=log_flk)
+            # raise CustomException(e)
 
-
-def route_after_executor(state: GRState) -> Literal["toolbox", "error_handler"]:
-    """Route based on executor result."""
-    if state.status == "error":
-        return "error_handler"
-    return "toolbox"
-
-
-# =============================================================================
-# Graph Builder
-# =============================================================================
-
-
-def build_graph(checkpointer: bool = True) -> StateGraph:
-    """
-    Build the LangGraph workflow for menu recommendation.
-
-    Args:
-        checkpointer: Whether to add memory checkpointing for conversation persistence.
-
-    Returns:
-        Compiled StateGraph ready for execution.
-    """
-    # Initialize nodes
-    nodes = GraphNodes()
-
-    # Create the graph
-    graph = StateGraph(GRState)
-
-    # -------------------------------------------------------------------------
-    # Add all nodes
-    # -------------------------------------------------------------------------
-
-    # Entry nodes
-    graph.add_node("guardrail", nodes.guardrail_node)
-    graph.add_node("get_memory", nodes.get_memory_node)
-
-    # Planner Agent
-    graph.add_node("planner", nodes.planner_node)
-
-    # Executor path (tool_call intent)
-    graph.add_node("executor", nodes.executor_node)
-    graph.add_node("toolbox", nodes.toolbox_node)
-
-    # Direct DB path
-    graph.add_node("query_db", nodes.query_db_node)
-
-    # General chat path
-    graph.add_node("general_chat", nodes.general_chat_node)
-
-    # Shared nodes
-    graph.add_node("flatten", nodes.flatten_node)
-    graph.add_node("put_memory", nodes.put_memory_node)
-    graph.add_node("check_status", nodes.check_status_node)
-
-    # Error/unsafe handlers (just pass through with appropriate response)
-    graph.add_node(
-        "end_unsafe",
-        lambda state: {
-            "agent_answer": state.guardrail_message
-            or "I'm sorry, I can't help with that request.",
-            "status": "error",
-        },
-    )
-    graph.add_node(
-        "error_handler",
-        lambda state: {
-            "status": "error",
-            "flattened_data": f"Error: {state.error_message}",
-        },
-    )
-
-    # -------------------------------------------------------------------------
-    # Add edges
-    # -------------------------------------------------------------------------
-
-    # Start → Guardrail
-    graph.add_edge(START, "guardrail")
-
-    # Guardrail → conditional
-    graph.add_conditional_edges(
-        "guardrail",
-        route_after_guardrail,
-        {
-            "get_memory": "get_memory",
-            "end_unsafe": "end_unsafe",
-        },
-    )
-
-    # Unsafe → End
-    graph.add_edge("end_unsafe", END)
-
-    # Get Memory → Planner
-    graph.add_edge("get_memory", "planner")
-
-    # Planner → conditional routing
-    graph.add_conditional_edges(
-        "planner",
-        route_after_planner,
-        {
-            "executor": "executor",
-            "query_db": "query_db",
-            "general_chat": "general_chat",
-            "end_clarification": "put_memory",  # Still save to memory even on clarification
-        },
-    )
-
-    # Executor → conditional
-    graph.add_conditional_edges(
-        "executor",
-        route_after_executor,
-        {
-            "toolbox": "toolbox",
-            "error_handler": "error_handler",
-        },
-    )
-
-    # ToolBox → Flatten
-    graph.add_edge("toolbox", "flatten")
-
-    # Query DB → Flatten
-    graph.add_edge("query_db", "flatten")
-
-    # General Chat → Put Memory (skip flatten since no data)
-    graph.add_edge("general_chat", "put_memory")
-
-    # Flatten → Put Memory
-    graph.add_edge("flatten", "put_memory")
-
-    # Error Handler → Put Memory
-    graph.add_edge("error_handler", "put_memory")
-
-    # Put Memory → Check Status
-    graph.add_edge("put_memory", "check_status")
-
-    # Check Status → End
-    graph.add_edge("check_status", END)
-
-    # -------------------------------------------------------------------------
-    # Compile with optional checkpointer
-    # -------------------------------------------------------------------------
-
-    if checkpointer:
-        memory = MemorySaver()
-        compiled = graph.compile(checkpointer=memory)
-    else:
-        compiled = graph.compile()
-
-    return compiled
-
-
-# =============================================================================
-# Convenience Functions
-# =============================================================================
-
-
-def create_workflow():
-    """Create and return the compiled workflow with checkpointing enabled."""
-    return build_graph(checkpointer=True)
-
-
-def create_workflow_no_memory():
-    """Create and return the compiled workflow without checkpointing."""
-    return build_graph(checkpointer=False)
+        return ln_state_graph
 
 
 # =============================================================================
@@ -209,7 +80,7 @@ if __name__ == "__main__":
     from langchain_core.messages import HumanMessage
 
     # Create the workflow
-    workflow = create_workflow()
+    workflow = LangGraphState().build()
 
     # Example invocation
     initial_state = GRState(

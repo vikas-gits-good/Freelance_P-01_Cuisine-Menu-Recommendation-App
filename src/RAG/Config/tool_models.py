@@ -1,16 +1,18 @@
 from typing import Literal, Optional
 from pydantic import BaseModel, Field, model_validator
 
+from src.RAG.Constants.labels import PlannerLabels, ToolLabels
+
 # =============================================================================
 # Guardrail Agent Models (for structured output)
 # =============================================================================
 
 
 class GuardrailSchema(BaseModel):
-    is_safe: bool = Field(default=True, description="is the user query safe?")
+    is_safe: bool = Field(default=False, description="is the user query safe?")
     guardrail_message: str = Field(
-        default="Totally not a scam query!",
-        description="A brief 5 to 10 word reasoning for user query classification",
+        default="Invalid query. Please limit queries to restaurants, menus and cuisines",
+        description="A brief 10 to 30 word response to user explaining why their query is invalid",
     )
 
 
@@ -40,13 +42,11 @@ class UserPreferenceSchema(BaseModel):
 
 
 class IntentClassification(BaseModel):
-    """Model for classifying user intent."""
+    """Model for classifying user intent."""  # Literal["tool_call", "daba_query", "gnrl_chat"]
 
-    intent: Literal["tool_call", "direct_db_query", "follow_up", "general_chat"] = (
-        Field(
-            default="general_chat",
-            description="The classified intent of the user query",
-        )
+    intent: PlannerLabels = Field(
+        default=PlannerLabels.GNRL_CHAT,
+        description="The classified intent of the user query as python Enum",
     )
     reasoning: str = Field(
         default="",
@@ -65,18 +65,9 @@ class IntentClassification(BaseModel):
 class ToolSelection(BaseModel):
     """Model for selecting which tool to use."""
 
-    tool_name: Literal[
-        "get_competitors_data",
-        "get_competitors_menu",
-        "get_menu_benchmark",
-        "get_menu_opportunities",
-        "get_overpriced_menu",
-        "get_premium_menu",
-        "get_specific_competitor_menu",
-        "recommend_menu",
-    ] = Field(
-        default="get_competitors_data",
-        description="The tool to call based on user intent",
+    tool_name: ToolLabels = Field(
+        default=ToolLabels.GET_COMPETITORS_DATA,
+        description="The tool to call based on user intent as python Enum",
     )
     reasoning: str = Field(
         default="",
@@ -89,16 +80,6 @@ class PlannerOutput(BaseModel):
 
     intent: IntentClassification
     tool_selection: Optional[ToolSelection] = None
-
-
-# =============================================================================
-# Executor Agent Models # Do I even tneed this?
-# =============================================================================
-class CypherQueryPlan(BaseModel):
-    """Model for direct DB query planning."""
-
-    query: str = Field(description="Cypher query to execute")
-    purpose: str = Field(description="What this query retrieves")
 
 
 # =============================================================================

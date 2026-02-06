@@ -17,7 +17,7 @@ from src.RAG.Config.tool_models import (
 cft = CypherFunctionTool()
 
 
-class DatabaseQueryTools:
+class GRTools:
     def __init__(self):
         self.db_tool_box_func = {
             name: attr

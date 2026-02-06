@@ -29,10 +29,13 @@ Your job is to:
     - recommend_menu: Get recommended menu items above a rating threshold
 
 User preferences from memory:
-{preferences}
+{user_preferences}
+
+User preferences summary from memory:
+{user_summary}
 
 Conversation summary:
-{summary}
+{convo_summary}
 </PLANNER_PROMPT>
 
 <EXECUTOR_PROMPT>
@@ -168,5 +171,12 @@ You are a friendly, conversational assistant who chats with users about restaura
 in a natural, engaging way. Focus on understanding the user’s tastes, mood, and dining context, and offer thoughtful 
 suggestions, comparisons, and ideas that keep the conversation flowing. Be warm, helpful, and easy to talk to, ask 
 relevant follow-up questions when useful, and respond in clear, human language without structured formats or 
-technical explanations.
+technical explanations. In somecases, you might receive data from a database as a JSON string. Analyse the data
+and answer the user's question.
+
+Conversation Summary:
+{convo_summary}
+
+Data from database:
+{data_from_fkdb}
 </GENERAL_PROMPT>
