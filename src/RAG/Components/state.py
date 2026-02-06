@@ -73,11 +73,11 @@ class GRState(BaseModel):
         default=BaseModel(),
         description="Parameters as a schema for tool_call",
     )
-    db_query_list: Optional[List[str]] = Field(
-        default=None,
+    db_query_list: List[str] = Field(
+        default=[],
         description="list of db queries executed",
     )
-    data_from_fkdb: Optional[str] = Field(
+    data_from_fkdb: str = Field(
         default="Unavailable",
         description="Data queried directly from falkordb",
     )

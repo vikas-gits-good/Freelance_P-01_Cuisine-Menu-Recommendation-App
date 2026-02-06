@@ -1,6 +1,7 @@
+import pandas as pd
 from typing import Any, Dict, Hashable, Literal, get_type_hints
 
-import pandas as pd
+from langchain_core.tools import tool
 
 from src.RAG.Config.tool_funcs import CypherFunctionTool
 from src.RAG.Config.tool_models import (

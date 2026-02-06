@@ -62,17 +62,20 @@ class GRNodes:
                 self.sms.guardrail,
                 state.user_query,
             ]
-            response = self.llm_gdrl.invoke(messages).model_dump()
-            gdrl_msgs = AIMessage(content=f"{response}")
+            response: GuardrailSchema = self.llm_gdrl.invoke(messages)
+            gdrl_msgs = AIMessage(content=f"{response.model_dump()}")
+
+            # update state
+            state.is_safe = response.is_safe
+            state.guardrail_message = response.guardrail_message
             state.conversation.append(state.user_query)
             state.conversation.append(gdrl_msgs)
             state.messages.append(state.user_query)
-            # state.messages.append(gdrl_msgs) # dont add
 
         except Exception as e:
             LogException(e, logger=log_flk)
 
-        return state.model_copy(update=response)
+        return state
 
     # -------------------------------------------------------------------------
     # User Memory Node -> Get user's data from memory ## Not Implemented
@@ -80,12 +83,18 @@ class GRNodes:
     def memory_node(self, state: GRState) -> GRState:
         """Retrieve user preferences and conversation summary from mem0."""
         try:
+            # TODO: Integrate with mem0 client
+            pass
             data: UserPreferenceSchema = UserPreferenceSchema()
+
+            # update state
+            state.user_preferences = data.user_preferences
+            state.user_summary = data.user_summary
 
         except Exception as e:
             LogException(e, logger=log_flk)
 
-        return state.model_copy(update=data.model_dump())
+        return state
 
     # -------------------------------------------------------------------------
     # Planner Agent Node -> decide how to best address user query
@@ -103,31 +112,33 @@ class GRNodes:
                 ),
                 *state.messages[:-1],  # conversation history
                 state.user_query,  # current user query
-            ]  # double check this
+            ]
             llm_plnr = self.llm_chat.with_structured_output(schema=PlannerOutput)
             response: PlannerOutput = llm_plnr.invoke(messages)
 
-            output = {
-                "intent": response.intent.intent,
-                "selected_tool": response.tool_selection.tool_name
+            # update state
+            state.conversation.append(AIMessage(content=f"{response.model_dump()}"))
+            state.intent = response.intent.intent
+            state.selected_tool = (
+                response.tool_selection.tool_name
                 if response.tool_selection
-                else state.selected_tool,
-                "status": StatusLabels.CLARIFY
+                else state.selected_tool
+            )
+            state.status = (
+                StatusLabels.CLARIFY
                 if response.intent.requires_clarification
-                else state.status,
-                "agent_answer": AIMessage(
-                    content=response.intent.clarification_question
-                )
+                else state.status
+            )
+            state.agent_answer = (
+                AIMessage(content=response.intent.clarification_question)
                 if response.intent.requires_clarification
-                else state.agent_answer,
-            }
+                else state.agent_answer
+            )
 
         except Exception as e:
             LogException(e, logger=log_flk)
-            log_flk.info(f"Planner Output {output = }")
-            # output = {}
 
-        return state.model_copy(update=output)
+        return state
 
     # -------------------------------------------------------------------------
     # Executor Agent Node
@@ -152,9 +163,9 @@ class GRNodes:
                         args.update({k: v[0] for k, v in tool_result.items()})
 
                     # construct the toolbox function parameter schema
-                    state.func_parm_schm = self.tool_schm_map[state.selected_tool](
-                        **args
-                    )
+                    state.func_parm_schm = self.tool_schm_map[
+                        state.selected_tool.value
+                    ](**args)
 
             elif state.intent == PlannerLabels.DABA_QERY:
                 messages = [
@@ -202,7 +213,7 @@ class GRNodes:
     def toolbox_node(self, state: GRState) -> GRState:
         """Execute the selected tool with resolved parameters."""
         try:
-            state.tool_result = self.tool_func_map[state.selected_tool].invoke(
+            state.tool_result = self.tool_func_map[state.selected_tool.value].invoke(
                 state.func_parm_schm.model_dump()
             )
 
@@ -240,7 +251,7 @@ class GRNodes:
         try:
             messages = [
                 SystemMessage(
-                    content=self.sms.general.format(
+                    content=self.sms.general.content.format(
                         convo_summary=state.msg_summary,
                         data_from_fkdb=state.data_from_fkdb,
                     )
