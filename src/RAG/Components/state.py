@@ -11,9 +11,6 @@ from src.RAG.Constants.labels import PlannerLabels, StatusLabels, ToolLabels
 class GRState(BaseModel):
     """Main state for the GraphRAG workflow."""
 
-    # some bs pydantic compilation error
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     # Conversation tracking
     messages: Annotated[List[HumanMessage | AIMessage], add_messages] = Field(
         default_factory=list,
@@ -39,10 +36,10 @@ class GRState(BaseModel):
     )
 
     # User Memory
-    user_id: str = Field(
-        default="Unavailable",
-        description="unique user id",
-    )
+    # user_id: str = Field(
+    #     default="Unavailable",
+    #     description="unique user id",
+    # )
     user_preferences: str = Field(
         default="Unavailable",
         description="user preferences",
@@ -53,14 +50,14 @@ class GRState(BaseModel):
     )
 
     # Current turn
-    user_query: Optional[HumanMessage] = Field(
-        default=None,
-        description="Current user query",
-    )
-    agent_answer: Optional[AIMessage] = Field(
-        default=None,
-        description="Current ai agent response",
-    )
+    # user_query: Optional[HumanMessage] = Field(
+    #     default=None,
+    #     description="Current user query",
+    # )
+    # agent_answer: Optional[AIMessage] = Field(
+    #     default=None,
+    #     description="Current ai agent response",
+    # )
 
     # Planner Agent
     intent: PlannerLabels = Field(
@@ -77,48 +74,51 @@ class GRState(BaseModel):
         default=None,
         description="Parameters as a schema for tool_call",
     )
-    db_query_list: List[str] = Field(
-        default_factory=list,
-        description="list of db queries executed",
-    )
+    # db_query_list: List[str] = Field(
+    #     default_factory=list,
+    #     description="list of db queries executed",
+    # )
     data_from_fkdb: Optional[str] = Field(
         default="Unavailable",
         description="Data queried directly from falkordb",
     )
 
     # Toolbox
-    tool_result: Dict[str, Any] | pd.DataFrame = Field(
-        default_factory=pd.DataFrame,
-        description="Result obtained from toolbox functions",
-    )
+    # some bs pydantic compilation error
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
+    # tool_result: Dict[str, Any] | pd.DataFrame = Field(
+    #     default_factory=pd.DataFrame,
+    #     description="Result obtained from toolbox functions",
+    # )
 
     # Flow control
     status: StatusLabels = Field(
         default=StatusLabels.PROGRESS,
         description="Current status of the state for given query",
     )
-    error_message: str = Field(
-        default_factory=str,
-        description="Error message to end user incase of error in graph state",
-    )
+    # error_message: str = Field(
+    #     default_factory=str,
+    #     description="Error message to end user incase of error in graph state",
+    # )
 
     def reset_turn(self) -> None:
         """Reset per-turn state fields at the start of each invocation."""
         self.messages = [
             msg
-            for msg in self.messages
+            for msg in self.messages  # dont send tabular data to llm
             if not (
                 isinstance(msg, AIMessage)
-                and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
+                and getattr(msg, "tool_call_id", None)
+                == f"{PlannerLabels.TOOL_CALL.value}_data"
             )
         ]
         self.is_safe = False
         self.guardrail_message = ""
-        self.agent_answer = None
+        # self.agent_answer = None
         self.intent = PlannerLabels.GNRL_CHAT
         self.selected_tool = None
         self.func_parm_schm = None
-        self.db_query_list = []
+        # self.db_query_list = []
         self.data_from_fkdb = "Unavailable"
         self.status = StatusLabels.PROGRESS
-        self.error_message = ""
+        # self.error_message = ""

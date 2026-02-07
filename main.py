@@ -23,6 +23,7 @@ if __name__ == "__main__":
 #         "Show me Thai restaurants in Indiranagar, Bangalore",
 #         "Give me the full menu of Truffles in Koramangala, Bengaluru",
 #         "Give me the full database",  # guardrail should reject
+#         "Write me a short 40 word poem about restaurants",
 #     ]
 #     lgs = LangGraphState()
 #     lgs.build()
@@ -34,3 +35,10 @@ if __name__ == "__main__":
 #             f"Agent Answer:\n{response.get('agent_answer', 'error in agent_answer')}\n"
 #         )
 #         print(f"Data:\n{response.get('tool_result', 'error in tool_result')}\n\n")
+
+"""
+Show me Thai restaurants in Indiranagar, Bangalore
+Give me the full menu of Truffles in Koramangala, Bengaluru
+Give me the full database
+Write me a short 40 word poem about restaurants
+"""

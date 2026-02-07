@@ -1,4 +1,5 @@
 from typing import Literal
+from langgraph.graph.state import END
 
 from src.RAG.Components.state import GRState
 from src.RAG.Constants.labels import GRNodeLabel, PlannerLabels, StatusLabels
@@ -42,8 +43,7 @@ class GRRouter:
                 decision = GRNodeLabel.EXECUTOR
 
             elif state.status == StatusLabels.CLARIFY:
-                # query is not unsafe but routed to end through here
-                decision = GRNodeLabel.UNSAFE  # check this
+                decision = GRNodeLabel.UNSAFE
 
             else:
                 decision = GRNodeLabel.GENERAL

@@ -60,8 +60,7 @@ class GRNodes:
     def guardrail_node(self, state: GRState) -> GRState:
         """Check if user query is safe and on-topic."""
         try:
-            state.reset_turn()
-            log_flk.info(f"{state.messages=}")
+            state.reset_turn()  # reset prev state
             convo = [
                 self.sms.guardrail,  # system prompt - guardrail
                 state.messages[-1],  # user query - latest
@@ -216,7 +215,6 @@ class GRNodes:
             data = self.tool_func_map[state.selected_tool.value].invoke(
                 {"param_model": state.func_parm_schm}
             )
-            state.tool_result = data
 
             # convert data into markdown for display in LangSmith Studio
             data_md = GRNodes.to_markdown(data)
@@ -225,6 +223,7 @@ class GRNodes:
                 tool_call_id=f"{PlannerLabels.TOOL_CALL.value}_data",
             )
             state.messages.append(data_msg)
+            state.debug_convo.append(data_msg)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -247,7 +246,8 @@ class GRNodes:
                 for msg in state.messages
                 if not (
                     isinstance(msg, AIMessage)
-                    and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
+                    and getattr(msg, "tool_call_id", None)
+                    == f"{PlannerLabels.TOOL_CALL.value}_data"
                 )
             ]
             if len(state.messages) >= 6:
@@ -286,7 +286,6 @@ class GRNodes:
             response = self.llm_chat.invoke(convo)
             state.debug_convo.append(response)
             state.messages.append(response)
-            state.agent_answer = response
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -301,13 +300,7 @@ class GRNodes:
         try:
             if not state.is_safe:
                 grdm_msg = AIMessage(content=state.guardrail_message)
-                state.agent_answer = grdm_msg
-                state.debug_convo.append(grdm_msg)
-
-            elif state.status == StatusLabels.CLARIFY:
-                # clarification msg is already set to state.agent_answer
-                state.debug_convo.append(state.agent_answer)
-                state.messages.append(state.agent_answer)
+                state.messages.append(grdm_msg)
 
         except Exception as e:
             LogException(e, logger=log_flk)

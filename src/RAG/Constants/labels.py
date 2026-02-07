@@ -10,6 +10,7 @@ class GRNodeLabel(Enum):
     SUMMARY = "summary"
     GENERAL = "general"
     UNSAFE = "unsafe"
+    END = "end"
 
 
 class PlannerLabels(Enum):  # rename to IntentLabels
