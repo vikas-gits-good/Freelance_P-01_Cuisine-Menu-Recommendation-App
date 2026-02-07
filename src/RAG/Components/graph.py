@@ -77,7 +77,7 @@ class LangGraphState:
             _ = self.build() if not self.graph else None
 
             log_flk.info("GRAG: Preparing user query")
-            init_state = GRState(user_query=HumanMessage(content=question))
+            init_state = GRState(messages=[HumanMessage(content=question)])
             config = {"configurable": {"thread_id": user_id}}
 
             log_flk.info("GRAG: Sending query to GRAG system")

@@ -41,7 +41,7 @@ class GRRouter:
             if state.intent in [PlannerLabels.TOOL_CALL, PlannerLabels.DABA_QERY]:
                 decision = GRNodeLabel.EXECUTOR
 
-            elif state.status == "needs_clarification":
+            elif state.status == StatusLabels.CLARIFY:
                 # query is not unsafe but routed to end through here
                 decision = GRNodeLabel.UNSAFE  # check this
 
@@ -60,7 +60,7 @@ class GRRouter:
         """Route based on executor result."""
         decision = GRNodeLabel.TOOLBOX
         try:
-            if state.data_from_fkdb is not None:  # daba_query
+            if state.data_from_fkdb != "Unavailable":  # daba_query
                 decision = GRNodeLabel.GENERAL
 
             elif state.status == StatusLabels.ERROR:  # error somewhere

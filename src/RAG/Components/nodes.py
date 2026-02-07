@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from typing import Union, Any, Dict
 
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
@@ -59,23 +60,20 @@ class GRNodes:
     def guardrail_node(self, state: GRState) -> GRState:
         """Check if user query is safe and on-topic."""
         try:
-            state.messages = [  # workaround to avoid sending data
-                msg
-                for msg in state.messages  # changed table data to state.conversation
-                if not (
-                    isinstance(msg, AIMessage)
-                    and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
-                )
+            state.reset_turn()
+            log_flk.info(f"{state.messages=}")
+            convo = [
+                self.sms.guardrail,  # system prompt - guardrail
+                state.messages[-1],  # user query - latest
             ]
-            messages = [self.sms.guardrail, state.messages[-1]]
-            response: GuardrailSchema = self.llm_gdrl.invoke(messages)
+            response: GuardrailSchema = self.llm_gdrl.invoke(convo)
             gdrl_msgs = AIMessage(content=f"{response.model_dump()}")
 
             # update state
             state.is_safe = response.is_safe
             state.guardrail_message = response.guardrail_message
-            state.conversation.append(state.messages[-1])
-            state.conversation.append(gdrl_msgs)
+            state.debug_convo.append(state.messages[-1])  # add user query
+            state.debug_convo.append(gdrl_msgs)  # add grdl response
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -107,37 +105,31 @@ class GRNodes:
     def planner_node(self, state: GRState) -> GRState:
         """Classify intent, select tool, and extract parameters."""
         try:
-            messages = [
-                SystemMessage(
+            convo = [
+                SystemMessage(  # system prompt - planner
                     content=self.sms.planner.content.format(
                         user_preferences=state.user_preferences,
                         user_summary=state.user_summary,
                         convo_summary=state.msg_summary,
                     ),
                 ),
-                *state.messages,
+                *state.messages,  # user query - full conversation
             ]
             llm_plnr = self.llm_chat.with_structured_output(schema=PlannerOutput)
-            response: PlannerOutput = llm_plnr.invoke(messages)
+            response: PlannerOutput = llm_plnr.invoke(convo)
 
             # update state
-            state.conversation.append(AIMessage(content=f"{response.model_dump()}"))
+            state.debug_convo.append(AIMessage(content=f"{response.model_dump()}"))
             state.intent = response.intent.intent
-            state.selected_tool = (
-                response.tool_selection.tool_name
-                if response.tool_selection
-                else state.selected_tool
-            )
-            state.status = (
-                StatusLabels.CLARIFY
-                if response.intent.requires_clarification
-                else state.status
-            )
-            state.agent_answer = (
-                AIMessage(content=response.intent.clarification_question)
-                if response.intent.requires_clarification
-                else state.agent_answer
-            )
+            if response.tool_selection:
+                state.selected_tool = response.tool_selection.tool_name
+
+            if response.intent.requires_clarification:
+                clrf_qstn = AIMessage(content=response.intent.clarification_question)
+                state.agent_answer = clrf_qstn
+                state.status = StatusLabels.CLARIFY
+                state.debug_convo.append(clrf_qstn)
+                state.messages.append(clrf_qstn)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -151,14 +143,14 @@ class GRNodes:
         """Execute plan to either call toolbox function or directly query db"""
         try:
             if state.intent == PlannerLabels.TOOL_CALL:
-                messages = [
-                    self.sms.executor,
-                    state.messages[-1],
+                convo = [
+                    self.sms.executor,  # system prompt - executor
+                    state.messages[-1],  # user query - latest
                 ]
                 # see if you can put another ReAct loop with a smaller model
                 llm_tool = self.llm_chat.bind_tools([self.qry_parm_func])
-                response = llm_tool.invoke(messages)
-                state.conversation.append(response)
+                response = llm_tool.invoke(convo)
+                state.debug_convo.append(response)
 
                 args = {}
                 if response.tool_calls:
@@ -171,18 +163,22 @@ class GRNodes:
                         state.selected_tool.value
                     ](**args)
 
+                state.debug_convo.append(
+                    ToolMessage(content=f"{args}", tool_call_id="placeholder_id")
+                )
+
             elif state.intent == PlannerLabels.DABA_QERY:
-                messages = [
-                    self.sms.graphdb,  # dont use .format(max_steps=)
-                    state.messages[-1],
+                convo = [
+                    self.sms.graphdb,  # system prompt - graphdb
+                    state.messages[-1],  # user query - latest
                 ]
                 llm_tool = self.llm_chat.bind_tools([self.qry_daba_func])
 
                 # ReAct agent loop clamped at self.max_steps
                 for _ in range(self.max_steps):
-                    response = llm_tool.invoke(messages)  # return cypher query
-                    messages.append(response)
-                    state.conversation.append(response)
+                    response = llm_tool.invoke(convo)  # returns cypher query
+                    convo.append(response)
+                    state.debug_convo.append(response)
 
                     if not response.tool_calls:
                         break
@@ -193,15 +189,15 @@ class GRNodes:
                         )
                         result = self.qry_daba_func.invoke(tc["args"])
                         tool_msg = ToolMessage(
-                            content=json.dumps(result),
+                            content=json.dumps(result),  # json string
                             tool_call_id=tc["id"],
                         )
-                        messages.append(tool_msg)
-                        state.conversation.append(tool_msg)
+                        convo.append(tool_msg)
+                        state.debug_convo.append(tool_msg)
 
-                # loop through messages and get last ToolMessage
+                # loop through local convo and get last ToolMessage
                 last_tool_msg = next(
-                    (msg for msg in reversed(messages) if isinstance(msg, ToolMessage)),
+                    (msg for msg in reversed(convo) if isinstance(msg, ToolMessage)),
                     None,
                 )
                 state.data_from_fkdb = last_tool_msg.content if last_tool_msg else None
@@ -222,14 +218,13 @@ class GRNodes:
             )
             state.tool_result = data
 
-            # convert data into markdown for display in LangStudio
-            data = pd.DataFrame(data) if isinstance(data, dict) else data
-            data_md = data.to_markdown(index=False)
+            # convert data into markdown for display in LangSmith Studio
+            data_md = GRNodes.to_markdown(data)
             data_msg = AIMessage(
                 content=data_md,
                 tool_call_id=f"{PlannerLabels.TOOL_CALL.value}_data",
             )
-            state.conversation.append(data_msg)
+            state.messages.append(data_msg)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -246,10 +241,25 @@ class GRNodes:
             pass
 
             # summarisation
+            # remove tabular data if present
+            temp_convo = [
+                msg
+                for msg in state.messages
+                if not (
+                    isinstance(msg, AIMessage)
+                    and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
+                )
+            ]
             if len(state.messages) >= 6:
-                messages = [self.sms.summary, state.msg_summary, *state.messages[:-4]]
-                response = self.llm_chat.invoke(messages)
-                state.msg_summary = AIMessage(content=response.content)
+                convo = [
+                    SystemMessage(  # system prompt - summary
+                        content=self.sms.summary.content.format(
+                            prev_summary=state.msg_summary,
+                        )  # conversation summary - previous
+                    ),
+                    *temp_convo[:-4],
+                ]
+                state.msg_summary = self.llm_chat.invoke(convo).content
                 state.messages = state.messages[:-4]
 
         except Exception as e:
@@ -263,18 +273,18 @@ class GRNodes:
     def genchat_node(self, state: GRState) -> GRState:
         """Handle general conversation without tool calls."""
         try:
-            messages = [
+            convo = [  # system prompt - general
                 SystemMessage(
                     content=self.sms.general.content.format(
                         convo_summary=state.msg_summary,
                         data_from_fkdb=state.data_from_fkdb,
                     )
                 ),
-                *state.messages,
+                *state.messages,  # conversation data - full
             ]
 
-            response = self.llm_chat.invoke(messages)
-            state.conversation.append(response)
+            response = self.llm_chat.invoke(convo)
+            state.debug_convo.append(response)
             state.messages.append(response)
             state.agent_answer = response
 
@@ -292,12 +302,42 @@ class GRNodes:
             if not state.is_safe:
                 grdm_msg = AIMessage(content=state.guardrail_message)
                 state.agent_answer = grdm_msg
+                state.debug_convo.append(grdm_msg)
 
             elif state.status == StatusLabels.CLARIFY:
                 # clarification msg is already set to state.agent_answer
-                state.conversation.append(state.agent_answer)
+                state.debug_convo.append(state.agent_answer)
+                state.messages.append(state.agent_answer)
 
         except Exception as e:
             LogException(e, logger=log_flk)
 
         return state
+
+    @staticmethod
+    def to_markdown(data: Union[str, Dict[str, Any], pd.DataFrame]) -> str:
+        """Static method to convert data from FalkorDB into a markdown string format for visualisation
+        in LangSmith Studio.
+
+        Args:
+            data (Union[str, Dict[str, Any], pd.DataFrame]): The data from FalkorDB.
+
+        Returns:
+            data (str): Tabular data in markdown format.
+        """
+        try:
+            if isinstance(data, dict):
+                data = pd.DataFrame(data)
+
+            elif isinstance(data, str):
+                data = pd.DataFrame(json.loads(data))
+
+            elif isinstance(data, pd.DataFrame):
+                data = data
+
+            data = data.to_markdown(index=False)
+
+        except Exception as e:
+            LogException(e, logger=log_flk)
+
+        return data

@@ -1,8 +1,9 @@
 import pandas as pd
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Any, Optional
+from typing import Annotated, List, Dict, Any, Optional
 
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
+from langgraph.graph.message import add_messages
 
 from src.RAG.Constants.labels import PlannerLabels, StatusLabels, ToolLabels
 
@@ -14,13 +15,13 @@ class GRState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Conversation tracking
-    conversation: List[AnyMessage] = Field(
+    messages: Annotated[List[HumanMessage | AIMessage], add_messages] = Field(
         default_factory=list,
-        description="All messages for state tracking",
+        description="Chat conversation messages (Human + AI only)",
     )
-    messages: List[AnyMessage] = Field(
+    debug_convo: Annotated[List[AnyMessage], add_messages] = Field(
         default_factory=list,
-        description="Recent conversation messages for state tracking",
+        description="All messages for state tracking and debugging",
     )
     msg_summary: AIMessage = Field(
         default=AIMessage(content="Unavailable"),
@@ -81,7 +82,7 @@ class GRState(BaseModel):
         description="list of db queries executed",
     )
     data_from_fkdb: Optional[str] = Field(
-        default=None,
+        default="Unavailable",
         description="Data queried directly from falkordb",
     )
 
@@ -100,3 +101,24 @@ class GRState(BaseModel):
         default_factory=str,
         description="Error message to end user incase of error in graph state",
     )
+
+    def reset_turn(self) -> None:
+        """Reset per-turn state fields at the start of each invocation."""
+        self.messages = [
+            msg
+            for msg in self.messages
+            if not (
+                isinstance(msg, AIMessage)
+                and msg.tool_call_id == f"{PlannerLabels.TOOL_CALL.value}_data"
+            )
+        ]
+        self.is_safe = False
+        self.guardrail_message = ""
+        self.agent_answer = None
+        self.intent = PlannerLabels.GNRL_CHAT
+        self.selected_tool = None
+        self.func_parm_schm = None
+        self.db_query_list = []
+        self.data_from_fkdb = "Unavailable"
+        self.status = StatusLabels.PROGRESS
+        self.error_message = ""

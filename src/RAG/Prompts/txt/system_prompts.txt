@@ -4,7 +4,7 @@ Analyze the user message and determine if it is:
 1. Safe and relevant to restaurant/menu/cuisine analysis
 2. Contains harmful, inappropriate, or completely off-topic content
 
-Respond with JSON: {"is_safe": true/false, "reason": "brief explanation in less than 10 words"}
+User Query: 
 </GUARDRAIL_PROMPT>
 
 <PLANNER_PROMPT>
@@ -31,11 +31,13 @@ Your job is to:
 User preferences from memory:
 {user_preferences}
 
-User preferences summary from memory:
+User summary from memory:
 {user_summary}
 
 Conversation summary:
 {convo_summary}
+
+User Query: 
 </PLANNER_PROMPT>
 
 <EXECUTOR_PROMPT>
@@ -46,6 +48,8 @@ You need to resolve these parameters by calling a tool one or more times:
 1. If area name and city name are provided, call with purpose='get_area_ids' to get area_ids
 2. If area name, city name and cuisine_name is provided, call with purpose='get_cuis_name' to get the exact cuisine
 3. If restaurant_name is provided, call with purpose='get_rstn_id' to get rstn_ids
+
+User Query: 
 </EXECUTOR_PROMPT>
 
 <GRAPHDB_PROMPT>
@@ -144,6 +148,8 @@ Relationships:
 (:Locality)-[:HAS_RESTAURANT]->(:Restaurant)
 (:Restaurant)-[:HAS_MENU {price:int|null, rating:float|null}]->(:Menu)
 (:Restaurant)-[:SERVES_MAIN_CUISINE]->(:MainCuisine)
+
+User Query: 
 </GRAPHDB_PROMPT>
 
 <SUMMARY_PROMPT>
@@ -164,6 +170,11 @@ STYLE
 
 OUTPUT
 - Return only the summary text.
+
+Previous summary:
+{prev_summary}
+
+Recent Conversation: 
 </SUMMARY_PROMPT>
 
 <GENERAL_PROMPT>
