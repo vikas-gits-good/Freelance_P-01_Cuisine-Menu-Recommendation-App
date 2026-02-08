@@ -36,10 +36,18 @@ class GRState(BaseModel):
     )
 
     # User Memory
-    # user_id: str = Field(
-    #     default="Unavailable",
-    #     description="unique user id",
-    # )
+    user_id: str = Field(
+        default="Unavailable",
+        description="unique user id",
+    )
+    session_id: str = Field(
+        default="",
+        description="current session id",
+    )
+    turn_count: int = Field(
+        default=0,
+        description="interaction turn counter within session",
+    )
     user_preferences: str = Field(
         default="Unavailable",
         description="user preferences",

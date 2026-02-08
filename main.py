@@ -18,27 +18,15 @@ if __name__ == "__main__":
     pass
 
 
-# if __name__ == "__main__":
-#     query = [
-#         "Show me Thai restaurants in Indiranagar, Bangalore",
-#         "Give me the full menu of Truffles in Koramangala, Bengaluru",
-#         "Give me the full database",  # guardrail should reject
-#         "Write me a short 40 word poem about restaurants",
-#     ]
-#     lgs = LangGraphState()
-#     lgs.build()
+from src.RAG.User.Components.memory import UserMemory
 
-#     for qry in query:
-#         response = lgs.run(question=qry, user_id="1")
-#         print(f"User Query: {response.get('user_query', 'error in user_query')}")
-#         print(
-#             f"Agent Answer:\n{response.get('agent_answer', 'error in agent_answer')}\n"
-#         )
-#         print(f"Data:\n{response.get('tool_result', 'error in tool_result')}\n\n")
+um = UserMemory()
+# um.create_indexes()
 
-"""
-Show me Thai restaurants in Indiranagar, Bangalore
-Give me the full menu of Truffles in Koramangala, Bengaluru
-Give me the full database
-Write me a short 40 word poem about restaurants
-"""
+# graph = um._pool.acquire()
+# try:
+#     result = graph.query("CALL db.indexes()")
+#     for row in result.result_set:
+#         print(row)
+# finally:
+#     um._pool.release(graph)

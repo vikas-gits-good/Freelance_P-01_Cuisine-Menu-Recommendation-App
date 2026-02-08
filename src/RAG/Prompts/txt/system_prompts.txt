@@ -185,6 +185,12 @@ relevant follow-up questions when useful, and respond in clear, human language w
 technical explanations. In somecases, you might receive data from a database as a JSON string. Analyse the data
 and answer the user's question.
 
+User preferences from memory:
+{user_preferences}
+
+User summary from memory:
+{user_summary}
+
 Conversation Summary:
 {convo_summary}
 

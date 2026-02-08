@@ -16,6 +16,9 @@ from src.RAG.Config.tool_models import (
 from src.RAG.Config.models import ModelConfig
 from src.RAG.Constants.models import GroqModelList
 from src.RAG.Constants.labels import StatusLabels, PlannerLabels
+from src.RAG.User.Components.memory import UserMemory
+from src.RAG.User.Components.extractor import PreferenceExtractor
+from src.RAG.User.schemas import InteractionData
 
 from src.Logging.logger import log_flk
 from src.Exception.exception import LogException
@@ -43,6 +46,12 @@ class GRNodes:
                 temperature=0,
             ).with_structured_output(schema=GuardrailSchema)
 
+            self.llm_extr = ChatGroq(
+                model=gdrl_model,
+                api_key=mdl_config.api_key.groq,
+                temperature=0,
+            )
+
             self.sms = SysMsgSet().sys_pmt
             self.dqt = GRTools()
             self.tool_func_map = self.dqt.db_tool_box_func
@@ -50,6 +59,10 @@ class GRNodes:
             self.qry_parm_func = self.dqt._get_params_from_db
             self.qry_daba_func = self.dqt._query_falkordb
             self.max_steps: int = 6
+
+            # User memory system
+            self.user_memory = UserMemory()
+            self.pref_extractor = PreferenceExtractor(self.llm_extr)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -80,18 +93,20 @@ class GRNodes:
         return state
 
     # -------------------------------------------------------------------------
-    # User Memory Node -> Get user's data from memory ## Not Implemented
+    # User Memory Node -> Get user's data from FalkorDB DB 10
     # -------------------------------------------------------------------------
     def memory_node(self, state: GRState) -> GRState:
-        """Retrieve user preferences and conversation summary from cognee."""
+        """Retrieve user preferences and conversation summary from user memory graph."""
         try:
-            # TODO: Integrate with cognee client
-            pass
-            data: UserPreferenceSchema = UserPreferenceSchema()
+            self.user_memory.ensure_user(state.user_id)
+            self.user_memory.update_last_active(state.user_id)
+
+            context = self.user_memory.get_user_context(state.user_id)
 
             # update state
-            state.user_preferences = data.user_preferences
-            state.user_summary = data.user_summary
+            state.user_preferences = context.preferences_text
+            state.user_summary = context.summary_text
+            state.turn_count += 1
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -234,12 +249,50 @@ class GRNodes:
     # Summarisation Node
     # -------------------------------------------------------------------------
     def summarisation_node(self, state: GRState) -> GRState:
-        """Save conversation updates to cognee."""
+        """Save conversation updates and extract user preferences."""
         try:
-            # TODO: Integrate with cognee client
-            pass
+            # --- User memory: extract preferences ---
+            extracted = self.pref_extractor.extract(state.messages)
+            if extracted.preferences:
+                self.user_memory.save_preferences(
+                    state.user_id, extracted.preferences
+                )
 
-            # summarisation
+            # --- User memory: log interaction ---
+            tool_name = state.selected_tool.value if state.selected_tool else None
+            interaction = InteractionData(
+                query=state.messages[-2].content if len(state.messages) >= 2 else "",
+                intent=state.intent.value,
+                tool_used=tool_name,
+                result_brief=state.messages[-1].content[:200] if state.messages else "",
+            )
+            self.user_memory.save_interaction(
+                state.user_id,
+                state.session_id,
+                state.turn_count,
+                interaction,
+            )
+
+            # --- User memory: periodic summary (every 5 turns) ---
+            if state.turn_count > 0 and state.turn_count % 5 == 0:
+                summary_convo = [
+                    SystemMessage(
+                        content=(
+                            "Summarize this user's preferences and conversation patterns "
+                            "for a restaurant recommendation system. Be concise (2-3 sentences).\n\n"
+                            f"Current preferences:\n{state.user_preferences}\n\n"
+                            f"Previous summary:\n{state.user_summary}"
+                        )
+                    ),
+                    *state.messages[-4:],
+                ]
+                user_summ = self.llm_chat.invoke(summary_convo).content
+                self.user_memory.save_summary(
+                    state.user_id, user_summ, version=state.turn_count // 5
+                )
+                self.user_memory.cleanup(state.user_id)
+
+            # --- Conversation summarisation (existing logic) ---
             # remove tabular data if present
             temp_convo = [
                 msg
@@ -276,6 +329,8 @@ class GRNodes:
             convo = [  # system prompt - general
                 SystemMessage(
                     content=self.sms.general.content.format(
+                        user_preferences=state.user_preferences,
+                        user_summary=state.user_summary,
                         convo_summary=state.msg_summary,
                         data_from_fkdb=state.data_from_fkdb,
                     )
