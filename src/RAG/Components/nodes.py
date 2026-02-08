@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Union, Any, Dict
 
 from langchain_groq import ChatGroq
-from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
+from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
 
 from src.RAG.Components.state import GRState
 from src.RAG.Components.tools import GRTools
@@ -83,9 +83,9 @@ class GRNodes:
     # User Memory Node -> Get user's data from memory ## Not Implemented
     # -------------------------------------------------------------------------
     def memory_node(self, state: GRState) -> GRState:
-        """Retrieve user preferences and conversation summary from mem0."""
+        """Retrieve user preferences and conversation summary from cognee."""
         try:
-            # TODO: Integrate with mem0 client
+            # TODO: Integrate with cognee client
             pass
             data: UserPreferenceSchema = UserPreferenceSchema()
 
@@ -234,9 +234,9 @@ class GRNodes:
     # Summarisation Node
     # -------------------------------------------------------------------------
     def summarisation_node(self, state: GRState) -> GRState:
-        """Save conversation updates to mem0."""
+        """Save conversation updates to cognee."""
         try:
-            # TODO: Integrate with mem0 client
+            # TODO: Integrate with cognee client
             pass
 
             # summarisation
