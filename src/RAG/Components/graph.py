@@ -1,3 +1,4 @@
+import time
 import uuid
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
@@ -78,12 +79,18 @@ class LangGraphState:
             _ = self.build() if not self.graph else None
 
             log_flk.info("GRAG: Preparing user query")
+            epoch = int(time.time())
+            sesn_id = str(uuid.uuid4())
             init_state = GRState(
                 messages=[HumanMessage(content=question)],
                 user_id=user_id,
-                session_id=str(uuid.uuid4()),
+                session_id=sesn_id,
             )
-            config = {"configurable": {"thread_id": user_id}}
+            config = {
+                "configurable": {
+                    "thread_id": f"user_{user_id}_time_{epoch}_sesn_{sesn_id}"
+                }
+            }
 
             log_flk.info("GRAG: Sending query to GRAG system")
             response = self.graph.invoke(init_state, config)

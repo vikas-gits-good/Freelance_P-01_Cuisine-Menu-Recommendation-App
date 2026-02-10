@@ -61,8 +61,8 @@ class GRNodes:
             self.max_steps: int = 6
 
             # User memory system
-            self.user_memory = UserMemory()
-            self.pref_extractor = PreferenceExtractor(self.llm_extr)
+            # self.user_memory = UserMemory()
+            # self.pref_extractor = PreferenceExtractor(self.llm_extr)
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -98,15 +98,19 @@ class GRNodes:
     def memory_node(self, state: GRState) -> GRState:
         """Retrieve user preferences and conversation summary from user memory graph."""
         try:
-            self.user_memory.ensure_user(state.user_id)
-            self.user_memory.update_last_active(state.user_id)
+            # self.user_memory.ensure_user(state.user_id)
+            # self.user_memory.update_last_active(state.user_id)
 
-            context = self.user_memory.get_user_context(state.user_id)
+            # context = self.user_memory.get_user_context(state.user_id)
 
             # update state
-            state.user_preferences = context.preferences_text
-            state.user_summary = context.summary_text
-            state.turn_count += 1
+            # state.user_preferences = context.preferences_text
+            # state.user_summary = context.summary_text
+            # state.turn_count += 1
+
+            context = UserPreferenceSchema()
+            state.user_preferences = context.user_preferences
+            state.user_summary = context.user_summary
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -252,45 +256,44 @@ class GRNodes:
         """Save conversation updates and extract user preferences."""
         try:
             # --- User memory: extract preferences ---
-            extracted = self.pref_extractor.extract(state.messages)
-            if extracted.preferences:
-                self.user_memory.save_preferences(
-                    state.user_id, extracted.preferences
-                )
+            # this will send data to llm
+            # extracted = self.pref_extractor.extract(state.messages)
+            # if extracted.preferences:
+            #     self.user_memory.save_preferences(state.user_id, extracted.preferences)
 
-            # --- User memory: log interaction ---
-            tool_name = state.selected_tool.value if state.selected_tool else None
-            interaction = InteractionData(
-                query=state.messages[-2].content if len(state.messages) >= 2 else "",
-                intent=state.intent.value,
-                tool_used=tool_name,
-                result_brief=state.messages[-1].content[:200] if state.messages else "",
-            )
-            self.user_memory.save_interaction(
-                state.user_id,
-                state.session_id,
-                state.turn_count,
-                interaction,
-            )
+            # # --- User memory: log interaction ---
+            # tool_name = state.selected_tool.value if state.selected_tool else None
+            # interaction = InteractionData(
+            #     query=state.messages[-2].content if len(state.messages) >= 2 else "",
+            #     intent=state.intent.value,
+            #     tool_used=tool_name,
+            #     result_brief=state.messages[-1].content[:200] if state.messages else "",
+            # )
+            # self.user_memory.save_interaction(
+            #     state.user_id,
+            #     state.session_id,
+            #     state.turn_count,
+            #     interaction,
+            # )
 
             # --- User memory: periodic summary (every 5 turns) ---
-            if state.turn_count > 0 and state.turn_count % 5 == 0:
-                summary_convo = [
-                    SystemMessage(
-                        content=(
-                            "Summarize this user's preferences and conversation patterns "
-                            "for a restaurant recommendation system. Be concise (2-3 sentences).\n\n"
-                            f"Current preferences:\n{state.user_preferences}\n\n"
-                            f"Previous summary:\n{state.user_summary}"
-                        )
-                    ),
-                    *state.messages[-4:],
-                ]
-                user_summ = self.llm_chat.invoke(summary_convo).content
-                self.user_memory.save_summary(
-                    state.user_id, user_summ, version=state.turn_count // 5
-                )
-                self.user_memory.cleanup(state.user_id)
+            # if state.turn_count > 0 and state.turn_count % 5 == 0:
+            #     summary_convo = [
+            #         SystemMessage(
+            #             content=(
+            #                 "Summarize this user's preferences and conversation patterns "
+            #                 "for a restaurant recommendation system. Be concise (2-3 sentences).\n\n"
+            #                 f"Current preferences:\n{state.user_preferences}\n\n"
+            #                 f"Previous summary:\n{state.user_summary}"
+            #             )
+            #         ),
+            #         *state.messages[-4:],
+            #     ]
+            #     user_summ = self.llm_chat.invoke(summary_convo).content
+            #     self.user_memory.save_summary(
+            #         state.user_id, user_summ, version=state.turn_count // 5
+            #     )
+            #     self.user_memory.cleanup(state.user_id)
 
             # --- Conversation summarisation (existing logic) ---
             # remove tabular data if present

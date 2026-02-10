@@ -16,17 +16,3 @@ if __name__ == "__main__":
 
     # Loader(purpose="test").run()
     pass
-
-
-from src.RAG.User.Components.memory import UserMemory
-
-um = UserMemory()
-# um.create_indexes()
-
-# graph = um._pool.acquire()
-# try:
-#     result = graph.query("CALL db.indexes()")
-#     for row in result.result_set:
-#         print(row)
-# finally:
-#     um._pool.release(graph)
