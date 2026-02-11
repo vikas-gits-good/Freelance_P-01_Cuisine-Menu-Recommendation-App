@@ -42,3 +42,6 @@ langchain_openai
 langchain-community
 langchain-experimental
 langgraph-cli[inmem]
+
+# frontend
+reflex
