@@ -292,7 +292,7 @@ class CypherFunctionTool:
         """
         try:
             q_code = self.cp_config.cp_code.tools[key]
-            result = self.graph.query(q_code, q_params, timeout=1000)
+            result = self.graph.query(q_code, q_params, timeout=2000)
             df = pd.DataFrame(
                 data=result.result_set,
                 columns=[item[-1] for item in result.header],

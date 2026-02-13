@@ -42,6 +42,9 @@ class GRRouter:
             if state.intent in [PlannerLabels.TOOL_CALL, PlannerLabels.DABA_QERY]:
                 decision = GRNodeLabel.EXECUTOR
 
+            elif state.intent == PlannerLabels.EROR_QUIT:
+                decision = GRNodeLabel.UNSAFE
+
             elif state.status == StatusLabels.CLARIFY:
                 decision = GRNodeLabel.UNSAFE
 

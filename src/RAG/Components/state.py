@@ -1,8 +1,8 @@
 import pandas as pd
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Annotated, List, Dict, Any, Optional
+from typing import Annotated, List, Dict, Any, Literal, Optional
 
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
+from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, RemoveMessage
 from langgraph.graph.message import add_messages
 
 from src.RAG.Constants.labels import PlannerLabels, StatusLabels, ToolLabels
@@ -109,17 +109,58 @@ class GRState(BaseModel):
     #     description="Error message to end user incase of error in graph state",
     # )
 
+    @staticmethod
+    def remove_table(
+        messages: List[HumanMessage | AIMessage],
+        purpose: Literal["messages", "temporary"] = "temporary",
+    ) -> List[HumanMessage | AIMessage]:
+        """Remove AIMessages containing tabular tool_call data."""
+        tag = f"{PlannerLabels.TOOL_CALL.value}_data"
+        if purpose == "messages":
+            # messages.extend(
+            #     [
+            #         RemoveMessage(msg.id)
+            #         for msg in messages[:]
+            #         if (
+            #             isinstance(msg, AIMessage)
+            #             and msg.additional_kwargs.get("tag") == tag
+            #         )
+            #     ]
+            # )
+
+            # messages[0:0] = [
+            #     RemoveMessage(msg.id)
+            #     for msg in messages[:]
+            #     if (
+            #         isinstance(msg, AIMessage)
+            #         and msg.additional_kwargs.get("tag") == tag
+            #     )
+            # ]
+
+            # for i, msg in enumerate(messages):
+            #     if (
+            #         isinstance(msg, AIMessage)
+            #         and msg.additional_kwargs.get("tag") == tag
+            #     ):
+            #         messages[i] = RemoveMessage(msg.id)
+
+            pass
+
+        elif purpose == "temporary":
+            messages = [
+                msg
+                for msg in messages
+                if not (
+                    isinstance(msg, AIMessage)
+                    and msg.additional_kwargs.get("tag") == tag
+                )
+            ]
+
+        return messages
+
     def reset_turn(self) -> None:
         """Reset per-turn state fields at the start of each invocation."""
-        self.messages = [
-            msg
-            for msg in self.messages  # dont send tabular data to llm
-            if not (
-                isinstance(msg, AIMessage)
-                and getattr(msg, "tool_call_id", None)
-                == f"{PlannerLabels.TOOL_CALL.value}_data"
-            )
-        ]
+        self.remove_table(self.messages, "messages")
         self.is_safe = False
         self.guardrail_message = ""
         # self.agent_answer = None

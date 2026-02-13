@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Union, Any, Dict
 
 from langchain_groq import ChatGroq
-from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
+from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, RemoveMessage
 
 from src.RAG.Components.state import GRState
 from src.RAG.Components.tools import GRTools
@@ -68,6 +68,13 @@ class GRNodes:
             LogException(e, logger=log_flk)
 
     # -------------------------------------------------------------------------
+    # Reset Node -> Remove tabular data
+    # -------------------------------------------------------------------------
+    def reset_node(self, state: GRState) -> GRState:
+        state.reset_turn()
+        return state
+
+    # -------------------------------------------------------------------------
     # Guardrail Node -> No suspicious queries goes through
     # -------------------------------------------------------------------------
     def guardrail_node(self, state: GRState) -> GRState:
@@ -98,6 +105,7 @@ class GRNodes:
     def memory_node(self, state: GRState) -> GRState:
         """Retrieve user preferences and conversation summary from user memory graph."""
         try:
+            messages = GRState.remove_table(state.messages)
             # self.user_memory.ensure_user(state.user_id)
             # self.user_memory.update_last_active(state.user_id)
 
@@ -131,7 +139,7 @@ class GRNodes:
                         convo_summary=state.msg_summary,
                     ),
                 ),
-                *state.messages,  # user query - full conversation
+                *GRState.remove_table(state.messages),  # user query - full conversation
             ]
             llm_plnr = self.llm_chat.with_structured_output(schema=PlannerOutput)
             response: PlannerOutput = llm_plnr.invoke(convo)
@@ -144,13 +152,14 @@ class GRNodes:
 
             if response.intent.requires_clarification:
                 clrf_qstn = AIMessage(content=response.intent.clarification_question)
-                state.agent_answer = clrf_qstn
+                # state.agent_answer = clrf_qstn
                 state.status = StatusLabels.CLARIFY
                 state.debug_convo.append(clrf_qstn)
                 state.messages.append(clrf_qstn)
 
         except Exception as e:
             LogException(e, logger=log_flk)
+            state.intent = PlannerLabels.EROR_QUIT
 
         return state
 
@@ -239,7 +248,7 @@ class GRNodes:
             data_md = GRNodes.to_markdown(data)
             data_msg = AIMessage(
                 content=data_md,
-                tool_call_id=f"{PlannerLabels.TOOL_CALL.value}_data",
+                additional_kwargs={"tag": f"{PlannerLabels.TOOL_CALL.value}_data"},
             )
             state.messages.append(data_msg)
             state.debug_convo.append(data_msg)
@@ -296,27 +305,19 @@ class GRNodes:
             #     self.user_memory.cleanup(state.user_id)
 
             # --- Conversation summarisation (existing logic) ---
-            # remove tabular data if present
-            temp_convo = [
-                msg
-                for msg in state.messages
-                if not (
-                    isinstance(msg, AIMessage)
-                    and getattr(msg, "tool_call_id", None)
-                    == f"{PlannerLabels.TOOL_CALL.value}_data"
-                )
-            ]
-            if len(state.messages) >= 6:
+            if len(GRState.remove_table(state.messages)) >= 6:
                 convo = [
                     SystemMessage(  # system prompt - summary
                         content=self.sms.summary.content.format(
                             prev_summary=state.msg_summary,
                         )  # conversation summary - previous
                     ),
-                    *temp_convo[:-4],
+                    *GRState.remove_table(state.messages)[:-4],
                 ]
                 state.msg_summary = self.llm_chat.invoke(convo).content
-                state.messages = state.messages[:-4]
+                # state.messages = [RemoveMessage(msg.id) for msg in state.messages[-4:]]
+                # removing items from state.messages removes it from chat window
+                # in langsmith studio
 
         except Exception as e:
             LogException(e, logger=log_flk)
@@ -338,7 +339,7 @@ class GRNodes:
                         data_from_fkdb=state.data_from_fkdb,
                     )
                 ),
-                *state.messages,  # conversation data - full
+                *GRState.remove_table(state.messages),  # conversation data - full
             ]
 
             response = self.llm_chat.invoke(convo)

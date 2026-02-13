@@ -1,2 +1,3 @@
 # Freelance_P-01_Cuisine-Menu-Recommendation-App
-An application where user can enter a locality in a city and a cuisine and it will recommend menu items.
+An web chatbot application that provides information on restaurant cuisine and menu based on area, city, cuisine.
+

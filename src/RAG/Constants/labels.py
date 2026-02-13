@@ -17,6 +17,7 @@ class PlannerLabels(Enum):  # rename to IntentLabels
     TOOL_CALL = "tool_call"
     DABA_QERY = "daba_query"
     GNRL_CHAT = "gnrl_chat"
+    EROR_QUIT = "eror_quit"
 
 
 class StatusLabels(Enum):
