@@ -68,13 +68,6 @@ class GRNodes:
             LogException(e, logger=log_flk)
 
     # -------------------------------------------------------------------------
-    # Reset Node -> Remove tabular data
-    # -------------------------------------------------------------------------
-    def reset_node(self, state: GRState) -> GRState:
-        state.reset_turn()
-        return state
-
-    # -------------------------------------------------------------------------
     # Guardrail Node -> No suspicious queries goes through
     # -------------------------------------------------------------------------
     def guardrail_node(self, state: GRState) -> GRState:
