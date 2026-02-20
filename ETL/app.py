@@ -24,7 +24,7 @@ tasks: dict[TaskType, APIStatus] = {
 
 
 @app.post("/seed")
-def seeder():
+def seeder():  # theres a bug where it loads 700 failed urls into redis
     return execute_task(TaskType.SEED, tasks)
 
 

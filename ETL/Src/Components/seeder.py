@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 from Src.Seeder import SitemapExtractor, SitemapUploader
-from Src.Utils import LogException, get_seeder_info, log_etl
+from Src.Utils import LogException, log_etl, util_func
 
 
 class ETL_Seeder:
@@ -14,7 +14,7 @@ class ETL_Seeder:
         try:
             load_dotenv(".env")
             self.upld_prps = str(os.getenv("ETL_REDIS_PRPS", "ltst"))
-            self.stmp_extr = SitemapExtractor(*get_seeder_info())
+            self.stmp_extr = SitemapExtractor(*util_func.get_seeder_info())
             self.stmp_upld = SitemapUploader()
 
         except Exception as e:

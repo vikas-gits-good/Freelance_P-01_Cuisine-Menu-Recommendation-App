@@ -12,7 +12,7 @@ from pymongo import AsyncMongoClient
 from redis.asyncio import Redis as AsyncRedis
 
 from Src.Config import FalkorDBConfig, MongoDBConfig, RedisDBConfig
-from Src.Constants import APIStatus, StatusMessage, TaskStatus, TaskType
+from Src.Constants import APIStatus, TaskStatus, TaskType
 from Src.Utils import LogException, log_etl
 
 from .extractor import ETL_Scraper
@@ -40,6 +40,7 @@ class AplcOps:
                 )
                 self.task.task_id = uuid4().hex[:12]
                 self.task.status = TaskStatus.ONGOING
+                self.task.message = "all ok"
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -258,57 +259,45 @@ class UtilOps:
     def _status_check(self, task: TaskType, task_id: str):
         try:
             entry = self.tasks[task]
-            _status = StatusMessage(
-                status=entry.status,
-                task=task,
-                task_id=task_id,
-                message=entry.message,
-            )
 
             if entry.task_id != task_id:
-                _status.status = TaskStatus.ERROR
-                _status.message = "Wrong task_id"
+                entry.status = TaskStatus.ERROR
+                entry.message = "Wrong task_id"
 
         except Exception as e:
             LogException(e, logger=log_etl)
-            _status.status = TaskStatus.ERROR
-            _status.message = f"Unknown error: {str(e)}"
+            entry.status = TaskStatus.ERROR
+            entry.message = f"Unknown error: {str(e)}"
 
-        return _status.model_dump()
+        return entry.model_dump()
 
     def _kill_switch(self, task: TaskType, task_id: str):
         try:
             entry = self.tasks[task]
-            _status = StatusMessage(
-                status=entry.status,
-                task=task,
-                task_id=task_id,
-                message="all ok",
-            )
 
             # Check for wrong task_id
             if entry.task_id != task_id:
                 log_etl.info(
                     f"ETL_API: Failed to kill '{task}: {task_id}' as it is wrong task_id (status: {entry.status.value})"
                 )
-                _status.status = TaskStatus.ERROR
-                _status.message = "Wrong task_id"
+                entry.status = TaskStatus.ERROR
+                entry.message = "Wrong task_id"
 
             # check for task status
             elif entry.status != TaskStatus.ONGOING:
                 log_etl.info(
                     f"ETL_API: Failed to kill '{task}: {task_id}' as it is not running (status: {entry.status.value})"
                 )
-                _status.status = TaskStatus.ERROR
-                _status.message = "Task isn't running"
+                entry.status = TaskStatus.ERROR
+                entry.message = "Task isn't running"
 
             # check for process
             elif not entry.process or not entry.process.is_alive():
                 log_etl.info(
                     f"ETL_API: Failed to kill '{task}: {task_id}' as process is not present (status: {entry.status.value})"
                 )
-                _status.status = TaskStatus.ERROR
-                _status.message = "Program is missing"
+                entry.status = TaskStatus.ERROR
+                entry.message = "Program is missing"
 
             else:
                 # Force kill if still alive
@@ -317,17 +306,16 @@ class UtilOps:
                     os.killpg(os.getpgid(entry.process.pid), SIGKILL)  # type: ignore[misc]
 
                 entry.status = TaskStatus.KILLED
+                entry.message = "Successfully killed task"
                 entry.process = None
-                _status.status = TaskStatus.KILLED
-                _status.message = "Successfully killed task"
                 log_etl.info(f"ETL_API: Successfully killed task '{task_id}'")
 
         except Exception as e:
             LogException(e, logger=log_etl)
-            _status.status = TaskStatus.ERROR
-            _status.message = f"Unknown error: {str(e)}"
+            entry.status = TaskStatus.ERROR
+            entry.message = f"Unknown error: {str(e)}"
 
-        return _status.model_dump()
+        return entry.model_dump()
 
 
 # ============================================================================
