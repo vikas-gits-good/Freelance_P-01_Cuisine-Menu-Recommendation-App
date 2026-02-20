@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, List, Literal, Optional
 
 import pandas as pd
 from dotenv import load_dotenv
-from falkordb import FalkorDB
 from pymongo import MongoClient, UpdateOne
 from redis import Redis
 
