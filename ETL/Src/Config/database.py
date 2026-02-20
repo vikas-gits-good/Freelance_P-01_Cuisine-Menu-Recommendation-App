@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 from dotenv import load_dotenv
 
-from ..Constants.database import FalkorDBConstants, MongoDBConstants, RedisDBConstants
+from Src.Constants import FalkorDBConstants, MongoDBConstants, RedisDBConstants
 
 
 class SwiggyConfig:
@@ -19,6 +19,8 @@ class SwiggyConfig:
 
 
 class MongoDBConfig:
+    """Method to get credentials to connect to a MongoDB instance"""
+
     def __init__(self):
         load_dotenv(".env")
         self.conn_uri = MongoDBConstants.CONNECTION_URI.format(
@@ -32,6 +34,8 @@ class MongoDBConfig:
 
 
 class RedisDBConfig:
+    """Method to get credentials to connect to a RedisDB instance"""
+
     def __init__(self):
         load_dotenv(".env")
         REDIS_USER = os.getenv("ETL_REDIS_USER")
@@ -62,6 +66,8 @@ class RedisDBConfig:
 
 
 class FalkorDBConfig:
+    """Method to get credentials to connect to a FalkorDB instance"""
+
     def __init__(self):
         load_dotenv(".env")
         self.conn_uri = FalkorDBConstants.CONNECTION_URI.format(

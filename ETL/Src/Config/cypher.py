@@ -28,5 +28,7 @@ class _get_cypher_code:
 
 
 class ETLCypherConfig:
+    """Method to get cypher code for ETL-loader operations"""
+
     def __init__(self):
         self.cp_code = _get_cypher_code()
