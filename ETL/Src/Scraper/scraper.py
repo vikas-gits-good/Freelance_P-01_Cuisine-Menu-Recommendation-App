@@ -62,14 +62,14 @@ class RestaurantDataScraper:
                     f"Extraction: Scraping menu data from {len(urls_list)} restaurants in '{city}'"
                 )
                 # Process streaming data as it arrives
-                async for menu_data, json_data in self._scrape_one_city(
+                async for rstn_data, json_data in self._scrape_one_city(
                     urls_list, city
                 ):
                     try:
                         batch_json_data.append(
                             {
-                                "rstn_id": menu_data.ids,
-                                "rstn_city": menu_data.city_id,
+                                "rstn_id": rstn_data.ids,
+                                "rstn_city": rstn_data.city_id,
                                 "rstn_data": json_data,
                             }
                         )
