@@ -124,7 +124,7 @@ class AplcOps:
         except Exception as e:
             LogException(e, logger=log_etl)
             # staticmethods return exit code 0 on error which will
-            # make the system this it worked successfuly
+            # make the system think it worked successfuly
             # that's why need to raise the error
             raise
 
@@ -228,7 +228,7 @@ class UtilOps:
                 await client.aclose()
 
             except Exception as e:
-                log_etl.info("ETL_API: Health check FAIL (Redis)")
+                log_etl.info("ETL_API: Health check FAIL (RedisDB)")
                 LogException(e, logger=log_etl)
                 status["redis"] = "unreachable"
                 status["status"] = "degraded"
@@ -300,7 +300,7 @@ class UtilOps:
                 entry.message = "Program is missing"
 
             else:
-                # Force kill if still alive
+                # Force kill
                 if entry.process.is_alive():
                     log_etl.info(f"ETL_API: Sending SIGKILL to kill task '{task_id}'")
                     os.killpg(os.getpgid(entry.process.pid), SIGKILL)  # type: ignore[misc]

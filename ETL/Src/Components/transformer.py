@@ -94,7 +94,7 @@ class Transformer:
             for key, val in self.lctn_files.items():
                 node_data[NodeLabels(key)] = val
 
-            log_etl.info("Load: Appending relationship data")
+            log_etl.info("Loader: Appending relationship data")
             srch_data = {
                 "country_lookup": {
                     item["params"]["name"]: {"ids": item["ids"]}

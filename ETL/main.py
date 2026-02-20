@@ -14,19 +14,21 @@ if __name__ == "__main__":
 
         # --------------------------------------------------------- #
 
-        log_etl.info("Seeder: Preparing scraper")
-        scrp = ETL_Scraper()
+        # log_etl.info("Seeder: Preparing scraper")
+        # scrp = ETL_Scraper()
 
-        log_etl.info("Seeder: Running scraper")
-        scrp.run()
+        # log_etl.info("Seeder: Running scraper")
+        # scrp.run()
 
         # --------------------------------------------------------- #
 
-        # log_etl.info("Seeder: Preparing loader")
-        # load = ETL_Loader()
+        log_etl.info("Seeder: Preparing loader")
+        load = ETL_Loader("test")
 
-        # log_etl.info("Seeder: Running loader")
-        # load.run()
+        log_etl.info("Seeder: Running loader")
+        load.run()
+
+        pass
 
     except Exception as e:
         LogException(e, logger=log_etl)

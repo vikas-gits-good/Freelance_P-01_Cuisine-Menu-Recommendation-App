@@ -33,19 +33,19 @@ class ETL_Loader:
 
     def run(self):
         try:
-            log_etl.info("Load: Communicating with FalkorDB")
+            log_etl.info("Loader: Communicating with FalkorDB")
             graph = GraphPool.get_graph(self.purpose)  # type: ignore
 
             result = graph.query("MATCH (st: State) RETURN count(st)")
             is_empty = result.result_set[0][0] == 0
 
             if is_empty:
-                log_etl.info("Load: Starting initial Knowledge Graph setup")
+                log_etl.info("Loader: Starting initial Knowledge Graph setup")
                 graph = self.create(graph)
 
             else:
                 log_etl.info(
-                    "Load: Knowledge Graph exists. Moving to upsert operations"
+                    "Loader: Knowledge Graph exists. Moving to upsert operations"
                 )
 
             self.upsert(graph)
@@ -55,16 +55,16 @@ class ETL_Loader:
 
     def create(self, graph: Graph) -> Graph:
         try:
-            log_etl.info("Load: Creating indexes on nodes")
+            log_etl.info("Loader: Creating indexes on nodes")
             graph = create_indexes(graph)
 
-            log_etl.info("Load: Acquiring data for graph")
+            log_etl.info("Loader: Acquiring data for graph")
             node_data, rlsp_data = self.transformer.get_data(purpose="create")
 
-            log_etl.info("Load: Creating initial nodes")
+            log_etl.info("Loader: Creating initial nodes")
             graph = create_nodes(graph, node_data)
 
-            log_etl.info("Load: Creating initial links")
+            log_etl.info("Loader: Creating initial links")
             graph = create_links(graph, rlsp_data)
 
         except Exception as e:
@@ -79,15 +79,15 @@ class ETL_Loader:
                 if os.getenv("LOADER_THREADS")
                 else ETLCyphersConstants.NUMBER_OF_MT_WORKERS
             )
-            log_etl.info(f"Load: Preparing a KG pool of {instances}")
+            log_etl.info(f"Loader: Preparing a KG pool of {instances}")
             self.graph_pool = GraphPool(instances, self.purpose)  # type: ignore
 
-            log_etl.info("Load: Starting batch upsertion with multi-threading")
+            log_etl.info("Loader: Starting batch upsertion with multi-threading")
             strt_time_main = time()
             size = int(os.getenv("LOADER_BATCH_SIZE", "1024"))
             with ThreadPoolExecutor(max_workers=instances) as pool:
                 for batch in fetch_batches(batch_size=size):
-                    log_etl.info("Load: Transforming batch data")
+                    log_etl.info("Loader: Transforming batch data")
                     strt_time_btch = time()
                     prepared = []
                     for i in range(instances):
@@ -97,7 +97,7 @@ class ETL_Loader:
 
                     del batch
 
-                    log_etl.info("Load: Started node creation for batch")
+                    log_etl.info("Loader: Started node creation for batch")
                     node_futures = []
 
                     for node_data, _ in prepared:
@@ -108,7 +108,7 @@ class ETL_Loader:
 
                     wait(node_futures)  # HARD BARRIER
 
-                    log_etl.info("Load: Started link creation for batch")
+                    log_etl.info("Loader: Started link creation for batch")
                     rlsp_futures = []
 
                     for _, rlsp_data in prepared:
@@ -121,11 +121,11 @@ class ETL_Loader:
                     del prepared
 
                     log_etl.info(
-                        f"Load: Completed batch in {util_func.format_time(time() - strt_time_btch)}"
+                        f"Loader: Completed batch in {util_func.format_time(time() - strt_time_btch)}"
                     )
 
             log_etl.info(
-                f"Load: Completed full upsertion in {util_func.format_time(time() - strt_time_main)}!"
+                f"Loader: Completed full upsertion in {util_func.format_time(time() - strt_time_main)}!"
             )
 
         except Exception as e:
