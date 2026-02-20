@@ -1,13 +1,14 @@
 # Logs
 logs/
 **/logs/
+*.log
 
 # Python
 .venv/
-__pycache__/
 **/__pycache__/
 **/*.pyc
 **/.pytest_cache/
+*.py[cod]
 
 # Folders
 Src/Expt/
@@ -15,12 +16,15 @@ Bruno/
 Docker/
 
 # Git
-.git
+.git/
 .gitignore
 
 # Environment
-.env
-.acl
+**/*.env
+**/*.acl
 
 # Docs
 *.md
+
+# Build artifacts
+*.egg-info/

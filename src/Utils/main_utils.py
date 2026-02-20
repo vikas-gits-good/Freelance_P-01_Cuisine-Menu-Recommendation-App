@@ -1,14 +1,14 @@
-import os
 import json
-import pandas as pd
+import os
 from logging import Logger
-from pymongo import MongoClient, UpdateOne, AsyncMongoClient
+from typing import Any, AsyncIterator, Dict, Iterator, List, Literal
 
-from typing import Any, Dict, List, Literal, Iterator, AsyncIterator
+import pandas as pd
+from pymongo import AsyncMongoClient, MongoClient, UpdateOne
 
 from src.Config import MongoDBConfig
+from src.Exception.exception import CustomException, LogException
 from src.Logging.logger import log_etl, log_flk
-from src.Exception.exception import LogException, CustomException
 
 
 def save_json(
@@ -216,11 +216,11 @@ def get_from_mongodb(
         data = []  # list(colls.find())
         """data = [
             {
-                '_id': ObjectId('695238e68f4ca8f90d6caeef'), 
-                'city': 'abohar', 
+                '_id': ObjectId('695238e68f4ca8f90d6caeef'),
+                'city': 'abohar',
                 'config': {
-                    'name': 'Abohar, Abohar Tahsil, Fazilka, Punjab, 152116, India', 
-                    'coords': [30.1450543, 74.1956597], 
+                    'name': 'Abohar, Abohar Tahsil, Fazilka, Punjab, 152116, India',
+                    'coords': [30.1450543, 74.1956597],
                     'boundingbox': [...],
                     'address': {...},
                     'restaurants': [{},...],

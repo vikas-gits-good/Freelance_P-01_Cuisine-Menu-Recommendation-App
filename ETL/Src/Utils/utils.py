@@ -2,12 +2,12 @@ import json
 import os
 import re
 from datetime import timedelta, timezone
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, Iterator, List, Literal, Optional
 
+import pandas as pd
 from dotenv import load_dotenv
 from falkordb import FalkorDB
 from pymongo import MongoClient, UpdateOne
-from pymongo.cursor import Cursor
 from redis import Redis
 
 from Src.Config import FalkorDBConfig, MongoDBConfig, RedisDBConfig
@@ -18,62 +18,214 @@ rd_cnf = RedisDBConfig()
 fd_cnf = FalkorDBConfig()
 
 
-def get_timezone() -> timezone:
-    """Method to get timezone information from environment variables"""
-    TZ = timezone(timedelta(hours=5, minutes=30))
-    try:
-        load_dotenv(".env")
-        hrs, min = os.getenv("TIMEZONE", "5:30").split(":")
-        TZ = timezone(timedelta(hours=int(hrs), minutes=int(min)))
+class util_func:
+    @staticmethod
+    def get_timezone() -> timezone:
+        """Method to get timezone information from environment variables"""
+        TZ = timezone(timedelta(hours=5, minutes=30))
+        try:
+            load_dotenv(".env")
+            hrs, min = os.getenv("TIMEZONE", "5:30").split(":")
+            TZ = timezone(timedelta(hours=int(hrs), minutes=int(min)))
 
-    except Exception:
-        pass  # fallback to default IST
+        except Exception:
+            pass  # fallback to default IST
 
-    return TZ
+        return TZ
 
+    @staticmethod
+    def get_seeder_info() -> list[Any]:
+        """Method to get Seeder function parameters from environment variables"""
+        from .exception import LogException
+        from .logger import log_etl
 
-def get_seeder_info() -> list[Any]:
-    """Method to get Seeder function parameters from environment variables"""
-    from .exception import LogException
-    from .logger import log_etl
-
-    try:
-        load_dotenv(".env")
-        website, pattern, headers, threads = [
-            os.getenv(item, "")
-            for item in [
-                "SEEDER_WEBSITE",
-                "SEEDER_PATTERN",
-                "SEEDER_HEADERS",
-                "SEEDER_THREADS",
+        try:
+            load_dotenv(".env")
+            website, pattern, headers, threads = [
+                os.getenv(item, "")
+                for item in [
+                    "SEEDER_WEBSITE",
+                    "SEEDER_PATTERN",
+                    "SEEDER_HEADERS",
+                    "SEEDER_THREADS",
+                ]
             ]
-        ]
-        log_etl.info("Seeder: Got seeder ENV Vars")
+            log_etl.info("Seeder: Got seeder ENV Vars")
 
-    except Exception as e:
-        LogException(e, logger=log_etl)
+        except Exception as e:
+            LogException(e, logger=log_etl)
 
-    return (website, re.compile(pattern), headers, int(threads), 10)
+        return (website, re.compile(pattern), headers, int(threads), 10)
+
+    @staticmethod
+    def format_time(seconds: float) -> str:
+        """Format elapsed time as '00 hr, 00 min, 00 sec'
+
+        Arguments:
+            seconds (float): Time to format
+
+        Returns:
+            time (str): Time formatted as a string
+        """
+        hrs, rem = divmod(seconds, 3600)
+        mins, secs = divmod(rem, 60)
+        return f"{int(hrs):2d} hr, {int(mins):2d} min, {int(secs):2d} sec"
 
 
-def read_json(path) -> Dict[str, Any]:
-    """Method to read json data
+class json_func:
+    @staticmethod
+    def read(path) -> Dict[str, Any]:
+        """Method to read json data
 
-    Args:
-        path (str): Path to .json file
-    """
-    from .exception import LogException
-    from .logger import log_etl
+        Arguments:
+            path (str): Path to data .json file
 
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        log_etl.info("Seeder: Read json data from file")
+        Returns:
+            data (Dict[str, Any]): Data as a dict
 
-    except Exception as e:
-        LogException(e, logger=log_etl)
+        """
+        from .exception import LogException
+        from .logger import log_etl
 
-    return data
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            log_etl.info("Seeder: Read json data from file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+
+        return data
+
+    @staticmethod
+    def save(data: Dict[str, Any] | List[Dict[str, Any]], path: str):
+        """Method to save json data
+
+        Arguments:
+            data (Dict[str, Any] | List[Dict[str, Any]]): Data to save
+            path (str): Path to .json file
+        """
+        from .exception import LogException
+        from .logger import log_etl
+
+        try:
+            dir_path = os.path.dirname(path)
+            os.makedirs(dir_path, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            log_etl.info("Successfully saved JSON data to file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
+
+
+class dataframe_func:
+    @staticmethod
+    def read(path: str) -> pd.DataFrame:
+        """Method to read dataframe
+
+        Args:
+            path (str): Path to dataframe .pkl file
+
+        Returns:
+            data (pd.DataFrame): Data as a dataframe
+        """
+        from .exception import LogException
+        from .logger import log_etl
+
+        try:
+            data = pd.read_pickle(path)
+            log_etl.info("Successfully read DataFrame from file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
+
+        return data
+
+    @staticmethod
+    def save(data: pd.DataFrame, path: str):
+        """Method to save dataframe
+
+        Args:
+            data (pd.DataFrame): Data to save
+            path (str): Path to save .pkl file
+        """
+        from .exception import LogException
+        from .logger import log_etl
+
+        try:
+            dir_path = os.path.dirname(path)
+            os.makedirs(dir_path, exist_ok=True)
+            data.to_pickle(path=path)
+            log_etl.info("Successfully saved DataFrame to file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
+
+
+class cypher_func:
+    @staticmethod
+    def read(path: str, chunk: bool = False) -> str | List[str]:
+        """Method to read cypher code
+
+        Arguments:
+            path (str): Path to cypher .cyp file
+
+        Returns:
+            data (str | List[str]): Cypher code as a string or list of string
+        """
+        from .exception import LogException
+        from .logger import log_etl
+
+        try:
+            with open(path, mode="rt", encoding="utf-8", newline="\r\n") as f:
+                data = f.read()
+            data = (
+                [part.strip() for part in data.split("\n\n") if part.strip()]
+                if chunk
+                else data
+            )
+            log_etl.info("Successfully read cypher code from file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
+
+        return data
+
+
+class prompt_func:
+    @staticmethod
+    def read(path: str, chunk: bool = False) -> str | List[str]:
+        """Method to read prompt data
+
+        Args:
+            path (str): Path to prompt .txt file
+
+        Returns:
+            data (str | List[str]): Prompt text as a string or list of string
+        """
+        from .exception import LogException
+        from .logger import log_etl
+
+        try:
+            with open(path, mode="rt", encoding="utf-8", newline="\r\n") as f:
+                data = f.read()
+            data = (
+                [part.strip() for part in data.split("\n\n") if part.strip()]
+                if chunk
+                else data
+            )
+            log_etl.info("Successfully read prompt text from file")
+
+        except Exception as e:
+            LogException(e, logger=log_etl)
+            # raise CustomException(e)
+
+        return data
 
 
 COLLECTION_SCHEMA = {
@@ -97,7 +249,15 @@ def _transform_data(
     data: Dict[str, Dict[str, Any]] | List[Dict[str, Dict[str, Any]]],
     collection: str,
 ) -> List[Dict[str, Any]]:
-    """Method to transform data into MongoDB upsertable form"""
+    """Method to transform data into MongoDB upsertable form
+
+    Arguments:
+        data (Dict[str, Dict[str, Any]] | List[Dict[str, Dict[str, Any]]]): Input data t0 transform
+        collection (str): database collection name
+
+    Returns:
+        data (List[Dict[str, Any]]): Transformed data ready for mongodb upsertion
+    """
     from .exception import LogException
     from .logger import log_etl
 
@@ -262,6 +422,55 @@ def pull_from_mongodb(
         LogException(e, logger=log_etl)
 
     return pull_data
+
+
+def fetch_batches(
+    batch_size: int = 1024,
+    limit: int = 0,
+    prefix: str = "Loader",
+) -> Iterator[List[Dict[str, Any]]]:
+    """Method to synchronously get scraped data in batches
+
+    Arguments:
+        batch_size (int): Number of rows to get per batch
+        limit (int): Total number of rows to retrieve
+        prefix (int): Logger prefix string
+
+    """
+    from .exception import LogException
+    from .logger import log_etl
+
+    try:
+        database = md_cnf.swiggy.database
+        collection = md_cnf.swiggy.coll_scrp_data
+
+        log_etl.info(f"{prefix}: Communicating with MongoDB: '{database}/{collection}'")
+        with MongoClient(md_cnf.conn_uri) as mgcl:
+            colls = mgcl[database][collection]
+            # here batch_size can be diff from what function param specifies
+            cursor = colls.find({}, {"_id": 0}, batch_size=batch_size).limit(limit)
+
+            batch = []
+            for doc in cursor:
+                if "rstn_data" not in doc.keys():
+                    continue
+
+                batch.append(doc["rstn_data"])
+
+                if len(batch) == batch_size:
+                    log_etl.info(f"{prefix}: Sending {len(batch):,} rows of data")
+                    yield batch
+                    batch = []
+
+            if batch:
+                log_etl.info(f"{prefix}: Sending final {len(batch):,} rows of data")
+                yield batch
+
+            mgcl.close()
+
+    except Exception as e:
+        LogException(e, logger=log_etl)
+        # raise CustomException(e)
 
 
 REDISDB_SCHEMA = {

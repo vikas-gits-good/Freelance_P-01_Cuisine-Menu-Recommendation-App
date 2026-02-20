@@ -1,3 +1,4 @@
+import asyncio
 import os
 from multiprocessing import Process
 from signal import SIGKILL
@@ -5,9 +6,10 @@ from threading import Thread
 from typing import Literal, Optional
 from uuid import uuid4
 
-from falkordb import FalkorDB
-from pymongo import MongoClient
-from redis import Redis
+from falkordb.asyncio import FalkorDB as AsyncFalkorDB
+from fastapi import HTTPException
+from pymongo import AsyncMongoClient
+from redis.asyncio import Redis as AsyncRedis
 
 from Src.Config import FalkorDBConfig, MongoDBConfig, RedisDBConfig
 from Src.Constants import APIStatus, StatusMessage, TaskStatus, TaskType
@@ -78,7 +80,8 @@ class AplcOps:
 
             # Set process group AFTER start, from parent
             try:
-                os.setpgid(process.pid, process.pid)
+                os.setpgid(process.pid, process.pid)  # type: ignore[misc]
+
             except (ProcessLookupError, PermissionError):
                 pass  # Process may have already exited
 
@@ -174,12 +177,16 @@ class UtilOps:
     def run(self, **kwargs):
         try:
             func = {
-                "health": self._health_check,
+                "health": self._health_check,  # async tool
                 "status": self._status_check,
                 "kill": self._kill_switch,
             }.get(self.tool, self._health_check)
 
-            status = func(**kwargs)
+            # Handle async tools
+            if asyncio.iscoroutinefunction(func):
+                status = asyncio.run(func(**kwargs))
+            else:
+                status = func(**kwargs)
 
         except Exception as e:
             LogException(e, logger=log_etl)
@@ -187,41 +194,63 @@ class UtilOps:
 
         return status
 
-    def _health_check(self):  # dont log here cuz it checks health frequently
+    async def _health_check(self):
+        """Async health check - pings all databases in parallel for faster response."""
         status = {"status": "ok", "mongo": "ok", "redis": "ok", "falkor": "ok"}
-        try:
-            mg_cnf = MongoDBConfig()
-            with MongoClient(mg_cnf.conn_uri, serverSelectionTimeoutMS=5000) as client:
-                client.admin.command("ping")
 
-        except Exception as e:
-            log_etl.info("ETL_API: Status: FAIL")
-            LogException(e, logger=log_etl)
-            status["mongo"] = "unreachable"
-            status["status"] = "degraded"
+        async def check_mongo():
+            try:
+                mg_cnf = MongoDBConfig()
+                client = AsyncMongoClient(
+                    mg_cnf.conn_uri,
+                    serverSelectionTimeoutMS=5000,
+                )
+                await client.admin.command("ping")
+                await client.close()
 
-        try:
-            rd_cnf = RedisDBConfig()
-            with Redis(**rd_cnf.redis_dict_main, socket_timeout=5) as client:
-                client.ping()
+            except Exception as e:
+                log_etl.info("ETL_API: Health check FAIL (MongoDB)")
+                LogException(e, logger=log_etl)
+                status["mongo"] = "unreachable"
+                status["status"] = "degraded"
 
-        except Exception as e:
-            log_etl.info("ETL_API: Status: FAIL")
-            LogException(e, logger=log_etl)
-            status["redis"] = "unreachable"
-            status["status"] = "degraded"
+        async def check_redis():
+            try:
+                rd_cnf = RedisDBConfig()
+                client = AsyncRedis(
+                    **rd_cnf.redis_dict_main,
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                )
+                await client.ping()  # type: ignore[misc]
+                await client.aclose()
 
-        try:
-            fd_cnf = FalkorDBConfig()
-            fdb = FalkorDB(**fd_cnf.conn_dict, socket_timeout=5)
-            graph = fdb.select_graph(fd_cnf.fdb_kg)
-            graph.query("RETURN 1")
+            except Exception as e:
+                log_etl.info("ETL_API: Health check FAIL (Redis)")
+                LogException(e, logger=log_etl)
+                status["redis"] = "unreachable"
+                status["status"] = "degraded"
 
-        except Exception as e:
-            log_etl.info("ETL_API: Status: FAIL")
-            LogException(e, logger=log_etl)
-            status["falkor"] = "unreachable"
-            status["status"] = "degraded"
+        async def check_falkor():
+            try:
+                fd_cnf = FalkorDBConfig()
+                fdb = AsyncFalkorDB(**fd_cnf.conn_dict, socket_timeout=5)
+                graph = fdb.select_graph(fd_cnf.fdb_kg)
+                await graph.query("RETURN 1")
+
+            except Exception as e:
+                log_etl.info("ETL_API: Health check FAIL (FalkorDB)")
+                LogException(e, logger=log_etl)
+                status["falkor"] = "unreachable"
+                status["status"] = "degraded"
+
+        # Run all health checks in parallel
+        await asyncio.gather(
+            check_mongo(),
+            check_redis(),
+            check_falkor(),
+            return_exceptions=True,  # Continue even if one fails
+        )
 
         return status
 
@@ -232,7 +261,7 @@ class UtilOps:
                 status=entry.status,
                 task=task,
                 task_id=task_id,
-                message="all ok",
+                message=entry.message,
             )
 
             if entry.task_id != task_id:
@@ -284,7 +313,7 @@ class UtilOps:
                 # Force kill if still alive
                 if entry.process.is_alive():
                     log_etl.info(f"ETL_API: Sending SIGKILL to kill task '{task_id}'")
-                    os.killpg(os.getpgid(entry.process.pid), SIGKILL)
+                    os.killpg(os.getpgid(entry.process.pid), SIGKILL)  # type: ignore[misc]
 
                 entry.status = TaskStatus.KILLED
                 entry.process = None
@@ -298,3 +327,69 @@ class UtilOps:
             _status.message = f"Unknown error: {str(e)}"
 
         return _status.model_dump()
+
+
+# ============================================================================
+# FastAPI Endpoint Helpers
+# ============================================================================
+
+
+def execute_task(task_type: TaskType, tasks: dict[TaskType, APIStatus]):
+    """Helper function to execute ETL tasks with FastAPI error handling.
+
+    Args:
+        task_type: The type of task to execute (SEED, SCRP, LOAD)
+        tasks: Dictionary mapping task types to their status
+
+    Returns:
+        Task execution status
+
+    Raises:
+        HTTPException: If task execution fails
+    """
+    try:
+        log_etl.info(f"ETL_API: Starting task: {task_type.value}")
+        aplc = AplcOps(tasks[task_type], task_type)
+        result = aplc.run()
+        log_etl.info(f"ETL_API: Task {task_type.value} executed successfully")
+
+    except Exception as e:
+        log_etl.error(f"Task {task_type.value} failed: {str(e)}", exc_info=True)
+        LogException(e, logger=log_etl)
+
+        raise HTTPException(status_code=500, detail=f"Task execution failed: {str(e)}")
+
+    return result
+
+
+def execute_util(
+    tool: Literal["health", "status", "kill"],
+    tasks: dict[TaskType, APIStatus],
+    **kwargs,
+):
+    """Helper function to execute utility operations with FastAPI error handling.
+
+    Args:
+        tool: The utility tool to execute (health, status, kill)
+        tasks: Dictionary mapping task types to their status
+        **kwargs: Additional arguments to pass to the utility operation
+
+    Returns:
+        Utility operation result
+
+    Raises:
+        HTTPException: If utility operation fails
+    """
+    try:
+        log_etl.info(f"ETL_API: Executing utility: {tool}")
+        util = UtilOps(tool=tool, tasks=tasks if tool in ["status", "kill"] else None)
+        result = util.run(**kwargs)
+        log_etl.info(f"ETL_API: Utility {tool} executed successfully")
+
+    except Exception as e:
+        log_etl.error(f"ETL_API: Utility {tool} failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"{tool.capitalize()} operation failed: {str(e)}"
+        )
+
+    return result

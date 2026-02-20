@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from Src.Components import AplcOps, UtilOps
+from Src.Components import execute_task, execute_util
 from Src.Constants import APIStatus, TaskType
 from Src.Utils import log_etl
 
@@ -25,38 +25,29 @@ tasks: dict[TaskType, APIStatus] = {
 
 @app.post("/seed")
 def seeder():
-    purpose = TaskType.SEED
-    aplc = AplcOps(tasks[purpose], purpose)
-    return aplc.run()
+    return execute_task(TaskType.SEED, tasks)
 
 
 @app.post("/scrape")
 def scraper():
-    purpose = TaskType.SCRP
-    aplc = AplcOps(tasks[purpose], purpose)
-    return aplc.run()
+    return execute_task(TaskType.SCRP, tasks)
 
 
 @app.post("/load")
 def loader():
-    purpose = TaskType.LOAD
-    aplc = AplcOps(tasks[purpose], purpose)
-    return aplc.run()
+    return execute_task(TaskType.LOAD, tasks)
 
 
 @app.get("/health")
 def health():
-    util = UtilOps(tool="health")
-    return util.run()  # No kwargs here
+    return execute_util("health", tasks)
 
 
 @app.get("/status")
 def status(task: TaskType, task_id: str):
-    util = UtilOps(tool="status", tasks=tasks)
-    return util.run(task=task, task_id=task_id)
+    return execute_util("status", tasks, task=task, task_id=task_id)
 
 
 @app.get("/kill")
 def kill(task: TaskType, task_id: str):
-    util = UtilOps(tool="kill", tasks=tasks)
-    return util.run(task=task, task_id=task_id)
+    return execute_util("kill", tasks, task=task, task_id=task_id)
