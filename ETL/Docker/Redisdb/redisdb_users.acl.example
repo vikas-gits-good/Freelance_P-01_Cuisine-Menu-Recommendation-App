@@ -1,0 +1,2 @@
+user __username__ on >__password__ ~* &* +@all
+user default off

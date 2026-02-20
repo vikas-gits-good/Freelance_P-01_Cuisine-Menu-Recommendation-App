@@ -1,0 +1,21 @@
+meta {
+  name: /kill
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://127.0.0.1:8001/kill?task&task_id
+  body: none
+  auth: inherit
+}
+
+params:query {
+  task: 
+  task_id: 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

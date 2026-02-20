@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "name": "Rstn_ETL_Bruno",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.00102996826171875,
+  "filesCount": 6,
+  "presets": {
+    "requestType": "http",
+    "requestUrl": "http://127.0.0.1:8001/"
+  }
+}

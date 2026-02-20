@@ -1,0 +1,18 @@
+# Database
+redis
+pymongo
+falkordb
+
+# API
+fastapi
+uvicorn
+
+# Scrape
+httpx
+crawl4ai
+
+# Test
+pytest
+
+# Secrets
+python-dotenv
