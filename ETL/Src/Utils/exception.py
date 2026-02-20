@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from .utils import util_func
+from ._utils import util_func
 
 TZ = util_func.get_timezone()
 logging.Formatter.converter = lambda *args: datetime.now(TZ).timetuple()

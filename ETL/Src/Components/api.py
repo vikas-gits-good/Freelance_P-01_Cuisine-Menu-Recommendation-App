@@ -149,7 +149,8 @@ class AplcOps:
         try:
             # os.setpgrp()  # Setting a group so you can kill later by PID
             log_etl.info(f"ETL_API: Preparing ETL loader for task '{task_id}'")
-            lodr = ETL_Loader()
+            purpose = os.getenv("LOADER_PURPOSE", "prod")
+            lodr = ETL_Loader(purpose)  # type:ignore
 
             log_etl.info("ETL_API: Running ETL loader")
             lodr.run()

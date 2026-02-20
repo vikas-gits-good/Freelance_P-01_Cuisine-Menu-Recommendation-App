@@ -40,22 +40,15 @@ class Transformer:
                     idx_key=idx_key,
                     prefix="Loader",
                 )
+                if idx_key.value == "uniq_city":
+                    self.city_data = _data
+
                 for val in _data.values():
                     self.lctn_files[lctn].append(val)
 
             except Exception as e:
                 LogException(e, logger=log_etl)
                 continue
-
-        # path_list = LocationConstants.LOCATION_DATA_FILE_PATHS
-        # for path in path_list:
-        #     # "unq_ids_city.json" -> "City"
-        #     key = path.split("/")[-1][:-5].split("_")[-1].capitalize()
-        #     if key == "City":
-        #         self.city_data = read_json(path)
-
-        #     for data in read_json(path).values():
-        #         self.lctn_files[key].append(data)
 
     def get_data(
         self,
@@ -65,7 +58,7 @@ class Transformer:
         """Method to get transformed data for node and link creation.
 
         Args:
-            purpose (Literal[&quot;create&quot;, &quot;upsert&quot;]):
+            purpose (Literal["create", "upsert"]):
                 * Select `create` to get data to create a new `Graph` from scratch.
                 * Select `upsert` to get data to upsert data into existing `Graph`.
                 * Defaults to `"create"`.
@@ -92,7 +85,7 @@ class Transformer:
         node_data = {}
         rlsp_data = {}
         try:
-            log_etl.info("Load: Appending node data")
+            log_etl.info("Loader: Appending node data")
             node_data = {
                 NodeLabels.COUNTRY: [],
                 NodeLabels.STATE: [],
@@ -159,7 +152,8 @@ class Transformer:
                 NodeLabels.RESTAURANT: [],
                 NodeLabels.MENU: [],
                 NodeLabels.MAINCUISINE: [],
-                # NodeLabels.SUBCUISINE: [],  # include in production
+                # NodeLabels.SUBCUISINE: [],
+                # include in production
             }
             rlsp_data = {
                 RelationshipLabels.HAS_AREA: [],

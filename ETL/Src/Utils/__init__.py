@@ -1,3 +1,4 @@
+from ._utils import util_func
 from .exception import CustomException, LogException
 from .logger import log_etl
 from .utils import (
@@ -12,7 +13,6 @@ from .utils import (
     put_urls_to_redis,
     upsert_to_mongodb,
     upsert_to_redisdb,
-    util_func,
 )
 
 __all__ = [
