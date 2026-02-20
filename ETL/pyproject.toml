@@ -9,6 +9,7 @@ dependencies = [
     "falkordb",
     "fastapi",
     "httpx",
+    "pandas>=3.0.1",
     "pymongo",
     "pytest",
     "python-dotenv",

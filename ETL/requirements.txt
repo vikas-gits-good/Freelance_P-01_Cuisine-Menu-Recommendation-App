@@ -11,6 +11,9 @@ uvicorn
 httpx
 crawl4ai
 
+# Utils
+pandas
+
 # Test
 pytest
 
