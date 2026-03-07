@@ -1,0 +1,650 @@
+{
+    "Maharashtra": {
+        "ids": "relation:1950884",
+        "country": "India",
+        "params": {
+            "name": "Maharashtra",
+            "iso_code": "IN-MH",
+            "coords": [
+                19.5670323,
+                76.4164557
+            ],
+            "boundingbox": [
+                15.6063596,
+                22.0302694,
+                72.6526112,
+                80.8977842
+            ]
+        }
+    },
+    "Tamil Nadu": {
+        "ids": "relation:96905",
+        "country": "India",
+        "params": {
+            "name": "Tamil Nadu",
+            "iso_code": "IN-TN",
+            "coords": [
+                11.3323723,
+                78.6098639
+            ],
+            "boundingbox": [
+                8.0768938,
+                13.5639111,
+                76.2329467,
+                80.3592991
+            ]
+        }
+    },
+    "Uttar Pradesh": {
+        "ids": "relation:1942587",
+        "country": "India",
+        "params": {
+            "name": "Uttar Pradesh",
+            "iso_code": "IN-UP",
+            "coords": [
+                27.1303344,
+                80.859666
+            ],
+            "boundingbox": [
+                23.8706272,
+                30.4063828,
+                77.0838761,
+                84.6345091
+            ]
+        }
+    },
+    "Karnataka": {
+        "ids": "relation:2019939",
+        "country": "India",
+        "params": {
+            "name": "Karnataka",
+            "iso_code": "IN-KA",
+            "coords": [
+                14.9562045,
+                75.7896741
+            ],
+            "boundingbox": [
+                11.5945587,
+                18.4766494,
+                74.0543908,
+                78.5875761
+            ]
+        }
+    },
+    "Gujarat": {
+        "ids": "relation:1949080",
+        "country": "India",
+        "params": {
+            "name": "Gujarat",
+            "iso_code": "IN-GJ",
+            "coords": [
+                22.3850051,
+                71.745261
+            ],
+            "boundingbox": [
+                20.1195321,
+                24.7118932,
+                68.1756585,
+                74.4764325
+            ]
+        }
+    },
+    "West Bengal": {
+        "ids": "relation:1960177",
+        "country": "India",
+        "params": {
+            "name": "West Bengal",
+            "iso_code": "IN-WB",
+            "coords": [
+                22.9964948,
+                87.6855882
+            ],
+            "boundingbox": [
+                21.5473014,
+                27.2210674,
+                85.8196735,
+                89.8826022
+            ]
+        }
+    },
+    "Rajasthan": {
+        "ids": "relation:1942920",
+        "country": "India",
+        "params": {
+            "name": "Rajasthan",
+            "iso_code": "IN-RJ",
+            "coords": [
+                26.8105777,
+                73.7684549
+            ],
+            "boundingbox": [
+                23.0586612,
+                30.198253,
+                69.4844368,
+                78.2720089
+            ]
+        }
+    },
+    "Telangana": {
+        "ids": "relation:3250963",
+        "country": "India",
+        "params": {
+            "name": "Telangana",
+            "iso_code": "IN-TS",
+            "coords": [
+                17.8495919,
+                79.1151663
+            ],
+            "boundingbox": [
+                15.8364246,
+                19.9172962,
+                77.236585,
+                81.3226246
+            ]
+        }
+    },
+    "Andhra Pradesh": {
+        "ids": "relation:2022095",
+        "country": "India",
+        "params": {
+            "name": "Andhra Pradesh",
+            "iso_code": "IN-AP",
+            "coords": [
+                15.9240905,
+                80.1863809
+            ],
+            "boundingbox": [
+                12.6238599,
+                19.166806,
+                76.7600837,
+                84.7658033
+            ]
+        }
+    },
+    "Madhya Pradesh": {
+        "ids": "relation:1950071",
+        "country": "India",
+        "params": {
+            "name": "Madhya Pradesh",
+            "iso_code": "IN-MP",
+            "coords": [
+                23.8143419,
+                77.5340719
+            ],
+            "boundingbox": [
+                21.0706885,
+                26.8695616,
+                74.029382,
+                82.8126116
+            ]
+        }
+    },
+    "Kerala": {
+        "ids": "relation:2018151",
+        "country": "India",
+        "params": {
+            "name": "Kerala",
+            "iso_code": "IN-KL",
+            "coords": [
+                10.3528744,
+                76.5120396
+            ],
+            "boundingbox": [
+                8.2935318,
+                12.7960559,
+                74.8640682,
+                77.4123612
+            ]
+        }
+    },
+    "Delhi": {
+        "ids": "relation:2763541",
+        "country": "India",
+        "params": {
+            "name": "Delhi",
+            "iso_code": "IN-DL",
+            "coords": [
+                28.6138954,
+                77.2090057
+            ],
+            "boundingbox": [
+                28.4812209,
+                28.6456842,
+                77.0503708,
+                77.2551392
+            ]
+        }
+    },
+    "Haryana": {
+        "ids": "relation:1942601",
+        "country": "India",
+        "params": {
+            "name": "Haryana",
+            "iso_code": "IN-HR",
+            "coords": [
+                29.0,
+                76.0
+            ],
+            "boundingbox": [
+                27.6526273,
+                30.9287706,
+                74.4735074,
+                77.6021432
+            ]
+        }
+    },
+    "Odisha": {
+        "ids": "relation:1984022",
+        "country": "India",
+        "params": {
+            "name": "Odisha",
+            "iso_code": "IN-OD",
+            "coords": [
+                20.5431241,
+                84.6897321
+            ],
+            "boundingbox": [
+                17.8122733,
+                22.5675932,
+                81.3885855,
+                87.4861351
+            ]
+        }
+    },
+    "Bihar": {
+        "ids": "relation:1958982",
+        "country": "India",
+        "params": {
+            "name": "Bihar",
+            "iso_code": "IN-BR",
+            "coords": [
+                25.6440845,
+                85.906508
+            ],
+            "boundingbox": [
+                24.2857164,
+                27.521635,
+                83.3212566,
+                88.2937958
+            ]
+        }
+    },
+    "Punjab": {
+        "ids": "relation:1942686",
+        "country": "India",
+        "params": {
+            "name": "Punjab",
+            "iso_code": "IN-PB",
+            "coords": [
+                30.9293211,
+                75.5004841
+            ],
+            "boundingbox": [
+                29.5429378,
+                32.5111793,
+                73.8798336,
+                76.9390583
+            ]
+        }
+    },
+    "Assam": {
+        "ids": "relation:2025886",
+        "country": "India",
+        "params": {
+            "name": "Assam",
+            "iso_code": "IN-AS",
+            "coords": [
+                26.4073841,
+                93.2551303
+            ],
+            "boundingbox": [
+                24.136033,
+                27.9712428,
+                89.6986005,
+                96.0124397
+            ]
+        }
+    },
+    "Chhattisgarh": {
+        "ids": "relation:1972004",
+        "country": "India",
+        "params": {
+            "name": "Chhattisgarh",
+            "iso_code": "IN-CG",
+            "coords": [
+                21.6637359,
+                81.8406351
+            ],
+            "boundingbox": [
+                17.7822157,
+                24.1066864,
+                80.2441803,
+                84.3959641
+            ]
+        }
+    },
+    "Jharkhand": {
+        "ids": "relation:1960191",
+        "country": "India",
+        "params": {
+            "name": "Jharkhand",
+            "iso_code": "IN-JH",
+            "coords": [
+                23.4559809,
+                85.2557301
+            ],
+            "boundingbox": [
+                21.9700317,
+                25.3489225,
+                83.3281137,
+                87.9628253
+            ]
+        }
+    },
+    "Uttarakhand": {
+        "ids": "relation:9987086",
+        "country": "India",
+        "params": {
+            "name": "Uttarakhand",
+            "iso_code": "IN-UK",
+            "coords": [
+                30.0417376,
+                79.089691
+            ],
+            "boundingbox": [
+                28.7243243,
+                31.459016,
+                77.57133,
+                81.044789
+            ]
+        }
+    },
+    "Jammu and Kashmir": {
+        "ids": "relation:1943188",
+        "country": "India",
+        "params": {
+            "name": "Jammu and Kashmir",
+            "iso_code": "IN-JK",
+            "coords": [
+                33.6649297,
+                75.1629584
+            ],
+            "boundingbox": [
+                32.2763569,
+                34.7871414,
+                73.7500338,
+                76.7803165
+            ]
+        }
+    },
+    "Himachal Pradesh": {
+        "ids": "relation:364186",
+        "country": "India",
+        "params": {
+            "name": "Himachal Pradesh",
+            "iso_code": "IN-HP",
+            "coords": [
+                31.9292352,
+                77.1828462
+            ],
+            "boundingbox": [
+                30.3771701,
+                33.2556686,
+                75.5940055,
+                79.0123843
+            ]
+        }
+    },
+    "Goa": {
+        "ids": "relation:11251493",
+        "country": "India",
+        "params": {
+            "name": "Goa",
+            "iso_code": "IN-GA",
+            "coords": [
+                15.3004543,
+                74.0855134
+            ],
+            "boundingbox": [
+                14.7529315,
+                15.8007631,
+                73.6756012,
+                74.3361139
+            ]
+        }
+    },
+    "Tripura": {
+        "ids": "relation:2026458",
+        "country": "India",
+        "params": {
+            "name": "Tripura",
+            "iso_code": "IN-TR",
+            "coords": [
+                23.7750823,
+                91.7025091
+            ],
+            "boundingbox": [
+                22.9376106,
+                24.530878,
+                91.1508098,
+                92.33585
+            ]
+        }
+    },
+    "Chandigarh": {
+        "ids": "node:342117043",
+        "country": "India",
+        "params": {
+            "name": "Chandigarh",
+            "iso_code": "IN-CH",
+            "coords": [
+                30.7334421,
+                76.7797143
+            ],
+            "boundingbox": [
+                30.5734421,
+                30.8934421,
+                76.6197143,
+                76.9397143
+            ]
+        }
+    },
+    "Meghalaya": {
+        "ids": "relation:2027521",
+        "country": "India",
+        "params": {
+            "name": "Meghalaya",
+            "iso_code": "IN-ML",
+            "coords": [
+                25.5379432,
+                91.2999102
+            ],
+            "boundingbox": [
+                25.0306475,
+                26.1181651,
+                89.814444,
+                92.8027367
+            ]
+        }
+    },
+    "Puducherry": {
+        "ids": "relation:107001",
+        "country": "India",
+        "params": {
+            "name": "Puducherry",
+            "iso_code": "IN-PY",
+            "coords": [
+                10.9156489,
+                79.8069488
+            ],
+            "boundingbox": [
+                10.827721,
+                16.7617112,
+                75.5265863,
+                82.3137136
+            ]
+        }
+    },
+    "Sikkim": {
+        "ids": "relation:1791324",
+        "country": "India",
+        "params": {
+            "name": "Sikkim",
+            "iso_code": "IN-SK",
+            "coords": [
+                27.6016108,
+                88.4550204
+            ],
+            "boundingbox": [
+                27.0792596,
+                28.1240465,
+                88.0120333,
+                88.9211683
+            ]
+        }
+    },
+    "Manipur": {
+        "ids": "relation:2027869",
+        "country": "India",
+        "params": {
+            "name": "Manipur",
+            "iso_code": "IN-MN",
+            "coords": [
+                24.7208818,
+                93.9229386
+            ],
+            "boundingbox": [
+                23.8336205,
+                25.6921015,
+                92.9707074,
+                94.745244
+            ]
+        }
+    },
+    "Nagaland": {
+        "ids": "relation:2027973",
+        "country": "India",
+        "params": {
+            "name": "Nagaland",
+            "iso_code": "IN-NL",
+            "coords": [
+                26.1630556,
+                94.5884911
+            ],
+            "boundingbox": [
+                25.1984274,
+                27.035801,
+                93.3267005,
+                95.2423775
+            ]
+        }
+    },
+    "Arunachal Pradesh": {
+        "ids": "relation:2027346",
+        "country": "India",
+        "params": {
+            "name": "Arunachal Pradesh",
+            "iso_code": "IN-AR",
+            "coords": [
+                28.0937702,
+                94.5921326
+            ],
+            "boundingbox": [
+                26.650863,
+                29.3745566,
+                91.5623082,
+                97.3950905
+            ]
+        }
+    },
+    "Mizoram": {
+        "ids": "relation:2029046",
+        "country": "India",
+        "params": {
+            "name": "Mizoram",
+            "iso_code": "IN-MZ",
+            "coords": [
+                23.2146169,
+                92.8687612
+            ],
+            "boundingbox": [
+                21.9400528,
+                24.5231304,
+                92.2602224,
+                93.4373696
+            ]
+        }
+    },
+    "Andaman and Nicobar Islands": {
+        "ids": "relation:2025855",
+        "country": "India",
+        "params": {
+            "name": "Andaman and Nicobar Islands",
+            "iso_code": "IN-AN",
+            "coords": [
+                12.6112387,
+                92.8316541
+            ],
+            "boundingbox": [
+                6.7562674,
+                13.6753133,
+                92.2042072,
+                94.2773214
+            ]
+        }
+    },
+    "Dadra and Nagar Haveli and Daman and Diu": {
+        "ids": "relation:1952530",
+        "country": "India",
+        "params": {
+            "name": "Dadra and Nagar Haveli and Daman and Diu",
+            "iso_code": "IN-DH",
+            "coords": [
+                20.718175,
+                70.9323834
+            ],
+            "boundingbox": [
+                20.0473907,
+                20.7677936,
+                70.8734588,
+                73.2178258
+            ]
+        }
+    },
+    "Lakshadweep": {
+        "ids": "relation:2027460",
+        "country": "India",
+        "params": {
+            "name": "Lakshadweep",
+            "iso_code": "IN-LD",
+            "coords": [
+                10.3337313,
+                72.9205386
+            ],
+            "boundingbox": [
+                8.0648198,
+                12.6010064,
+                71.5180377,
+                73.9061436
+            ]
+        }
+    },
+    "Ladakh": {
+        "ids": "relation:5515045",
+        "country": "India",
+        "params": {
+            "name": "Ladakh",
+            "iso_code": "IN-LA",
+            "coords": [
+                33.9456407,
+                77.6568576
+            ],
+            "boundingbox": [
+                32.33574,
+                35.6745457,
+                75.3269726,
+                79.460728
+            ]
+        }
+    }
+}

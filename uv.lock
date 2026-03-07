@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "freelance-p-01-cuisine-menu-recommendation-app",
+    "frontend",
+]
+
 [[package]]
 name = "a2wsgi"
 version = "1.10.10"
@@ -1099,6 +1105,17 @@ requires-dist = [
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "torch", url = "https://download.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl" },
 ]
+
+[[package]]
+name = "frontend"
+version = "0.1.0"
+source = { virtual = "Frontend" }
+dependencies = [
+    { name = "reflex" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex", specifier = ">=0.8.26" }]
 
 [[package]]
 name = "frozenlist"

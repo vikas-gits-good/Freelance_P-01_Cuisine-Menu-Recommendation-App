@@ -34,7 +34,7 @@ def scraper():
 
 
 @app.post("/load")
-def loader():
+def loader():  # loads full dataset. fix it
     return execute_task(TaskType.LOAD, tasks)
 
 

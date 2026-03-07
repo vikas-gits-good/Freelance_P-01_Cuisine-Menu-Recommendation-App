@@ -1,6 +1,6 @@
 services: # configure secrets from .env for local
   rstn-misr-etl-codebase:
-    image: rstn-misr-etl-codebase:0.1.0
+    image: rstn-misr-etl-codebase:v0.1.0-trixie
     container_name: rstn-misr-etl-codebase
     ports:
       - "127.0.0.1:8001:8001"
@@ -37,7 +37,7 @@ services: # configure secrets from .env for local
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 5s
+      start_period: 1s
 
 networks:
   shared_net:

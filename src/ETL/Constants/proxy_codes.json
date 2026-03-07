@@ -1,0 +1,224 @@
+{
+    "name": "India",
+    "code": "IN",
+    "states": [
+        {
+            "name": "Haryana",
+            "code": "HR",
+            "cities": ["rohtak", "yamunanagar", "kaithal", "hisar"],
+            "coords": [
+                {"rohtak": [28.9010899, 76.5801935]},
+                {"yamunanagar": [30.1231349, 77.286329]},
+                {"kaithal": [29.7996588, 76.3989903]},
+                {"hisar": [29.2396596, 75.8174505]}
+            ]
+        },
+        {
+            "name": "Maharashtra",
+            "code": "MH",
+            "cities": ["wardha", "pune", "nagpur", "mumbai", "nashik"],
+            "coords": [
+                {"wardha": [20.8256232, 78.6131455]},
+                {"pune": [18.5213738, 73.8545071]},
+                {"nagpur": [21.1498134, 79.0820556]},
+                {"mumbai": [19.054999, 72.8692035]},
+                {"nashik": [20.0112475, 73.7902364]}
+            ]
+        },
+        {
+            "name": "Goa",
+            "code": "GA",
+            "cities": ["mormugao"],
+            "coords": [{"mormugao": [15.4102428, 73.7936048]}]
+        },
+        {
+            "name": "Puducherry",
+            "code": "PY",
+            "cities": ["puducherry"],
+            "coords": [{"puducherry": [11.9340568, 79.8306447]}]
+        },
+        {
+            "name": "Telangana",
+            "code": "TG",
+            "cities": ["hyderabad"],
+            "coords": [{"hyderabad": [17.360589, 78.4740613]}]
+        },
+        {
+            "name": "Odisha",
+            "code": "OR",
+            "cities": ["bhubaneswar", "cuttack"],
+            "coords": [
+                {"bhubaneswar": [20.2602964, 85.8394521]},
+                {"cuttack": [20.4686, 85.8792]}
+            ]
+        },
+        {
+            "name": "Rajasthan",
+            "code": "RJ",
+            "cities": ["jodhpur", "jaipur", "kota"],
+            "coords": [
+                {"jodhpur": [26.2967719, 73.0351433]},
+                {"jaipur": [26.9154576, 75.8189817]},
+                {"kota": [25.1737019, 75.8574194]}
+            ]
+        },
+        {
+            "name": "Punjab",
+            "code": "PB",
+            "cities": [
+                "ludhiana",
+                "phagwara",
+                "jalandhar",
+                "amritsar",
+                "kharar",
+                "patiala"
+            ],
+            "coords": [
+                {"ludhiana": [30.9090157, 75.851601]},
+                {"phagwara": [31.2206734, 75.7696463]},
+                {"jalandhar": [31.2922312, 75.5678878]},
+                {"amritsar": [31.6356659, 74.8787496]},
+                {"kharar": [30.7488437, 76.6428994]},
+                {"patiala": [30.2092778, 76.3397231]}
+            ]
+        },
+        {
+            "name": "Andhra Pradesh",
+            "code": "AP",
+            "cities": ["nellore", "vijayawada", "visakhapatnam"],
+            "coords": [
+                {"nellore": [14.4493717, 79.9873763]},
+                {"vijayawada": [16.5115306, 80.6160469]},
+                {"visakhapatnam": [17.6935526, 83.2921297]}
+            ]
+        },
+        {
+            "name": "Himachal Pradesh",
+            "code": "HP",
+            "cities": ["shimla"],
+            "coords": [{"shimla": [31.1041526, 77.1709729]}]
+        },
+        {
+            "name": "Delhi",
+            "code": "DL",
+            "cities": ["new_delhi", "delhi"],
+            "coords": [
+                {"new_delhi": [28.6138954, 77.2090057]},
+                {"delhi": [28.6138954, 77.2090057]}
+            ]
+        },
+        {
+            "name": "Uttar Pradesh",
+            "code": "UP",
+            "cities": ["agra", "varanasi", "kanpur", "lucknow"],
+            "coords": [
+                {"agra": [27.1752554, 78.0098161]},
+                {"varanasi": [25.3356491, 83.0076292]},
+                {"kanpur": [26.4609135, 80.3217588]},
+                {"lucknow": [26.8381, 80.9346001]}
+            ]
+        },
+        {
+            "name": "Jharkhand",
+            "code": "JH",
+            "cities": ["ranchi", "jamshedpur"],
+            "coords": [
+                {"ranchi": [23.3700501, 85.3250387]},
+                {"jamshedpur": [22.8015194, 86.2029579]}
+            ]
+        },
+        {
+            "name": "Karnataka",
+            "code": "KA",
+            "cities": ["bengaluru"],
+            "coords": [{"bengaluru": [12.9767936, 77.590082]}]
+        },
+        {
+            "name": "Assam",
+            "code": "AS",
+            "cities": ["guwahati"],
+            "coords": [{"guwahati": [26.1805978, 91.753943]}]
+        },
+        {
+            "name": "Kerala",
+            "code": "KL",
+            "cities": [
+                "kottayam",
+                "alappuzha",
+                "kannur",
+                "kollam",
+                "malappuram",
+                "thiruvananthapuram",
+                "kozhikode",
+                "thrissur"
+            ],
+            "coords": [
+                {"kottayam": [9.6287383, 76.6455326]},
+                {"alappuzha": [9.5006651, 76.4124143]},
+                {"kannur": [11.8763836, 75.3737973]},
+                {"kollam": [8.8870533, 76.5906696]},
+                {"malappuram": [11.1068448, 76.1099551]},
+                {"thiruvananthapuram": [8.4882267, 76.947551]},
+                {"kozhikode": [11.2450558, 75.7754716]},
+                {"thrissur": [10.5270099, 76.214621]}
+            ]
+        },
+        {
+            "name": "Gujarat",
+            "code": "GJ",
+            "cities": ["jamnagar", "rajkot", "surat", "ahmedabad", "vadodara"],
+            "coords": [
+                {"jamnagar": [22.4732415, 70.0552102]},
+                {"rajkot": [22.3053263, 70.8028377]},
+                {"surat": [21.2094892, 72.8317058]},
+                {"ahmedabad": [23.0215374, 72.5800568]},
+                {"vadodara": [22.2973142, 73.1942567]}
+            ]
+        },
+        {
+            "name": "Chandigarh",
+            "code": "CH",
+            "cities": ["chandigarh"],
+            "coords": [{"chandigarh": [30.7334421, 76.7797143]}]
+        },
+        {
+            "name": "Tamil Nadu",
+            "code": "TN",
+            "cities": ["coimbatore", "salem", "tirunelveli", "chennai", "madurai"],
+            "coords": [
+                {"coimbatore": [11.0018115, 76.9628425]},
+                {"salem": [11.6469616, 78.2106958]},
+                {"tirunelveli": [8.5495014, 77.5805178]},
+                {"chennai": [13.0836939, 80.270186]},
+                {"madurai": [9.9261153, 78.1140983]}
+            ]
+        },
+        {
+            "name": "Bihar",
+            "code": "BR",
+            "cities": ["patna"],
+            "coords": [{"patna": [25.6093239, 85.1235252]}]
+        },
+        {
+            "name": "Madhya Pradesh",
+            "code": "MP",
+            "cities": ["indore", "bhopal"],
+            "coords": [
+                {"indore": [22.7203616, 75.8681996]},
+                {"bhopal": [23.2584857, 77.401989]}
+            ]
+        },
+        {
+            "name": "Chhattisgarh",
+            "code": "CT",
+            "cities": ["raipur"],
+            "coords": [{"raipur": [21.2380912, 81.6336993]}]
+        },
+        {
+            "name": "West Bengal",
+            "code": "WB",
+            "cities": ["kolkata"],
+            "coords": [{"kolkata": [22.5726459, 88.3638953]}]
+        }
+    ]
+}
