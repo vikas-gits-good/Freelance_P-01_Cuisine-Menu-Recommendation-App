@@ -4,7 +4,7 @@ from glob import glob
 
 @dataclass
 class RAGCypherConstants:
-    ALL_CYPHER_CODE_PATH = glob("Src/Constants/*.cyp")
+    ALL_CYPHER_CODE_PATH = glob("Src/Constants/Cyphers/*.cyp")
 
 
 @dataclass

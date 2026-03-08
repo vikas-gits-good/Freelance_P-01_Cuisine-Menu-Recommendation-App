@@ -17,7 +17,6 @@ __pycache__/
 __pycache__/
 logs/
 *.acl
-Config/
 
 # Distribution / packaging
 .Python
