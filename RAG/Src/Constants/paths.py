@@ -9,4 +9,4 @@ class RAGCypherConstants:
 
 @dataclass
 class SystemPromptConstants:
-    SYSTEM_PROMPTS_TEXT_PATH = glob("Src/Prompts/txt/*.txt")
+    SYSTEM_PROMPTS_TEXT_PATH = glob("Src/Constants/Prompts/*.txt")
