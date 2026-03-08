@@ -1,0 +1,18 @@
+# Database
+falkordb
+
+# API
+fastapi
+uvicorn
+
+# Utils
+pandas
+pytest
+pydantic
+python-dotenv
+
+# RAG
+langgraph
+langchain
+langchain-core
+langchain-groq

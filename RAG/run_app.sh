@@ -1,0 +1,2 @@
+cd RAG
+uv init

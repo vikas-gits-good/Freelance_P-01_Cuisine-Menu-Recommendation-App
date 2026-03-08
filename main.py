@@ -1,6 +1,7 @@
 import asyncio
-from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
+
 from src.ETL.Components.load import Loader
+from src.ETL.Utils import AllLinks, CityCoordinates, RestaurantData
 from src.RAG.Components.graph import LangGraphState
 
 if __name__ == "__main__":
