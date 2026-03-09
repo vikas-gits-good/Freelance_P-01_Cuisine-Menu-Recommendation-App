@@ -1,48 +1,8 @@
-# airflow
-apache-airflow
-astro-run-dag
-
-# utils
-pytest
+# Utils
 pydantic
 python-dotenv
-ipykernel
 
-# scrape
-# rnet
-# tenacity
-# camoufox[geoip]
-# curl-cffi
-crawl4ai
-playwright
-
-# data
-pandas
-numpy
-
-# nlp
-torch @ https://download.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl
-scikit-learn
-sentence-transformers
-
-
-# database
-redis
-pymongo
-FalkorDB
-
-# RAG
-groq
-# mem0
-langgraph
-langchain
-langchain-core
-langchain-groq
-langchain_openai
-langchain-community
-langchain-experimental
-langgraph-cli[inmem]
-
-# frontend
+# Frontend
 reflex
-reflex==0.8.9
+
+reflex==0.8.27

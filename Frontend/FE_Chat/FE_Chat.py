@@ -1,6 +1,10 @@
 import reflex as rx
 
-from .GUI import base_layout
+from .Chat import ChatState, chat_page
 
 app = rx.App()
-app.add_page(base_layout, route="/")
+app.add_page(
+    chat_page,
+    route="/",
+    on_load=ChatState.on_load,  # type:ignore
+)

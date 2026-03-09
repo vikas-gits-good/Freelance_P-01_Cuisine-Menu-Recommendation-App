@@ -1109,11 +1109,17 @@ name = "frontend"
 version = "0.1.0"
 source = { virtual = "Frontend" }
 dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "reflex" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex", specifier = ">=0.8.27" }]
+requires-dist = [
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "reflex", specifier = ">=0.8.27" },
+]
 
 [[package]]
 name = "frozenlist"
