@@ -15,7 +15,6 @@ async def execute_chat(request: ChatRequest, runner: GraphRunner):
     try:
         thread_id = request.thread_id or str(uuid4())
         result: Dict[str, Any] = await runner.invoke(request.message, thread_id)
-        log_rag.info(f"{result = }")
         messages: List[HumanMessage | AIMessage] = result.get("messages", [])
         last_message: str = (
             messages[-1].content if messages else "No response from system."
