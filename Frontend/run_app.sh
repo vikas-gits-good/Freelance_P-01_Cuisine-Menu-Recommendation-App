@@ -1,0 +1,2 @@
+cd Frontend
+reflex run

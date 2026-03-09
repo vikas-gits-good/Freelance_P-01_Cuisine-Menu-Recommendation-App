@@ -35,7 +35,7 @@ services: # configure secrets from .env for local
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 1s
+      start_period: 10s
 
 networks:
   shared_net:
