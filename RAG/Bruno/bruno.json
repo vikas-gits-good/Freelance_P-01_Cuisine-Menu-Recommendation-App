@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "RSTN_RAG_Bruno",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

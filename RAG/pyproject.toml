@@ -15,5 +15,6 @@ dependencies = [
     "pydantic>=2.12.5",
     "pytest>=9.0.2",
     "python-dotenv>=1.2.2",
+    "tabulate>=0.10.0",
     "uvicorn>=0.41.0",
 ]

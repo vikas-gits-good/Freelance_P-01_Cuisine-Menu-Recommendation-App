@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,10 +10,10 @@ from Src.Utils import log_rag
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log_rag.info("GRAG: Initialising LangGraphState")
+    log_rag.info("RAG_API: Initialising LangGraphState")
     runner.initialize()  # build graph once at startup
     yield
-    log_rag.info("GRAG: Shutting down")
+    log_rag.info("RAG_API: Shutting down")
 
 
 app = FastAPI(title="RAG", lifespan=lifespan)
@@ -30,9 +29,9 @@ app.add_middleware(
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    return execute_chat(request, runner)
+    return await execute_chat(request, runner)
 
 
 @app.get("/health")
 async def health():
-    return asyncio.run(execute_health())
+    return await execute_health()

@@ -3,6 +3,8 @@ import asyncio
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
+from Src.Utils import LogException, log_rag
+
 from .graph import LangGraphState
 
 
@@ -27,10 +29,14 @@ class GraphRunner:
 
     async def invoke(self, message: str, thread_id: str) -> dict:
         """Run graph in thread pool to avoid blocking the event loop."""
-        config = {"configurable": {"thread_id": thread_id}}
-        input_state = {"messages": [HumanMessage(content=message)]}
+        try:
+            config = {"configurable": {"thread_id": thread_id}}
+            input_state = {"messages": [HumanMessage(content=message)]}
+            result = await asyncio.to_thread(self.graph.invoke, input_state, config)
 
-        result = await asyncio.to_thread(self.graph.invoke, input_state, config)
+        except Exception as e:
+            LogException(e, logger=log_rag)
+
         return result
 
 

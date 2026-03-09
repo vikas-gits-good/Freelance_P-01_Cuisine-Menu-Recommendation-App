@@ -1,20 +1,22 @@
 import asyncio
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from falkordb.asyncio import FalkorDB as AsyncFalkorDB
+from langchain_core.messages import AIMessage, HumanMessage
 
 from Src.Config import ChatRequest, ChatResponse, FalkorDBConfig
 from Src.Utils import LogException, log_rag
 
 from .runner import GraphRunner
-from .state import GRState
 
 
-def execute_chat(request: ChatRequest, runner: GraphRunner):
+async def execute_chat(request: ChatRequest, runner: GraphRunner):
     try:
         thread_id = request.thread_id or str(uuid4())
-        result: GRState = await runner.invoke(req.message, thread_id)
-        messages = result.messages
+        result: Dict[str, Any] = await runner.invoke(request.message, thread_id)
+        log_rag.info(f"{result = }")
+        messages: List[HumanMessage | AIMessage] = result.get("messages", [])
         last_message: str = (
             messages[-1].content if messages else "No response from system."
         )  # type: ignore
@@ -23,11 +25,11 @@ def execute_chat(request: ChatRequest, runner: GraphRunner):
     except Exception as e:
         LogException(e, logger=log_rag)
         response = ChatResponse(
-            reply="Error processing query. Try again",
+            reply=f"Error: {str(e)}",
             thread_id=thread_id,
         )
 
-    return response  # .model_dump()
+    return response
 
 
 async def execute_health():
