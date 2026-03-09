@@ -3,6 +3,7 @@ from .k_graph_config import FalkorDBConfig
 from .k_graph_pool import GraphPool
 from .models import ModelConfig
 from .prompts import SysMsgSet
+from .schemas import ChatRequest, ChatResponse
 from .tool_funcs import CypherFunctionTool
 from .tool_models import (
     GuardrailSchema,
@@ -24,4 +25,6 @@ __all__ = [
     "FalkorDBConfig",
     "GraphPool",
     "SysMsgSet",
+    "ChatRequest",
+    "ChatResponse",
 ]

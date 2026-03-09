@@ -1,8 +1,3 @@
-import time
-import uuid
-
-from langchain_core.messages import HumanMessage
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import END, START, CompiledStateGraph, StateGraph
 
 from Src.Constants import GRNodeLabel, Models
@@ -21,7 +16,7 @@ class LangGraphState:
         except Exception as e:
             LogException(e, logger=log_rag)
 
-    def build(self) -> CompiledStateGraph:
+    def build(self, checkpointer) -> CompiledStateGraph:
         """Method that returns the `CompiledStateGraph` object for the chat system"""
         try:
             log_rag.info("GRAG: Starting to build graph rag")
@@ -64,35 +59,9 @@ class LangGraphState:
             ln_graph.add_edge(GRNodeLabel.TOOLBOX.value, GRNodeLabel.SUMMARY.value)
 
             log_rag.info("GRAG: Compiling graph rag")
-            self.graph = ln_graph.compile()  # checkpointer=InMemorySaver())
+            self.graph = ln_graph.compile(checkpointer)
 
         except Exception as e:
             LogException(e, logger=log_rag)
 
         return self.graph
-
-    def run(self, question: str, user_id: str) -> dict:
-        try:
-            _ = self.build() if not self.graph else None
-
-            log_rag.info("GRAG: Preparing user query")
-            epoch = int(time.time())
-            sesn_id = str(uuid.uuid4())
-            init_state = GRState(
-                messages=[HumanMessage(content=question)],
-                user_id=user_id,
-                session_id=sesn_id,
-            )
-            config = {
-                "configurable": {
-                    "thread_id": f"user_{user_id}_time_{epoch}_sesn_{sesn_id}"
-                }
-            }
-
-            log_rag.info("GRAG: Sending query to GRAG system")
-            response = self.graph.invoke(init_state, config)
-
-        except Exception as e:
-            LogException(e, logger=log_rag)
-
-        return response
