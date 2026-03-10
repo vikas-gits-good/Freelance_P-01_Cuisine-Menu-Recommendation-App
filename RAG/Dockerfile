@@ -24,7 +24,7 @@ COPY . .
 RUN --mount=type=cache,id=cache-uv,target=/root/.cache/uv \
     uv sync --frozen
 
-
+# Expose port
 EXPOSE 9001
 
 CMD ["sh","-c","uv run uvicorn app:app --host 0.0.0.0 --port ${PORT:-9001}"]
