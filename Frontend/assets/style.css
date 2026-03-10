@@ -1,0 +1,22 @@
+.markdown-table table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85em;
+}
+
+.markdown-table th,
+.markdown-table td {
+    border: 1px solid #444;
+    padding: 6px 12px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.markdown-table th {
+    background-color: #2a2a2a;
+    font-weight: bold;
+}
+
+.markdown-table tr:nth-child(even) {
+    background-color: #1e1e1e;
+}

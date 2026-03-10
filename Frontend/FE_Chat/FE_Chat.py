@@ -2,7 +2,7 @@ import reflex as rx
 
 from .Chat import ChatState, chat_page
 
-app = rx.App()
+app = rx.App(stylesheets=["/style.css"])
 app.add_page(
     chat_page,
     route="/",

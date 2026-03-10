@@ -1,6 +1,6 @@
 import reflex as rx
 
-# from Frontend_ChatGUI.Navigation import NavState, Routes
+from FE_Chat.Nav import NavState
 
 
 def navbar_link(text: str, url: str) -> rx.Component:
@@ -29,7 +29,7 @@ def base_navbar() -> rx.Component:
                         id="navbar-logo",
                     ),
                     rx.heading(
-                        "Restaurant Menu Recommendation App",
+                        "Restaurant Competitor Analysis app",
                         size="7",
                         weight="bold",
                         id="navbar-heading",
@@ -37,11 +37,7 @@ def base_navbar() -> rx.Component:
                     align_items="center",
                 ),
                 rx.hstack(
-                    navbar_link("Home", "/#"),  # Routes.HOME),
-                    navbar_link("About", "/#"),  # Routes.ABOUT),
-                    navbar_link("Chat", "/#"),  # Routes.CHAT),
-                    # navbar_link("Pricing", "/#"),
-                    # navbar_link("Contact", "/#"),
+                    navbar_link("Chat", "/"),
                     justify="end",
                     spacing="5",
                 ),
@@ -60,7 +56,7 @@ def base_navbar() -> rx.Component:
                         id="navbar-logo",
                     ),
                     rx.heading(
-                        "Reflex GPT",
+                        "Restaurant Competitor Analysis app",
                         size="6",
                         weight="bold",
                         id="navbar-heading",
@@ -70,11 +66,7 @@ def base_navbar() -> rx.Component:
                 rx.menu.root(
                     rx.menu.trigger(rx.icon("menu", size=30)),
                     rx.menu.content(
-                        rx.menu.item("Home"),  # on_click=NavState.to_home()),
-                        rx.menu.item("About"),  # on_click=NavState.to_about()),
-                        rx.menu.item("Chat"),  # on_click=NavState.to_chat()),
-                        # rx.menu.item("Pricing"),
-                        # rx.menu.item("Contact"),
+                        rx.menu.item("Chat", on_click=NavState.to_chat()),
                     ),
                     justify="end",
                 ),

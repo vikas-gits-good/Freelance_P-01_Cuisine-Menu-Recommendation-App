@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import Optional
 
@@ -6,13 +5,6 @@ import httpx
 import reflex as rx
 from dotenv import load_dotenv
 from pydantic import BaseModel
-
-
-class MessageStyle(BaseModel):
-    display: str = "inline-block"
-    padding: str = "0.5em"
-    border_radius: str = "15px"
-    max_width: list[str] = ["50em", "50em", "50em", "50em", "50em", "50em"]
 
 
 class ChatMessage(BaseModel):
@@ -38,7 +30,7 @@ class ChatState(rx.State):
     def on_load(self):
         self.clear_gui()
 
-    def handle_submit(self, form_data: dict = {}):
+    async def handle_submit(self, form_data: dict = {}):
         try:
             user_message = form_data.get("HumanMessage", "")
             if user_message:
@@ -46,14 +38,14 @@ class ChatState(rx.State):
                 self.append_message_to_gui(user_message, False)
                 yield
 
-                # llm_rspn = asyncio.run(self.rag_api_call(user_message))
+                llm_rspn = await self.rag_api_call(user_message)
 
                 self.DID_SUBMT = False
                 self.append_message_to_gui(llm_rspn, True)
                 yield
 
         except Exception as e:
-            pass
+            raise e
 
     async def rag_api_call(self, message: str):
         try:
@@ -68,7 +60,7 @@ class ChatState(rx.State):
             response = data["reply"]
 
         except Exception as e:
-            pass
+            raise e
 
         return response
 

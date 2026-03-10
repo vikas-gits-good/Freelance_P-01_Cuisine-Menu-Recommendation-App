@@ -12,4 +12,6 @@ def base_layout(*args, **kwargs) -> rx.Component:
             id="base-fragment",
         ),
         id="base-container",
+        max_width="100%",  # add this
+        padding="0",
     )
