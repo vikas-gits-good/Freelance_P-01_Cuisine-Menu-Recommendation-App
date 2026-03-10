@@ -14,16 +14,23 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: "2"
           memory: 1536M
         reservations:
           memory: 768M
     healthcheck:
-      test: ["CMD", "mongosh", "mongodb://localhost:27017/admin", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "mongodb://localhost:27017/admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
+      start_period: 10s
 
   falkordb:
     image: falkordb/falkordb-server:v4.16.1-alpine
@@ -45,7 +52,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
+          cpus: "4"
           memory: 1G
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -66,14 +73,14 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: "2"
           memory: 1G
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
+      start_period: 10s
 
 volumes:
   mongodb_data:

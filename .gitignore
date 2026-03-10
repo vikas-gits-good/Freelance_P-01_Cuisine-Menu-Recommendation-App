@@ -27,6 +27,7 @@ __pycache__/
 docker/*/*.acl
 docker/*/*.env
 docker/*/*.js
+Misc/
 
 # Distribution / packaging
 .Python

@@ -34,19 +34,36 @@ class ChatState(rx.State):
     def on_load(self):
         self.clear_gui()
 
+    # async def handle_submit(self, form_data: dict = {}):
+    #     try:
+    #         user_message = form_data.get("HumanMessage", "")
+    #         if user_message:
+    #             self.DID_SUBMT = True
+    #             self.append_message_to_gui(user_message, False)
+    #             yield
+
+    #             llm_rspn = await self.rag_api_call(user_message)
+
+    #             self.DID_SUBMT = False
+    #             self.append_message_to_gui(llm_rspn, True)
+    #             yield
+
+    #     except Exception as e:
+    #         raise e
+    @rx.event(background=True)
     async def handle_submit(self, form_data: dict = {}):
         try:
             user_message = form_data.get("HumanMessage", "")
             if user_message:
-                self.DID_SUBMT = True
-                self.append_message_to_gui(user_message, False)
-                yield
+                async with self:
+                    self.DID_SUBMT = True
+                    self.append_message_to_gui(user_message, False)
 
                 llm_rspn = await self.rag_api_call(user_message)
 
-                self.DID_SUBMT = False
-                self.append_message_to_gui(llm_rspn, True)
-                yield
+                async with self:
+                    self.DID_SUBMT = False
+                    self.append_message_to_gui(llm_rspn, True)
 
         except Exception as e:
             raise e
@@ -60,7 +77,8 @@ class ChatState(rx.State):
                 )
                 data = res.json()
 
-            self.THREAD_ID = data.get("thread_id", None)
+            async with self:
+                self.THREAD_ID = data.get("thread_id", None)
             response = data["reply"]
 
         except Exception as e:
