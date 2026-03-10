@@ -104,10 +104,10 @@ class GRState(BaseModel):
         default=StatusLabels.PROGRESS,
         description="Current status of the state for given query",
     )
-    # error_message: str = Field(
-    #     default_factory=str,
-    #     description="Error message to end user incase of error in graph state",
-    # )
+    error_message: str = Field(
+        default_factory=str,
+        description="Error message to end user incase of error in graph state",
+    )
 
     @staticmethod
     def remove_table(

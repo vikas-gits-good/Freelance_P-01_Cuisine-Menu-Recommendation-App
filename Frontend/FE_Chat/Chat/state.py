@@ -18,10 +18,14 @@ class ChatState(rx.State):
     load_dotenv()
     RAG_API_URL = os.getenv("RAG_API_URL", "")
     THREAD_ID: Optional[str] = None
+    CURRENT_INPUT: str = ""
 
     @rx.var
     def user_form_submit(self) -> bool:
         return self.DID_SUBMT
+
+    def set_CURRENT_INPUT(self, value: str):
+        self.CURRENT_INPUT = value
 
     def clear_gui(self):
         self.DID_SUBMT = False

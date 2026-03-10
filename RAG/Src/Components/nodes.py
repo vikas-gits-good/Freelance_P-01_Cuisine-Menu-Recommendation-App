@@ -80,6 +80,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -106,6 +108,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -144,6 +148,8 @@ class GRNodes:
         except Exception as e:
             LogException(e, logger=log_rag)
             state.intent = PlannerLabels.EROR_QUIT
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -215,6 +221,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -239,6 +247,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -305,6 +315,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -332,6 +344,8 @@ class GRNodes:
 
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.status = StatusLabels.ERROR
+            state.error_message = str(e)
 
         return state
 
@@ -345,8 +359,13 @@ class GRNodes:
                 grdm_msg = AIMessage(content=state.guardrail_message)
                 state.messages.append(grdm_msg)
 
+            elif state.status == StatusLabels.ERROR:
+                error_message = AIMessage(content="Unknown error in rag system")
+                state.messages.append(error_message)
+
         except Exception as e:
             LogException(e, logger=log_rag)
+            state.error_message = str(e)
 
         return state
 
