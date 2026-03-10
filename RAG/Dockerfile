@@ -12,7 +12,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN --mount=type=cache,id=rstn-misr-rag-codebase-uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=cache-rstn-misr-rag-codebase,target=/root/.cache/uv \
     uv sync --frozen --no-install-project && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 

@@ -12,7 +12,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN --mount=type=cache,id=rstn-misr-etl-codebase-uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=cache-rstn-misr-etl-codebase,target=/root/.cache/uv \
     uv sync --frozen --no-install-project && \
     uv run playwright install chromium --with-deps && \
     rm -rf /var/lib/apt/lists/* /tmp/*
