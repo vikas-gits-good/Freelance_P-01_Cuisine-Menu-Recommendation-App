@@ -13,21 +13,14 @@ __pycache__/
 
 # Manual
 logs/
-mlruns/
-Artifacts/
-.langgraph_api/
-Final_Artifacts/
-src/ETL/Data/sitemap/
-src/RAG/References/
-/src/RAG/Notebook/
-catboost_info/
-src/Research/
-src/Secrets/
 __pycache__/
 docker/*/*.acl
 docker/*/*.env
 docker/*/*.js
 Misc/
+*.acl
+*.env
+*.js
 
 # Distribution / packaging
 .Python

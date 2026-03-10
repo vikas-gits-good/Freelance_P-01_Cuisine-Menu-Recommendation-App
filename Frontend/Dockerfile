@@ -31,6 +31,8 @@ RUN uv run reflex init
 
 RUN uv run reflex export --frontend-only --no-zip
 
+EXPOSE 10011
+
 STOPSIGNAL SIGKILL
 
-CMD ["sh", "-c", "redis-server --daemonize yes && exec uv run reflex run --env prod --backend-host 0.0.0.0 --backend-port 10001 --frontend-port 11001"]
+CMD ["sh", "-c", "redis-server --daemonize yes && exec uv run reflex run --env prod --backend-host 0.0.0.0 --backend-port 10001 --frontend-port 10011"]

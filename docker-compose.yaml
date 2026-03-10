@@ -1,16 +1,19 @@
 services:
+  # ─── Infrastructure ───────────────────────────────────────────────────────
   mongodb:
     image: mongo:8.2
     container_name: mongodb-local
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:8011:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_configdb:/data/configdb
       - ./docker/mongodb:/docker-entrypoint-initdb.d:ro
     env_file:
       - ./docker/mongodb/password.env
-    restart: "no"
+    restart: unless-stopped
+    networks:
+      - rstn-misr-etl-ntwk
     deploy:
       resources:
         limits:
@@ -32,44 +35,18 @@ services:
       retries: 5
       start_period: 10s
 
-  falkordb:
-    image: falkordb/falkordb-server:v4.16.1-alpine
-    container_name: falkordb-local
-    ports:
-      - "127.0.0.1:6389:6379"
-    volumes:
-      - falkordb_data:/var/lib/falkordb/data
-      - falkordb_redis_data:/data
-      - ./docker/falkordb/fkdb_users.acl:/etc/redis/fkdb_users.acl:ro
-    environment:
-      REDIS_ARGS: "--aclfile /etc/redis/fkdb_users.acl"
-    restart: "no"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "4"
-          memory: 1G
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
   redis:
     image: redis:8.4.0-alpine3.22
     container_name: redisdb-local
     ports:
-      - "127.0.0.1:6388:6379"
+      - "127.0.0.1:8021:6379"
     volumes:
       - redis_data:/data
       - ./docker/redisdb/redis_users.acl:/etc/redis/redis_users.acl:ro
     command: ["redis-server", "--aclfile", "/etc/redis/redis_users.acl"]
-    restart: "no"
+    restart: unless-stopped
+    networks:
+      - rstn-misr-etl-ntwk
     deploy:
       resources:
         limits:
@@ -82,6 +59,148 @@ services:
       retries: 5
       start_period: 10s
 
+  falkordb:
+    image: falkordb/falkordb-server:v4.16.1-alpine
+    container_name: falkordb-local
+    ports:
+      - "127.0.0.1:8031:6379"
+    volumes:
+      - falkordb_data:/var/lib/falkordb/data
+      - falkordb_redis_data:/data
+      - ./docker/falkordb/fkdb_users.acl:/etc/redis/fkdb_users.acl:ro
+    environment:
+      REDIS_ARGS: "--aclfile /etc/redis/fkdb_users.acl"
+    restart: unless-stopped
+    networks:
+      - rstn-misr-etl-ntwk
+      - rstn-misr-rag-ntwk
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ─── ETL ──────────────────────────────────────────────────────────────────
+  rstn-misr-etl-codebase:
+    image: rstn-misr-etl-codebase:${IMAGE_TAG:-latest}
+    pull_policy: build
+    build:
+      context: ./ETL
+      dockerfile: Dockerfile
+    container_name: rstn-misr-etl-codebase
+    ports:
+      - "127.0.0.1:8001:8001"
+    env_file:
+      - ./ETL/.env
+    environment:
+      ETL_MONGO_HOST: mongodb-local
+      ETL_MONGO_PORT: 27017
+      ETL_REDIS_HOST: redisdb-local
+      ETL_REDIS_PORT: 6379
+      ETL_FALKOR_HOST: falkordb-local
+      ETL_FALKOR_PORT: 6379
+    networks:
+      - rstn-misr-etl-ntwk
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      falkordb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 750M
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json,urllib.request,sys;sys.exit(0 if json.load(urllib.request.urlopen('http://localhost:8001/health'))['status']=='ok' else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─── RAG ──────────────────────────────────────────────────────────────────
+  rstn-misr-rag-codebase:
+    image: rstn-misr-rag-codebase:${IMAGE_TAG:-latest}
+    pull_policy: build
+    build:
+      context: ./RAG
+      dockerfile: Dockerfile
+    container_name: rstn-misr-rag-codebase
+    ports:
+      - "127.0.0.1:9001:9001"
+    env_file:
+      - ./RAG/.env
+    environment:
+      ETL_FALKOR_HOST: falkordb-local
+      ETL_FALKOR_PORT: 6379
+    networks:
+      - rstn-misr-rag-ntwk
+      - rstn-misr-fte-ntwk
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 750M
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json,urllib.request,sys;sys.exit(0 if json.load(urllib.request.urlopen('http://localhost:9001/health'))['status']=='ok' else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─── Frontend ─────────────────────────────────────────────────────────────
+  rstn-misr-fte-codebase:
+    image: rstn-misr-fte-codebase:${IMAGE_TAG:-latest}
+    pull_policy: build
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: rstn-misr-fte-codebase
+    ports:
+      - "127.0.0.1:10001:10001"
+      - "127.0.0.1:10011:10011"
+    env_file:
+      - ./Frontend/.env
+    environment:
+      RAG_API_URL: http://rstn-misr-rag-codebase:9001
+    networks:
+      - rstn-misr-fte-ntwk
+    depends_on:
+      rstn-misr-rag-codebase:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512M
+    restart: unless-stopped
+
+# ─── Volumes ────────────────────────────────────────────────────────────────
 volumes:
   mongodb_data:
     name: mongodb_data
@@ -93,3 +212,15 @@ volumes:
     name: falkordb_redis_data
   redis_data:
     name: redis_data
+
+# ─── Networks ───────────────────────────────────────────────────────────────
+networks:
+  rstn-misr-etl-ntwk:
+    name: rstn-misr-etl-ntwk
+    driver: bridge
+  rstn-misr-rag-ntwk:
+    name: rstn-misr-rag-ntwk
+    driver: bridge
+  rstn-misr-fte-ntwk:
+    name: rstn-misr-fte-ntwk
+    driver: bridge
