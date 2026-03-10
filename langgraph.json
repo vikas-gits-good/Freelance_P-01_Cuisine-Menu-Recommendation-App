@@ -1,7 +1,0 @@
-{
-  "dependencies": ["."],
-  "graphs": {
-    "rag_graph": "app:graph"
-  },
-  "env": "./src/Secrets/LangStudio.env"
-}
