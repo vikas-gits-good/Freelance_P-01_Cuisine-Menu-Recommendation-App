@@ -1,26 +1,30 @@
-# Base image
+# syntax=docker/dockerfile:1.7
+
 FROM ghcr.io/astral-sh/uv:python3.13-alpine3.23
 
-# Prevent Python from writing .pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependency files first (for Docker layer caching)
+
+# 1️⃣ Copy only dependency files (maximizes Docker cache)
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-RUN --mount=type=cache,id=cache-rstn-misr-rag-codebase,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+# 2️⃣ Install dependencies (cached)
+RUN --mount=type=cache,id=cache-uv,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
-# Copy app source
+
+# 3️⃣ Copy application code AFTER dependencies
 COPY . .
 
-# Expose port for communication
+
+# 4️⃣ Install the project itself (fast, since deps already cached)
+RUN --mount=type=cache,id=cache-uv,target=/root/.cache/uv \
+    uv sync --frozen
+
+
 EXPOSE 9001
 
-# Run inside uv environment
-CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9001"]
+CMD ["sh","-c","uv run uvicorn app:app --host 0.0.0.0 --port ${PORT:-9001}"]
