@@ -1,3 +1,6 @@
+import os
+
+from dotenv import load_dotenv
 from langgraph.graph.state import END, START, CompiledStateGraph, StateGraph
 
 from Src.Constants import GRNodeLabel, Models
@@ -12,6 +15,15 @@ class LangGraphState:
     def __init__(self):
         try:
             self.graph = None
+            load_dotenv()
+            self.large = os.getenv(
+                "MODEL_LARGE",
+                Models.Groq.meta.llama_33_70b_versatile,
+            )
+            self.small = os.getenv(
+                "MODEL_SMALL",
+                Models.Groq.meta.llama_31_8b_instant,
+            )
 
         except Exception as e:
             LogException(e, logger=log_rag)
@@ -21,8 +33,8 @@ class LangGraphState:
         try:
             log_rag.info("GRAG: Starting to build graph rag")
             nodes = GRNodes(  # redesign this part
-                chat_model=Models.Groq.meta.llama_33_70b_versatile,
-                gdrl_model=Models.Groq.meta.llama_31_8b_instant,
+                large_model=self.large,
+                small_model=self.small,
             )
             log_rag.info("GRAG: Preparing routes for GRAG")
             router = GRRouter()

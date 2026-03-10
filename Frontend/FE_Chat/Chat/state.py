@@ -1,3 +1,4 @@
+import asyncio
 import os
 from typing import Optional
 
@@ -45,7 +46,7 @@ class ChatState(rx.State):
                 self.append_message_to_gui(user_message, False)
                 yield
 
-                # llm_rspn = self.rag_api_call(user_message)
+                # llm_rspn = asyncio.run(self.rag_api_call(user_message))
 
                 self.DID_SUBMT = False
                 self.append_message_to_gui(llm_rspn, True)

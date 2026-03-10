@@ -24,28 +24,28 @@ class GRNodes:
 
     def __init__(
         self,
-        chat_model: str = Models.Groq.meta.llama_33_70b_versatile,
-        gdrl_model: str = Models.Groq.meta.llama_31_8b_instant,
+        large_model: str = Models.Groq.meta.llama_33_70b_versatile,
+        small_model: str = Models.Groq.meta.llama_31_8b_instant,
         mdl_config: ModelConfig = ModelConfig(),
     ):
         try:
             # change this to control opai vs groq models
             self.llm_chat = ChatGroq(
-                model=chat_model,
+                model=large_model,
                 api_key=mdl_config.api_key,  # type: ignore
                 temperature=0.7,
             )
             self.llm_gdrl = ChatGroq(
-                model=gdrl_model,
+                model=small_model,
                 api_key=mdl_config.api_key,  # type: ignore
                 temperature=0,
             ).with_structured_output(schema=GuardrailSchema)
 
-            self.llm_extr = ChatGroq(
-                model=gdrl_model,
-                api_key=mdl_config.api_key,  # type: ignore
-                temperature=0,
-            )
+            # self.llm_extr = ChatGroq(
+            #     model=small_model,
+            #     api_key=mdl_config.api_key,  # type: ignore
+            #     temperature=0,
+            # )
 
             self.sms = SysMsgSet().sys_pmt
             self.dqt = GRTools()

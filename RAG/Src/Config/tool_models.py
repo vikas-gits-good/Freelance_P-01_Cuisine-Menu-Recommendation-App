@@ -10,6 +10,8 @@ from Src.Constants import PlannerLabels, ToolLabels
 
 
 class GuardrailSchema(BaseModel):
+    """Respond ONLY with valid JSON matching this schema exactly."""
+
     is_safe: bool = Field(
         default_factory=bool,
         description="is the user query safe?",
