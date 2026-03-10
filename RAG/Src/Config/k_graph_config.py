@@ -11,15 +11,15 @@ class FalkorDBConfig:
 
     def __init__(self):
         load_dotenv(".env")
-        self.conn_uri = FalkorDBConstants.CONNECTION_URI.format(
-            user=quote(str(os.getenv("ETL_FALKOR_USER"))),
-            pswd=quote(str(os.getenv("ETL_FALKOR_PSWD"))),
-            host=quote(str(os.getenv("ETL_FALKOR_HOST"))),
-            port=quote(str(os.getenv("ETL_FALKOR_PORT"))),
-        )
+        # self.conn_uri = FalkorDBConstants.CONNECTION_URI.format(
+        #     user=quote(str(os.getenv("ETL_FALKOR_USER"))),
+        #     pswd=quote(str(os.getenv("ETL_FALKOR_PSWD"))),
+        #     host=quote(str(os.getenv("ETL_FALKOR_HOST"))),
+        #     port=quote(str(os.getenv("ETL_FALKOR_PORT"))),
+        # )
         self.conn_dict = {
-            "username": str(os.getenv("ETL_FALKOR_USER")),
-            "password": str(os.getenv("ETL_FALKOR_PSWD")),
+            # "username": str(os.getenv("ETL_FALKOR_USER")),
+            # "password": str(os.getenv("ETL_FALKOR_PSWD")),
             "host": str(os.getenv("ETL_FALKOR_HOST")),
             "port": int(os.getenv("ETL_FALKOR_PORT", "6379")),
         }

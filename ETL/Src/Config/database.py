@@ -38,22 +38,22 @@ class RedisDBConfig:
 
     def __init__(self):
         load_dotenv(".env")
-        REDIS_USER = os.getenv("ETL_REDIS_USER")
-        REDIS_PSWD = os.getenv("ETL_REDIS_PSWD")
+        # REDIS_USER = os.getenv("ETL_REDIS_USER")
+        # REDIS_PSWD = os.getenv("ETL_REDIS_PSWD")
         REDIS_HOST = os.getenv("ETL_REDIS_HOST")
         REDIS_PORT = os.getenv("ETL_REDIS_PORT", "6379")
 
         def _get_data(database: int = 0):
             data_dict = {
-                "username": REDIS_USER,
-                "password": REDIS_PSWD,
+                # "username": REDIS_USER,
+                # "password": REDIS_PSWD,
                 "host": str(REDIS_HOST),
                 "port": int(REDIS_PORT),
                 "db": database,
             }
             data_url = RedisDBConstants.CONNECTION_URI.format(
-                user=quote(str(os.getenv("ETL_REDIS_USER"))),
-                pswd=quote(str(os.getenv("ETL_REDIS_PSWD"))),
+                # user=quote(str(os.getenv("ETL_REDIS_USER"))),
+                # pswd=quote(str(os.getenv("ETL_REDIS_PSWD"))),
                 host=quote(str(os.getenv("ETL_REDIS_HOST"))),
                 port=quote(str(os.getenv("ETL_REDIS_PORT"))),
                 daba=database,
@@ -70,15 +70,15 @@ class FalkorDBConfig:
 
     def __init__(self):
         load_dotenv(".env")
-        self.conn_uri = FalkorDBConstants.CONNECTION_URI.format(
-            user=quote(str(os.getenv("ETL_FALKOR_USER"))),
-            pswd=quote(str(os.getenv("ETL_FALKOR_PSWD"))),
-            host=quote(str(os.getenv("ETL_FALKOR_HOST"))),
-            port=quote(str(os.getenv("ETL_FALKOR_PORT"))),
-        )
+        # self.conn_uri = FalkorDBConstants.CONNECTION_URI.format(
+        #     user=quote(str(os.getenv("ETL_FALKOR_USER"))),
+        #     pswd=quote(str(os.getenv("ETL_FALKOR_PSWD"))),
+        #     host=quote(str(os.getenv("ETL_FALKOR_HOST"))),
+        #     port=quote(str(os.getenv("ETL_FALKOR_PORT"))),
+        # )
         self.conn_dict = {
-            "username": str(os.getenv("ETL_FALKOR_USER")),
-            "password": str(os.getenv("ETL_FALKOR_PSWD")),
+            # "username": str(os.getenv("ETL_FALKOR_USER")),
+            # "password": str(os.getenv("ETL_FALKOR_PSWD")),
             "host": str(os.getenv("ETL_FALKOR_HOST")),
             "port": int(os.getenv("ETL_FALKOR_PORT", "6379")),
         }
