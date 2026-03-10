@@ -20,7 +20,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install deps
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=rstn-misr-fte-codebase-uv-cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
 
 # Copy code
