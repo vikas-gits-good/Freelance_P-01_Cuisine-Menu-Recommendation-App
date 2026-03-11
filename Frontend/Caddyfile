@@ -1,0 +1,15 @@
+:{$PORT}
+
+encode gzip
+
+root * /srv
+
+route /backend/* {
+    uri strip_prefix /backend
+    reverse_proxy localhost:10001
+}
+
+route /* {
+    try_files {path} {path}/ /index.html
+    file_server
+}
