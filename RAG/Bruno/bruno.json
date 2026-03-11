@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "Rstn_RAG_Bruno",
+  "name": "LOCAL_Rstn_RAG_Bruno",
   "type": "collection",
   "ignore": [
     "node_modules",

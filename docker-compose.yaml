@@ -92,7 +92,7 @@ services:
     pull_policy: build
     build:
       context: ./ETL
-      dockerfile: Dockerfile
+      dockerfile: devl.Dockerfile
     container_name: rstn-misr-etl-codebase
     ports:
       - "127.0.0.1:8001:8001"
@@ -139,7 +139,7 @@ services:
     pull_policy: build
     build:
       context: ./RAG
-      dockerfile: Dockerfile
+      dockerfile: devl.Dockerfile
     container_name: rstn-misr-rag-codebase
     ports:
       - "127.0.0.1:9001:9001"
@@ -179,7 +179,7 @@ services:
     pull_policy: build
     build:
       context: ./Frontend
-      dockerfile: Dockerfile
+      dockerfile: devl.Dockerfile
     container_name: rstn-misr-fte-codebase
     ports:
       - "127.0.0.1:10001:10001"
