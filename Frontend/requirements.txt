@@ -1,6 +1,7 @@
 # Utils
 pydantic
 python-dotenv
+tenacity
 
 # Frontend
 reflex
