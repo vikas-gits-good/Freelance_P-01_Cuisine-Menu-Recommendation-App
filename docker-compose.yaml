@@ -89,7 +89,7 @@ services:
   # ─── ETL ──────────────────────────────────────────────────────────────────
   rstn-misr-etl-codebase:
     image: rstn-misr-etl-codebase:${IMAGE_TAG:-latest}
-    # pull_policy: build
+    pull_policy: build
     build:
       context: ./ETL
       dockerfile: devl.Dockerfile
@@ -136,7 +136,7 @@ services:
   # ─── RAG ──────────────────────────────────────────────────────────────────
   rstn-misr-rag-codebase:
     image: rstn-misr-rag-codebase:${IMAGE_TAG:-latest}
-    # pull_policy: build
+    pull_policy: build
     build:
       context: ./RAG
       dockerfile: devl.Dockerfile
@@ -176,7 +176,7 @@ services:
   # ─── Frontend ─────────────────────────────────────────────────────────────
   rstn-misr-fte-codebase:
     image: rstn-misr-fte-codebase:${IMAGE_TAG:-latest}
-    # pull_policy: build
+    pull_policy: build
     build:
       context: ./Frontend
       dockerfile: prod.Dockerfile
