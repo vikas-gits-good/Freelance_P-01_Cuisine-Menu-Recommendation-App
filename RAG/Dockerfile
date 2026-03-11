@@ -12,7 +12,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # 2️⃣ Install dependencies (cached)
-RUN --mount=type=cache,id=cache-uv,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/.cache/uv,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
 
 
@@ -21,7 +21,7 @@ COPY . .
 
 
 # 4️⃣ Install the project itself (fast, since deps already cached)
-RUN --mount=type=cache,id=cache-uv,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-uv,target=/root/.cache/uv \
     uv sync --frozen
 
 # Expose port
