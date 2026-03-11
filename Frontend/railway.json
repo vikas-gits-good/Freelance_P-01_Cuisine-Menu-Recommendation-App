@@ -9,6 +9,13 @@
     "startCommand": "redis-server --daemonize yes && exec uv run reflex run --env prod --backend-host 0.0.0.0 --backend-port 10001 --frontend-port 10011",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
-    "sleepApplication": false
+    "region": "asia-southeast1",
+    "runtime": "V2",
+    "limitOverride": {
+      "containers": {
+        "cpu": 4,
+        "memoryBytes": 4000000000
+      }
+    }
   }
 }
