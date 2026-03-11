@@ -245,6 +245,8 @@ Services are deployed on **Railway** in a production environment:
 
 ![Railway Deployment](docs/railway_deployment.png)
 
+![System Architecture](docs/website_chat.png)
+
 > **Note:** The RAG backend and FalkorDB are set to sleep when idle to manage hosting costs. Expect a 20 - 40 second cold start on first query. ETL, MongoDB and Redis arent deployed to save cost.
 
 ---
