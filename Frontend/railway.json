@@ -6,7 +6,7 @@
     "watchPatterns": ["/Frontend/**"]
   },
   "deploy": {
-    "startCommand": "caddy start --config /app/Caddyfile && redis-server --daemonize yes && exec uv run reflex run --env prod --backend-only",
+    "startCommand": "ls /app && cat /app/Caddyfile && caddy start --config /app/Caddyfile && redis-server --daemonize yes && exec uv run reflex run --env prod --backend-only 2>&1",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "region": "asia-southeast1",
