@@ -6,7 +6,7 @@
     "watchPatterns": ["/Frontend/**"]
   },
   "deploy": {
-    "startCommand": "parallel --ungroup --halt now,fail=1 ::: uv run reflex run --backend-only --env prod caddy run --config /etc/caddy/Caddyfile 2>&1",
+    "startCommand": "parallel --ungroup --halt now,fail=1 ::: 'uv run reflex run --backend-only --env prod' 'caddy run --config /etc/caddy/Caddyfile'",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "region": "asia-southeast1",
