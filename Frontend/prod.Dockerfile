@@ -27,4 +27,4 @@ RUN uv run reflex export --frontend-only --no-zip && mv .web/build/client/* /srv
 STOPSIGNAL SIGKILL
 EXPOSE $PORT
 
-CMD ["sh", "-c", "caddy start && redis-server --daemonize yes && exec uv run reflex run --env prod --backend-only"]
+CMD ["sh", "-c", "caddy start --config /app/Caddyfile && redis-server --daemonize yes && exec uv run reflex run --env prod --backend-only"]
