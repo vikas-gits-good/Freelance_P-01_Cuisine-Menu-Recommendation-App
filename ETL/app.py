@@ -33,6 +33,9 @@ def scraper():
     return execute_task(TaskType.SCRP, tasks)
 
 
+# i noticed some weird bug where it was failing after
+# trying to get batch data from mongo when connecting to
+# prod falkor. check once
 @app.post("/load")
 def loader():  # loads full dataset. fix it
     return execute_task(TaskType.LOAD, tasks)
