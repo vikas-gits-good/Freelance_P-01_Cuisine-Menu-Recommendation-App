@@ -7,6 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+ARG RAILWAY_SERVICE_ID=3da6f436-e4e2-4483-a6c0-5933a9030475
+# ARG PORT=9001
+
 
 # 1️⃣ Copy only dependency files (maximizes Docker cache)
 COPY pyproject.toml uv.lock ./
@@ -27,4 +30,4 @@ RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/.cache/uv,target=/root/.
 # Expose port
 EXPOSE 9001
 
-CMD ["sh","-c","uv run uvicorn app:app --host 0.0.0.0 --port ${PORT:-9001}"]
+CMD ["sh","-c","uv run uvicorn app:app --host 0.0.0.0 --port 9001"]
