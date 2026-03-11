@@ -7,16 +7,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-ARG RAILWAY_SERVICE_ID=3da6f436-e4e2-4483-a6c0-5933a9030475
-# ARG PORT=9001
 
 
 # 1️⃣ Copy only dependency files (maximizes Docker cache)
 COPY pyproject.toml uv.lock ./
 
 # 2️⃣ Install dependencies (cached) /root/cache/uv
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/uv,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project
+# RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+#     uv sync --frozen --no-install-project
+
+RUN uv sync --frozen --no-install-project
 
 
 # 3️⃣ Copy application code AFTER dependencies
@@ -24,8 +24,10 @@ COPY . .
 
 
 # 4️⃣ Install the project itself (fast, since deps already cached)
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/uv,target=/root/.cache/uv \
-    uv sync --frozen
+# RUN --mount=type=cache,id=s/uv-cache,target=/root/.cache/uv \
+#     uv sync --frozen
+
+# RUN uv sync --frozen
 
 # Expose port
 # EXPOSE 9001
